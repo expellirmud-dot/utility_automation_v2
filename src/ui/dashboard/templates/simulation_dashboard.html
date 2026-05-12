@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulation Reports - Advisory Only</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="mb-4 bg-yellow-900 border-l-4 border-yellow-500 p-4">
+        <p class="font-bold">ADVISORY ONLY</p>
+        <p>No Authority Action Performed. Ledger is the source of truth.</p>
+    </div>
+    <h1 class="text-2xl mb-4">Simulation Dashboard</h1>
+    <table class="w-full text-left bg-gray-800 rounded">
+        <thead>
+            <tr class="border-b border-gray-700">
+                <th class="p-3">Hash</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Review Required</th>
+                <th class="p-3">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr class="border-b border-gray-700">
+                <td class="p-3 font-mono text-xs">{{ report.hash[:16] }}...</td>
+                <td class="p-3">{{ report.status }}</td>
+                <td class="p-3">{{ report.manual_review_required }}</td>
+                <td class="p-3"><a href="/simulation/detail/{{ report.hash }}" class="text-blue-400">View Detail</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

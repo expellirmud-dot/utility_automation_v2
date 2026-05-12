@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulation Detail</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="mb-4 bg-yellow-900 border-l-4 border-yellow-500 p-4">
+        <p class="font-bold">ADVISORY ONLY</p>
+        <p>No Authority Action Performed. Ledger is the source of truth.</p>
+    </div>
+    <h1 class="text-2xl mb-4">Simulation Detail</h1>
+    <div class="card p-6 bg-gray-800 rounded">
+        <h2 class="font-bold">Report Hash: {{ report.simulation_hash }}</h2>
+        <h3 class="mt-4 font-bold">Recommendations:</h3>
+        <p>{{ report.confidence_assessment }}</p>
+        <h3 class="mt-4 font-bold">Warnings:</h3>
+        <p>Total Warnings: {{ report.warning_count }}</p>
+        <ul class="list-disc ml-5">
+            {% for w in report.warnings %}
+                <li>{{ w }}</li>
+            {% endfor %}
+        </ul>
+        <div class="mt-8 text-xs text-gray-500 italic">Deterministic Hash: {{ report.simulation_hash }}</div>
+    </div>
+</body>
+</html>

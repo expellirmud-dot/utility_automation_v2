@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDML Governance Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080d14;
+      --bg-card: #0e1520;
+      --bg-card-hover: #141e2e;
+      --border: #1e2d42;
+      --byzantine: #ef4444;
+      --partition: #f59e0b;
+      --crashed: #6b7280;
+      --recovery: #8b5cf6;
+      --text-primary: #e2eaf4;
+      --text-secondary: #6b8299;
+      --text-muted: #3d5269;
+      --accent-blue: #3b82f6;
+      --accent-green: #22d3a4;
+      --accent-orange: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --committed: #22d3a4;
+      --quorum: #f59e0b;
+      --validated: #3b82f6;
+      --proposed: #4b5563;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(14, 21, 32, 0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .logo span { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .epoch-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* MAIN GRID */
+    main { padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .kpi-card:hover {
+      border-color: #2a3d57;
+      transform: translateY(-1px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .kpi-card.green::before { background: linear-gradient(90deg, var(--accent-green), transparent); }
+    .kpi-card.blue::before { background: linear-gradient(90deg, var(--accent-blue), transparent); }
+    .kpi-card.orange::before { background: linear-gradient(90deg, var(--accent-orange), transparent); }
+    .kpi-card.purple::before { background: linear-gradient(90deg, var(--accent-purple), transparent); }
+
+    .kpi-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card.green .kpi-value { color: var(--accent-green); }
+    .kpi-card.blue .kpi-value { color: var(--accent-blue); }
+    .kpi-card.orange .kpi-value { color: var(--accent-orange); }
+    .kpi-card.purple .kpi-value { color: var(--accent-purple); }
+
+    .kpi-sub { font-size: 12px; color: var(--text-muted); }
+
+    /* PANELS */
+    .panels-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) { .panels-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .panel-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-green { background: rgba(34, 211, 164, 0.1); color: var(--accent-green); border: 1px solid rgba(34, 211, 164, 0.2); }
+    .badge-blue  { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);  border: 1px solid rgba(59, 130, 246, 0.2); }
+
+    /* EVENT LOG */
+    .event-log { padding: 12px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+    .event-log::-webkit-scrollbar { width: 4px; }
+    .event-log::-webkit-scrollbar-track { background: transparent; }
+    .event-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+
+    .event-item:hover { background: var(--bg-card-hover); border-color: var(--border); }
+
+    .phase-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .phase-dot.COMMITTED    { background: var(--committed); box-shadow: 0 0 6px var(--committed); }
+    .phase-dot.QUORUM_SATISFIED { background: var(--quorum); }
+    .phase-dot.VALIDATED    { background: var(--validated); }
+    .phase-dot.PROPOSED     { background: var(--proposed); }
+
+    .event-hash {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-payload { font-size: 12px; color: var(--text-primary); margin-top: 2px; }
+
+    .event-meta {
+      display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tag-epoch { background: rgba(139, 92, 246, 0.12); color: var(--accent-purple); }
+    .tag-committed { background: rgba(34, 211, 164, 0.1); color: var(--accent-green); }
+    .tag-quorum { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); }
+
+    /* STATE PANEL */
+    .state-view { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; }
+
+    .state-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(30, 45, 66, 0.5); }
+    .state-row:last-child { border-bottom: none; }
+    .state-key { color: var(--accent-blue); }
+    .state-val { color: var(--accent-green); }
+
+    /* DAG MINI CANVAS */
+    #dag-canvas {
+      width: 100%;
+      height: 280px;
+      display: block;
+      border-radius: 0 0 14px 14px;
+    }
+
+    /* REFRESH BTN */
+    .refresh-btn {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .refresh-btn:hover { background: rgba(59, 130, 246, 0.18); }
+
+    /* EMPTY */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ANIMATE-IN */
+    .animate-in { animation: fadeSlide 0.3s ease; }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CHAOS PANEL */
+    .chaos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .chaos-node {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      transition: all 0.3s;
+    }
+    .chaos-node.alive    { border-color: rgba(34,211,164,0.3); background: rgba(34,211,164,0.05); }
+    .chaos-node.crashed  { border-color: rgba(107,114,128,0.4); background: rgba(107,114,128,0.1); }
+    .chaos-node.byzantine{ border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); animation: byz-pulse 1s infinite; }
+    .chaos-node.partitioned { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.08); }
+    @keyframes byz-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+    .node-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .node-status-dot.alive { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+    .node-status-dot.crashed { background: var(--crashed); }
+    .node-status-dot.byzantine { background: var(--byzantine); animation: byz-pulse 0.8s infinite; }
+    .node-status-dot.partitioned { background: var(--partition); }
+    .chaos-mode-badge {
+      font-size: 13px; font-weight: 700;
+      padding: 6px 16px; border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+    }
+    .chaos-mode-badge.NORMAL    { background: rgba(34,211,164,0.12); color: var(--accent-green); }
+    .chaos-mode-badge.PARTITION { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .chaos-mode-badge.BYZANTINE { background: rgba(239,68,68,0.15); color: var(--byzantine); }
+    .chaos-mode-badge.CRASH     { background: rgba(107,114,128,0.2); color: var(--crashed); }
+    .chaos-mode-badge.RECOVERY  { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+    .phase-dot.QUORUM_PENDING  { background: var(--accent-orange); }
+    .phase-dot.REJECTED_BYZANTINE { background: var(--byzantine); animation: byz-pulse 0.8s infinite; }
+    .phase-dot.crash_recovered { background: var(--accent-purple); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    <div>
+      <h1>CDML Governance Dashboard</h1>
+      <span>Causal Deterministic Mesh Ledger · Real-time</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="epoch-display" class="epoch-badge">Epoch —</div>
+    <div class="status-dot" id="status-dot"></div>
+    <button class="refresh-btn" onclick="fetchAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">Committed Events</div>
+      <div class="kpi-value" id="kpi-committed">—</div>
+      <div class="kpi-sub">in causal truth DAG</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Quorum Satisfied</div>
+      <div class="kpi-value" id="kpi-quorum">—</div>
+      <div class="kpi-sub">awaiting finalization</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Actions Executed</div>
+      <div class="kpi-value" id="kpi-actions">—</div>
+      <div class="kpi-sub">from projected state</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Current Epoch</div>
+      <div class="kpi-value" id="kpi-epoch">—</div>
+      <div class="kpi-sub">governance epoch</div>
+    </div>
+  </div>
+
+  <!-- PANELS ROW 1 -->
+  <div class="panels-grid">
+
+    <!-- EVENT LOG -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📡 Committed Event Log</span>
+        <span class="panel-badge badge-green" id="event-count">0 events</span>
+      </div>
+      <div class="event-log" id="event-log">
+        <div class="empty-state">No events indexed yet.</div>
+      </div>
+    </div>
+
+    <!-- PROJECTED STATE -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">🧬 Projected State (Single Truth Source)</span>
+        <span class="panel-badge badge-blue" id="state-epoch">epoch —</span>
+      </div>
+      <div class="state-view" id="state-view">
+        <div class="empty-state">State not yet available.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHAOS STATUS PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">⚡ Adversarial Status — Stage 5</span>
+      <span id="chaos-mode-badge" class="chaos-mode-badge NORMAL">NORMAL</span>
+    </div>
+    <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+      <div class="chaos-grid" id="node-grid">
+        <!-- Populated by JS -->
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 4px;">
+        <div class="kpi-card" style="border-radius:10px; padding:12px;">
+          <div class="kpi-label">Byzantine Rejected</div>
+          <div style="font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#ef4444;" id="byz-count">0</div>
+        </div>
+        <div class="kpi-card" style="border-radius:10px; padding:12px;">
+          <div class="kpi-label">Quorum Pending</div>
+          <div style="font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#f59e0b;" id="quorum-pending-count">0</div>
+        </div>
+        <div class="kpi-card" style="border-radius:10px; padding:12px;">
+          <div class="kpi-label">Chaos Events</div>
+          <div style="font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#8b5cf6;" id="chaos-event-count">0</div>
+        </div>
+        <div class="kpi-card" style="border-radius:10px; padding:12px;">
+          <div class="kpi-label">Recovery Flushes</div>
+          <div style="font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#22d3a4;" id="recovery-count">0</div>
+        </div>
+      </div>
+      <div id="chaos-log-mini" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#6b8299; max-height:80px; overflow-y:auto; line-height:1.8;"></div>
+    </div>
+  </div>
+
+  <!-- DAG CANVAS -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">🕸️ Causal DAG (Committed Truth Graph)</span>
+      <span class="panel-badge badge-green">Live</span>
+    </div>
+    <canvas id="dag-canvas"></canvas>
+  </div>
+
+</main>
+
+<script>
+  const DEMO_URL = "http://localhost:8000";
+  let dagNodes = {};
+
+  // -------------------------------------------------------
+  async function fetchEvents() {
+    try {
+      const resp = await fetch(`${DEMO_URL}/events?size=50`);
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      document.getElementById("status-dot").style.boxShadow = "0 0 8px #22d3a4";
+      return (data.hits?.hits || []).map(h => h._source);
+    } catch(e) {
+      console.warn("[Dashboard] Demo server unavailable:", e.message);
+      document.getElementById("status-dot").style.background = "#ef4444";
+      return [];
+    }
+  }
+
+  async function fetchProjectedState() {
+    try {
+      const resp = await fetch(`${DEMO_URL}/state`);
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch(e) { return null; }
+  }
+
+  async function fetchChaosStatus() {
+    try {
+      const resp = await fetch(`${DEMO_URL}/chaos`);
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch(e) { return null; }
+  }
+
+  function renderChaosPanel(chaos) {
+    if (!chaos) return;
+    // Mode badge
+    const badge = document.getElementById("chaos-mode-badge");
+    badge.textContent = chaos.chaos_mode;
+    badge.className = `chaos-mode-badge ${chaos.chaos_mode}`;
+    // Node grid
+    const grid = document.getElementById("node-grid");
+    grid.innerHTML = Object.entries(chaos.node_status).map(([node, status]) => `
+      <div class="chaos-node ${status}">
+        <div class="node-status-dot ${status}"></div>
+        <div>
+          <div style="font-size:13px; font-weight:600;">${node}</div>
+          <div style="font-size:10px; color:#6b8299; font-family:'JetBrains Mono',monospace;">${status.toUpperCase()}</div>
+        </div>
+        ${chaos.byzantine_nodes.includes(node) ? '<span style="font-size:10px; color:#ef4444; margin-left:auto;">FORGING</span>' : ''}
+      </div>
+    `).join("");
+    // Counters
+    document.getElementById("byz-count").textContent = chaos.byzantine_rejected;
+    document.getElementById("quorum-pending-count").textContent = chaos.pending_quorum;
+    document.getElementById("chaos-event-count").textContent = chaos.chaos_log?.length || 0;
+    const recoveries = chaos.chaos_log?.filter(l => l.fault_type === "RECOVERY").length || 0;
+    document.getElementById("recovery-count").textContent = recoveries;
+    // Mini chaos log
+    const logEl = document.getElementById("chaos-log-mini");
+    const entries = (chaos.chaos_log || []).slice(-5).reverse();
+    logEl.innerHTML = entries.map(e =>
+      `<div><span style="color:${e.severity==='CRITICAL'?'#ef4444':e.severity==='HIGH'?'#f59e0b':'#6b8299'}">[${e.fault_type}]</span> ${e.detail}</div>`
+    ).join("");
+  }
+
+  // -------------------------------------------------------
+  function renderEvents(events) {
+    const log = document.getElementById("event-log");
+    document.getElementById("event-count").textContent = `${events.length} events`;
+
+    if (!events.length) {
+      log.innerHTML = '<div class="empty-state">No events indexed yet.<br>Execute a command via <code>/execute</code></div>';
+      return;
+    }
+
+    // Update KPIs
+    const committed = events.filter(e => e.phase === "COMMITTED").length;
+    const quorum = events.filter(e => e.phase === "QUORUM_SATISFIED").length;
+    document.getElementById("kpi-committed").textContent = committed;
+    document.getElementById("kpi-quorum").textContent = quorum;
+
+    const latestEpoch = Math.max(...events.map(e => e.epoch || 1));
+    document.getElementById("kpi-epoch").textContent = latestEpoch;
+    document.getElementById("epoch-display").textContent = `Epoch ${latestEpoch}`;
+
+    // Render list
+    log.innerHTML = events.map(ev => `
+      <div class="event-item animate-in" onclick="inspectEvent('${ev.event_hash}')">
+        <div class="phase-dot ${ev.phase || 'PROPOSED'}"></div>
+        <div style="flex:1; min-width:0;">
+          <div class="event-hash">${ev.event_hash || '—'}</div>
+          <div class="event-payload">${JSON.stringify(ev.payload || {}).substring(0, 60)}</div>
+          <div class="event-meta">
+            <span class="tag tag-epoch">epoch:${ev.epoch}</span>
+            <span class="tag ${ev.phase === 'COMMITTED' ? 'tag-committed' : 'tag-quorum'}">${ev.phase}</span>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    // Update DAG
+    renderDAG(events);
+  }
+
+  function renderState(state) {
+    const view = document.getElementById("state-view");
+    const epochEl = document.getElementById("state-epoch");
+
+    if (!state || Object.keys(state).length === 0) {
+      view.innerHTML = '<div class="empty-state">No state projected yet.</div>';
+      return;
+    }
+
+    const actions = state.actions_executed || 0;
+    document.getElementById("kpi-actions").textContent = actions;
+
+    if (state.epoch) epochEl.textContent = `epoch ${state.epoch}`;
+
+    view.innerHTML = Object.entries(state).map(([k, v]) => `
+      <div class="state-row">
+        <span class="state-key">${k}</span>
+        <span class="state-val">${JSON.stringify(v)}</span>
+      </div>
+    `).join("");
+  }
+
+  // -------------------------------------------------------
+  function renderDAG(events) {
+    const canvas = document.getElementById("dag-canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 280;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!events.length) {
+      ctx.fillStyle = "#3d5269";
+      ctx.font = "13px Inter";
+      ctx.textAlign = "center";
+      ctx.fillText("No events yet", canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    // Simple left-to-right layout by epoch
+    const byEpoch = {};
+    events.forEach(e => {
+      const ep = e.epoch || 1;
+      if (!byEpoch[ep]) byEpoch[ep] = [];
+      byEpoch[ep].push(e);
+    });
+
+    const epochs = Object.keys(byEpoch).sort((a, b) => a - b);
+    const colWidth = canvas.width / (epochs.length + 1);
+    const positions = {};
+
+    // Compute node positions
+    epochs.forEach((ep, ei) => {
+      const nodes = byEpoch[ep];
+      const rowH = canvas.height / (nodes.length + 1);
+      nodes.forEach((n, ni) => {
+        positions[n.event_hash] = {
+          x: colWidth * (ei + 1),
+          y: rowH * (ni + 1),
+          phase: n.phase,
+          parents: n.parent_hashes || []
+        };
+      });
+    });
+
+    // Draw edges
+    ctx.lineWidth = 1.5;
+    Object.values(positions).forEach(node => {
+      node.parents.forEach(ph => {
+        const parent = positions[ph];
+        if (!parent) return;
+        ctx.beginPath();
+        ctx.moveTo(parent.x, parent.y);
+        ctx.lineTo(node.x, node.y);
+        const grad = ctx.createLinearGradient(parent.x, parent.y, node.x, node.y);
+        grad.addColorStop(0, "rgba(59,130,246,0.2)");
+        grad.addColorStop(1, "rgba(34,211,164,0.4)");
+        ctx.strokeStyle = grad;
+        ctx.stroke();
+      });
+    });
+
+    // Draw nodes
+    Object.values(positions).forEach(node => {
+      const colors = {
+        "COMMITTED": "#22d3a4",
+        "QUORUM_SATISFIED": "#f59e0b",
+        "VALIDATED": "#3b82f6",
+        "PROPOSED": "#4b5563",
+      };
+      const color = colors[node.phase] || "#4b5563";
+
+      // Glow
+      if (node.phase === "COMMITTED") {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+      }
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function inspectEvent(hash) {
+    console.log("Inspecting event:", hash);
+  }
+
+  // -------------------------------------------------------
+  async function fetchAll() {
+    const [events, state, chaos] = await Promise.all([
+      fetchEvents(), fetchProjectedState(), fetchChaosStatus()
+    ]);
+    renderEvents(events);
+    renderState(state);
+    renderChaosPanel(chaos);
+  }
+
+  // Auto-refresh every 5 seconds
+  fetchAll();
+  setInterval(fetchAll, 5000);
+
+  // Resize canvas on window resize
+  window.addEventListener("resize", () => {
+    fetchAll();
+  });
+</script>
+</body>
+</html>

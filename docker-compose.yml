@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  gov-audit:
+    build:
+      context: .
+      dockerfile: docker/gov-audit.Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/app/data
+      - ./ledger:/app/ledger
+    environment:
+      - LEDGER_PATH=/app/ledger/events.log
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  gov-identity:
+    build:
+      context: .
+      dockerfile: docker/gov-identity.Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      gov-audit:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  gov-rules:
+    build:
+      context: .
+      dockerfile: docker/gov-rules.Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      gov-audit:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  gov-control:
+    build:
+      context: .
+      dockerfile: docker/gov-control.Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      gov-identity:
+        condition: service_healthy
+      gov-rules:
+        condition: service_healthy
+      gov-audit:
+        condition: service_healthy
+    environment:
+      - IDENTITY_URL=http://gov-identity:8002
+      - RULES_URL=http://gov-rules:8003
+      - AUDIT_URL=http://gov-audit:8001
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  default:
+    driver: bridge

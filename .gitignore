@@ -1,0 +1,21 @@
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local runtime data and generated evidence
+*.db
+*.db-*
+*.log
+*.log-*
+output/
+ledger/
+data/*.db
+
+# Local chaos/deployment/test artifacts
+chaos_data_*/
+deploy_test_*/
+test_ledger_*/
+test_ledger_data/
+tests/temp_ledger.log*
+
