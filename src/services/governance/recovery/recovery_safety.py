@@ -96,6 +96,9 @@ class SafetyGate(ast.NodeVisitor):
             if func_name in FORBIDDEN_SYMBOLS:
                 self.forbidden_calls.append((node.lineno, func_name))
                 self.violations.append(f"Line {node.lineno}: Forbidden call '{func_name}'")
+            if func_name in FORBIDDEN_MODULES:
+                self.forbidden_calls.append((node.lineno, func_name))
+                self.violations.append(f"Line {node.lineno}: Forbidden construction '{func_name}'")
         
         # Method call: obj.method()
         elif isinstance(node.func, ast.Attribute):
@@ -140,6 +143,11 @@ class SafetyGate(ast.NodeVisitor):
         if node.module:
             if node.module.split('.')[0] in FORBIDDEN_MODULES or 'mesh' in node.module.lower():
                 for alias in node.names:
+                    self.violations.append(
+                        f"Line {node.lineno}: Forbidden import from {node.module}: {alias.name}"
+                    )
+            for alias in node.names:
+                if alias.name in FORBIDDEN_MODULES:
                     self.violations.append(
                         f"Line {node.lineno}: Forbidden import from {node.module}: {alias.name}"
                     )

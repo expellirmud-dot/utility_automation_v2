@@ -763,7 +763,7 @@ class TestRecoverySubsystemFullScan:
         safety_violations = []
 
         for py_file in py_files:
-            if py_file.name in excluded_files or py_file.name.startswith("__"):
+            if py_file.name in excluded_files:
                 continue
 
             try:
@@ -797,6 +797,8 @@ class TestRecoverySubsystemFullScan:
             "src/services/governance/recovery/recovery_models.py",
             "src/services/governance/recovery/recovery_report_hasher.py",
             "src/services/governance/recovery/recovery_safety.py",
+            "src/services/governance/recovery/recovery_classifier.py",
+            "src/services/governance/recovery/recovery_plan_builder.py",
         }
 
         for file_path in expected_files:

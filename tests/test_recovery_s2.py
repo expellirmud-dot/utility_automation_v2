@@ -394,6 +394,32 @@ class TestNoForbiddenSideEffects:
         is_safe, violations = check_recovery_code_safety(source)
         assert is_safe, f"Plan builder safety violations:\n" + "\n".join(violations)
 
+    def test_recovery_s2_entrypoints_have_no_forbidden_imports_or_calls(self):
+        """AST scan S2 recovery entrypoints; docstrings/comments are ignored."""
+        import pathlib
+
+        files = [
+            pathlib.Path("src/services/governance/recovery/recovery_classifier.py"),
+            pathlib.Path("src/services/governance/recovery/recovery_plan_builder.py"),
+            pathlib.Path("src/services/governance/recovery/__init__.py"),
+        ]
+
+        for path in files:
+            source = path.read_text(encoding="utf-8")
+            is_safe, violations = check_recovery_code_safety(source)
+            assert is_safe, f"{path} safety violations:\n" + "\n".join(violations)
+
+    @pytest.mark.parametrize("code,expected", [
+        ("from src.anywhere import MeshOrchestrator\n", "MeshOrchestrator"),
+        ("MeshOrchestrator()\n", "MeshOrchestrator"),
+        ("submit_recovery_proposal(proposal)\n", "submit_recovery_proposal"),
+        ("submit_critical_event(event)\n", "submit_critical_event"),
+    ])
+    def test_safety_gate_rejects_forbidden_imports_and_calls(self, code, expected):
+        is_safe, violations = check_recovery_code_safety(code)
+        assert not is_safe
+        assert any(expected in violation for violation in violations)
+
     def test_classifier_has_no_mesh_imports(self):
         import ast as _ast
         import src.services.governance.recovery.recovery_classifier as mod
@@ -415,7 +441,21 @@ class TestNoForbiddenSideEffects:
     def test_plan_builder_has_no_mesh_imports(self):
         import src.services.governance.recovery.recovery_plan_builder as mod
         source = self._get_source(mod)
-        assert "MeshOrchestrator" not in source
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    assert "mesh" not in alias.name.lower(), \
+                        f"Forbidden mesh import: {alias.name}"
+                    assert alias.name != "MeshOrchestrator", \
+                        f"Forbidden MeshOrchestrator import: {alias.name}"
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                assert "mesh" not in module.lower(), \
+                    f"Forbidden mesh module import: {module}"
+                for alias in node.names:
+                    assert alias.name != "MeshOrchestrator", \
+                        f"Forbidden MeshOrchestrator import: {alias.name}"
 
     def test_classifier_has_no_ledger_writes(self):
         import src.services.governance.recovery.recovery_classifier as mod
