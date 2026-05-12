@@ -1,7 +1,8 @@
 """
-Recovery subsystem - Deterministic Recovery Proposal Engine foundation.
+Recovery subsystem - Deterministic Recovery Proposal Engine.
 
 S1: Frozen models, deterministic hashing, safety gates.
+S2: Recovery classifier, failure taxonomy, deterministic plan builder.
 NOT execution, NOT mesh integration, NOT ledger mutation.
 """
 
@@ -45,6 +46,16 @@ from src.services.governance.recovery.recovery_safety import (
     RecoverySafetyViolation,
 )
 
+from src.services.governance.recovery.recovery_classifier import (
+    RecoveryFailureTaxonomy,
+    ClassifiedDiagnosis,
+    RecoveryClassifier,
+)
+
+from src.services.governance.recovery.recovery_plan_builder import (
+    RecoveryPlanBuilder,
+)
+
 __all__ = [
     # Models
     "RecoverySignal",
@@ -81,4 +92,10 @@ __all__ = [
     "check_recovery_function_safety",
     "enforce_fail_closed",
     "RecoverySafetyViolation",
+    # S2 — Classifier
+    "RecoveryFailureTaxonomy",
+    "ClassifiedDiagnosis",
+    "RecoveryClassifier",
+    # S2 — Plan Builder
+    "RecoveryPlanBuilder",
 ]

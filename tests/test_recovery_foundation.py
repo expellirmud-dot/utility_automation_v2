@@ -767,7 +767,7 @@ class TestRecoverySubsystemFullScan:
                 continue
 
             try:
-                with open(py_file, "r") as f:
+                with open(py_file, "r", encoding="utf-8") as f:
                     source_code = f.read()
 
                 is_safe, violations = check_recovery_code_safety(source_code)
@@ -804,7 +804,7 @@ class TestRecoverySubsystemFullScan:
             assert path.exists(), f"Expected file not found: {file_path}"
 
             # Verify it's valid Python
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 code = f.read()
             try:
                 compile(code, file_path, "exec")
