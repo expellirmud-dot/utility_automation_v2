@@ -5,6 +5,7 @@ S1: Frozen models, deterministic hashing, safety gates.
 S2: Recovery classifier, failure taxonomy, deterministic plan builder.
 S3: Recovery simulation gate.
 S4: Recovery handoff boundary.
+S5: Recovery observability surface.
 NOT execution, NOT mesh integration, NOT ledger mutation.
 """
 
@@ -78,6 +79,20 @@ from src.services.governance.recovery.recovery_handoff import (
     RecoveryProposalHandoff,
 )
 
+from src.services.governance.recovery.recovery_observability import (
+    SIGNAL_DETECTED,
+    CLASSIFIED,
+    PLAN_BUILT,
+    SIMULATION_COMPLETED,
+    AUTHORITY_HANDOFF,
+    AUTHORITY_DECISION,
+    RecoveryTimelineEvent,
+    RecoveryTimeline,
+    RecoveryAnalyticsSnapshot,
+    RecoveryArtifactRegistry,
+    RecoveryObservabilityService,
+)
+
 __all__ = [
     # Models
     "RecoverySignal",
@@ -136,4 +151,16 @@ __all__ = [
     "RecoveryHandoffDecision",
     "MeshAuthorityAdapter",
     "RecoveryProposalHandoff",
+    # S5 Observability
+    "SIGNAL_DETECTED",
+    "CLASSIFIED",
+    "PLAN_BUILT",
+    "SIMULATION_COMPLETED",
+    "AUTHORITY_HANDOFF",
+    "AUTHORITY_DECISION",
+    "RecoveryTimelineEvent",
+    "RecoveryTimeline",
+    "RecoveryAnalyticsSnapshot",
+    "RecoveryArtifactRegistry",
+    "RecoveryObservabilityService",
 ]

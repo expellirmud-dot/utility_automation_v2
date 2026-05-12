@@ -8,6 +8,7 @@ Prevents:
 - MeshOrchestrator mutation calls
 - Direct SQLite mutation outside projection repair, including sqlite3.connect
 - Recovery execution entrypoints: execute_plan, apply_recovery, run_recovery
+- Operator action entrypoints: approve_recovery, reject_recovery, retry_recovery
 
 S1 only allows: detect, normalize, classify, plan construction, hash, proposal object building.
 """
@@ -52,6 +53,9 @@ FORBIDDEN_SYMBOLS = {
     "execute_plan",
     "apply_recovery",
     "run_recovery",
+    "approve_recovery",
+    "reject_recovery",
+    "retry_recovery",
 }
 
 FORBIDDEN_DOTTED_CALLS = {

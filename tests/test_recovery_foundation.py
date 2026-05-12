@@ -801,6 +801,7 @@ class TestRecoverySubsystemFullScan:
             "src/services/governance/recovery/recovery_plan_builder.py",
             "src/services/governance/recovery/recovery_simulation_gate.py",
             "src/services/governance/recovery/recovery_handoff.py",
+            "src/services/governance/recovery/recovery_observability.py",
         }
 
         for file_path in expected_files:
@@ -871,6 +872,18 @@ class TestRecoverySubsystemFullScan:
             "RecoveryHandoffDecision",
             "MeshAuthorityAdapter",
             "RecoveryProposalHandoff",
+            # S5
+            "SIGNAL_DETECTED",
+            "CLASSIFIED",
+            "PLAN_BUILT",
+            "SIMULATION_COMPLETED",
+            "AUTHORITY_HANDOFF",
+            "AUTHORITY_DECISION",
+            "RecoveryTimelineEvent",
+            "RecoveryTimeline",
+            "RecoveryAnalyticsSnapshot",
+            "RecoveryArtifactRegistry",
+            "RecoveryObservabilityService",
         }
 
         for export_name in required_exports:

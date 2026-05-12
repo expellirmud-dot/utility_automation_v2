@@ -9,6 +9,7 @@ Completed baselines:
 - TASK 037: Policy graph, rollback, persistence, time-travel audit
 - TASK 038-S1: Advisory governance simulation
 - TASK 038-S2: Simulation scenario engine
+- TASK 039-S1/S2/S3/S4/S5: Deterministic recovery governance visibility plane
 
 ## Non-Negotiable Architecture Rules
 
@@ -54,11 +55,11 @@ After implementation:
 
 ## Current Recommended Next Task
 
-TASK 038-S3 — Simulation Report API / Operator Review Surface
+TASK 039 COMPLETE — Recovery governance visibility plane implemented
 
 Scope:
-- expose simulation/scenario reports through API/service layer
-- no dashboard yet
-- no ledger writes
-- no promotion calls
-- reports are cache artifacts only
+- recovery remains proposal/review only
+- no execution plane
+- no self-healing plane
+- no authority control plane
+- no ledger, SQLite, mesh, quorum, or promotion mutation from recovery code
