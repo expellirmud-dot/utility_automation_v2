@@ -4,6 +4,7 @@ Recovery subsystem - Deterministic Recovery Proposal Engine.
 S1: Frozen models, deterministic hashing, safety gates.
 S2: Recovery classifier, failure taxonomy, deterministic plan builder.
 S3: Recovery simulation gate.
+S4: Recovery handoff boundary.
 NOT execution, NOT mesh integration, NOT ledger mutation.
 """
 
@@ -68,6 +69,15 @@ from src.services.governance.recovery.recovery_simulation_gate import (
     STEP_WARNING_DETAIL_BY_TYPE,
 )
 
+from src.services.governance.recovery.recovery_handoff import (
+    RecoveryAuthorityDecision,
+    RecoveryAuthorityResponse,
+    RecoveryHandoffRequest,
+    RecoveryHandoffDecision,
+    MeshAuthorityAdapter,
+    RecoveryProposalHandoff,
+)
+
 __all__ = [
     # Models
     "RecoverySignal",
@@ -119,4 +129,11 @@ __all__ = [
     "STEP_RISK_BY_TYPE",
     "STEP_WARNING_CODE_BY_TYPE",
     "STEP_WARNING_DETAIL_BY_TYPE",
+    # S4 Handoff
+    "RecoveryAuthorityDecision",
+    "RecoveryAuthorityResponse",
+    "RecoveryHandoffRequest",
+    "RecoveryHandoffDecision",
+    "MeshAuthorityAdapter",
+    "RecoveryProposalHandoff",
 ]

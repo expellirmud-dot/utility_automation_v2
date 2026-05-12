@@ -800,6 +800,7 @@ class TestRecoverySubsystemFullScan:
             "src/services/governance/recovery/recovery_classifier.py",
             "src/services/governance/recovery/recovery_plan_builder.py",
             "src/services/governance/recovery/recovery_simulation_gate.py",
+            "src/services/governance/recovery/recovery_handoff.py",
         }
 
         for file_path in expected_files:
@@ -863,6 +864,13 @@ class TestRecoverySubsystemFullScan:
             "STEP_RISK_BY_TYPE",
             "STEP_WARNING_CODE_BY_TYPE",
             "STEP_WARNING_DETAIL_BY_TYPE",
+            # S4
+            "RecoveryAuthorityDecision",
+            "RecoveryAuthorityResponse",
+            "RecoveryHandoffRequest",
+            "RecoveryHandoffDecision",
+            "MeshAuthorityAdapter",
+            "RecoveryProposalHandoff",
         }
 
         for export_name in required_exports:

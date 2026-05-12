@@ -6,7 +6,8 @@ Prevents:
 - append_event, commit_event, write_ledger
 - promote, submit_critical_event, submit_recovery_proposal
 - MeshOrchestrator mutation calls
-- Direct SQLite mutation outside projection repair
+- Direct SQLite mutation outside projection repair, including sqlite3.connect
+- Recovery execution entrypoints: execute_plan, apply_recovery, run_recovery
 
 S1 only allows: detect, normalize, classify, plan construction, hash, proposal object building.
 """
@@ -48,6 +49,13 @@ FORBIDDEN_SYMBOLS = {
     "delete",
     "drop",
     "create_table",
+    "execute_plan",
+    "apply_recovery",
+    "run_recovery",
+}
+
+FORBIDDEN_DOTTED_CALLS = {
+    ("sqlite3", "connect"),
 }
 
 # Allowed detection/analysis functions
@@ -114,6 +122,11 @@ class SafetyGate(ast.NodeVisitor):
                     self.forbidden_attributes.append((node.lineno, f"{class_name}.{method_name}"))
                     self.violations.append(
                         f"Line {node.lineno}: Forbidden mutation via {class_name}.{method_name}"
+                    )
+                if (class_name, method_name) in FORBIDDEN_DOTTED_CALLS:
+                    self.forbidden_calls.append((node.lineno, f"{class_name}.{method_name}"))
+                    self.violations.append(
+                        f"Line {node.lineno}: Forbidden dotted call '{class_name}.{method_name}'"
                     )
 
         self.generic_visit(node)

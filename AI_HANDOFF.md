@@ -1,17 +1,20 @@
 # AI Handoff
 
 Latest main commit:
-**TASK 039-S3 IMPLEMENTED (LOCAL VERIFIED)** — Deterministic Recovery Simulation Gate
+**TASK 039-S4 IMPLEMENTED (LOCAL VERIFIED)** — Authority-safe Recovery Handoff
 - S1: Frozen models + deterministic hashing + AST safety gate
 - S2: Deterministic classifier + plan builder
 - S3: Read-only simulation gate producing frozen, hashable simulation reports
+- S4: Protocol-based recovery proposal handoff to mesh authority adapter
 - Simulation identity derives from proposal hash + deterministic payload only (not report identity; AI excluded)
 - Fail-closed blockers: empty plan, invalid proposal hash, invalid report hash, unknown step type
 - Static warning codes/details only (no runtime prose generation)
-- Recovery subsystem AST safety scan coverage extended to include S3
+- Handoff validates proposal/simulation hashes, proposal-simulation match, ready flag, and BLOCKED risk before authority call
+- Handoff returns deterministic decision only; no local execution, no hard mesh import, no ledger/SQLite mutation
+- Recovery subsystem AST safety scan coverage extended to include S3/S4
 
 Current goal:
-TASK 039-S4 — Mesh Integration (handoff only; still no ledger/SQLite mutation from recovery code)
+TASK 039 COMPLETE — await next recovery roadmap item
 
 Do not redesign core runtime.
 
@@ -31,6 +34,7 @@ Completed:
 - TASK 039-S1: Deterministic Recovery Foundation ✅
 - TASK 039-S2: Recovery Classifier + Deterministic Plan Builder ✅
 - TASK 039-S3: Recovery Simulation Gate ✅
+- TASK 039-S4: Authority-safe Recovery Handoff ✅
 
 Required tests:
 - existing TASK 036 certifier remains 100% ✅ (2/2 passed)
@@ -40,7 +44,7 @@ Required tests:
 - TASK 039-S1 safety gates enforce constraints ✅
 - AI advice excluded from all hashes ✅
 
-S3 verification commands (ran locally):
-- pytest tests/test_recovery_s3.py tests/test_recovery_s2.py tests/test_recovery_foundation.py -q
+S4 verification commands (ran locally):
+- pytest tests/test_recovery_s4.py tests/test_recovery_s3.py tests/test_recovery_s2.py tests/test_recovery_foundation.py -q
 - pytest tests/validation/test_ledger_integrity.py tests/integration/test_replay_determinism.py -q
-- rg "MeshOrchestrator|append_event|commit_event|write_ledger|promote|submit_critical_event|submit_recovery_proposal|execute|executemany|insert|update|delete|drop|create_table" src/services/governance/recovery
+- rg "MeshOrchestrator|append_event|commit_event|write_ledger|promote|execute_plan|apply_recovery|run_recovery|sqlite3.connect|submit_critical_event" src/services/governance/recovery
