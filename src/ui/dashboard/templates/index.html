@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Governance Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .metric-value { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="p-6">
+    <header class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-blue-400">Autonomous Governance Dashboard</h1>
+            <p class="text-slate-400">Runtime Control & Observability Center</p>
+        </div>
+        <div id="system-status" class="px-4 py-2 rounded-full bg-green-900 text-green-400 text-sm font-bold">
+            SYSTEM STABLE
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="card p-4 rounded-xl">
+            <div class="text-slate-400 text-sm">Total Decisions</div>
+            <div id="metric-decisions" class="text-2xl font-bold metric-value">---</div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="text-slate-400 text-sm">Fail-Closed Events</div>
+            <div id="metric-fail-closed" class="text-2xl font-bold text-red-400 metric-value">---</div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="text-slate-400 text-sm">Rule Conflicts</div>
+            <div id="metric-conflicts" class="text-2xl font-bold text-yellow-400 metric-value">---</div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="text-slate-400 text-sm">Security Rejections</div>
+            <div id="metric-security" class="text-2xl font-bold text-orange-400 metric-value">---</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Replay Explorer -->
+        <div class="card p-6 rounded-xl lg:col-span-2">
+            <h2 class="text-xl font-semibold mb-4">Audit Ledger & Replay Explorer</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-700">
+                            <th class="pb-2">Timestamp</th>
+                            <th class="pb-2">Event</th>
+                            <th class="pb-2">Decision</th>
+                            <th class="pb-2">Correlation ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-body" class="divide-y divide-slate-800">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="card p-6 rounded-xl">
+            <h2 class="text-xl font-semibold mb-4">Governance Control</h2>
+            <div class="space-y-4">
+                <button onclick="op('pause')" class="w-full py-2 bg-red-600 hover:bg-red-700 rounded font-bold transition">PAUSE OPERATIONS</button>
+                <button onclick="op('resume')" class="w-full py-2 bg-green-600 hover:bg-green-700 rounded font-bold transition">RESUME OPERATIONS</button>
+                <button onclick="op('replay')" class="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded font-bold transition">TRIGGER REPLAY VALIDATION</button>
+            </div>
+            <div class="mt-8 p-4 bg-slate-900 rounded-lg border border-slate-700">
+                <h3 class="text-sm font-bold text-slate-400 mb-2">Diagnostic Status</h3>
+                <div id="health-info" class="text-xs space-y-1 font-mono">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function updateMetrics() {
+            const res = await fetch('/dashboard/summary');
+            const data = await res.json();
+            document.getElementById('metric-decisions').innerText = data.metrics.total_decisions;
+            document.getElementById('metric-fail-closed').innerText = data.metrics.fail_closed_count;
+            document.getElementById('metric-conflicts').innerText = data.metrics.rule_conflicts;
+            document.getElementById('metric-security').innerText = data.metrics.security_rejections;
+            
+            document.getElementById('health-info').innerHTML = `
+                <div>Ledger: ${data.health.diagnostics.ledger_integrity}</div>
+                <div>Trust: ${data.health.diagnostics.trust_status}</div>
+                <div>WAL: ${data.health.diagnostics.wal_recovery_state}</div>
+            `;
+        }
+
+        async function updateLedger() {
+            const res = await fetch('/dashboard/ledger/preview');
+            const events = await res.json();
+            const body = document.getElementById('ledger-body');
+            body.innerHTML = events.reverse().map(e => `
+                <tr class="hover:bg-slate-800 transition">
+                    <td class="py-3 text-slate-400">${e.timestamp.split('T')[1].split('.')[0]}</td>
+                    <td class="py-3 font-medium">${e.event_type}</td>
+                    <td class="py-3"><span class="px-2 py-1 rounded text-xs ${e.decision === 'ALLOW' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}">${e.decision}</span></td>
+                    <td class="py-3 font-mono text-xs text-slate-500">${e.metadata.correlation_id || 'N/A'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function op(action) {
+            const endpoint = action === 'pause' ? '/ops/pause' : action === 'resume' ? '/ops/resume' : '/ops/trigger-replay';
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({operator: 'admin_01'})
+            });
+            const data = await res.json();
+            alert(`Operation ${action}: ${data.status}`);
+        }
+
+        setInterval(updateMetrics, 5000);
+        setInterval(updateLedger, 2000);
+        updateMetrics();
+        updateLedger();
+    </script>
+</body>
+</html>

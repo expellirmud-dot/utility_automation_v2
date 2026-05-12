@@ -1,0 +1,93 @@
+services:
+  gov-audit:
+    build:
+      context: ..
+      dockerfile: deploy/gov_audit/Dockerfile
+    ports:
+      - "8001:8001"
+    env_file: .env
+    volumes:
+      - gov-ledger:/app/ledger
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - gov-network
+
+  gov-identity:
+    build:
+      context: ..
+      dockerfile: deploy/gov_identity/Dockerfile
+    ports:
+      - "8002:8002"
+    env_file: .env
+    volumes:
+      - gov-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - gov-network
+
+  gov-rules:
+    build:
+      context: ..
+      dockerfile: deploy/gov_rules/Dockerfile
+    ports:
+      - "8003:8003"
+    env_file: .env
+    volumes:
+      - gov-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - gov-network
+
+  gov-control:
+    build:
+      context: ..
+      dockerfile: deploy/gov_control/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      gov-audit:
+        condition: service_healthy
+      gov-identity:
+        condition: service_healthy
+      gov-rules:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - gov-network
+
+networks:
+  gov-network:
+    driver: bridge
+
+volumes:
+  gov-ledger:
+  gov-data:
