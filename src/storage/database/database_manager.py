@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 class DatabaseManager:
-    DB_PATH = "data/utility_automation_v2.db"
+    DB_PATH = "data/utility_automation.db"
 
     @classmethod
     def get_connection(cls):
