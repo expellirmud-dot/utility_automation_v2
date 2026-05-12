@@ -10,6 +10,14 @@ from .index_integrity_checker import IndexIntegrityChecker, IndexIntegrityResult
 from .incremental_repair import IncrementalRepair, RepairResult
 from .migration_manager import MigrationManager
 from .sqlite_lock_manager import SQLiteLockManager
+from .audit_query_engine import AuditQueryEngine
+from .temporal_reconstructor import TemporalReconstructor
+from .lineage_explainer import LineageExplainer, PromotionTransition
+from .governance_explanation_engine import (
+    ExplanationTransition,
+    GovernanceExplanation,
+    GovernanceExplanationEngine,
+)
 
 __all__ = [
     "PolicySnapshot",
@@ -28,4 +36,11 @@ __all__ = [
     "RepairResult",
     "MigrationManager",
     "SQLiteLockManager",
+    "AuditQueryEngine",
+    "TemporalReconstructor",
+    "LineageExplainer",
+    "PromotionTransition",
+    "ExplanationTransition",
+    "GovernanceExplanation",
+    "GovernanceExplanationEngine",
 ]
