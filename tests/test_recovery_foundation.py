@@ -799,6 +799,7 @@ class TestRecoverySubsystemFullScan:
             "src/services/governance/recovery/recovery_safety.py",
             "src/services/governance/recovery/recovery_classifier.py",
             "src/services/governance/recovery/recovery_plan_builder.py",
+            "src/services/governance/recovery/recovery_simulation_gate.py",
         }
 
         for file_path in expected_files:
@@ -853,6 +854,15 @@ class TestRecoverySubsystemFullScan:
             "check_recovery_function_safety",
             "enforce_fail_closed",
             "RecoverySafetyViolation",
+            # S3
+            "RecoverySimulationRiskLevel",
+            "RecoveryStepSimulation",
+            "RecoverySimulationReport",
+            "RecoverySimulationGate",
+            "RISK_PRECEDENCE",
+            "STEP_RISK_BY_TYPE",
+            "STEP_WARNING_CODE_BY_TYPE",
+            "STEP_WARNING_DETAIL_BY_TYPE",
         }
 
         for export_name in required_exports:

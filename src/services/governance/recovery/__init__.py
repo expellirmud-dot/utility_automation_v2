@@ -3,6 +3,7 @@ Recovery subsystem - Deterministic Recovery Proposal Engine.
 
 S1: Frozen models, deterministic hashing, safety gates.
 S2: Recovery classifier, failure taxonomy, deterministic plan builder.
+S3: Recovery simulation gate.
 NOT execution, NOT mesh integration, NOT ledger mutation.
 """
 
@@ -56,6 +57,17 @@ from src.services.governance.recovery.recovery_plan_builder import (
     RecoveryPlanBuilder,
 )
 
+from src.services.governance.recovery.recovery_simulation_gate import (
+    RecoverySimulationRiskLevel,
+    RecoveryStepSimulation,
+    RecoverySimulationReport,
+    RecoverySimulationGate,
+    RISK_PRECEDENCE,
+    STEP_RISK_BY_TYPE,
+    STEP_WARNING_CODE_BY_TYPE,
+    STEP_WARNING_DETAIL_BY_TYPE,
+)
+
 __all__ = [
     # Models
     "RecoverySignal",
@@ -98,4 +110,13 @@ __all__ = [
     "RecoveryClassifier",
     # S2 — Plan Builder
     "RecoveryPlanBuilder",
+    # S3 Simulation Gate
+    "RecoverySimulationRiskLevel",
+    "RecoveryStepSimulation",
+    "RecoverySimulationReport",
+    "RecoverySimulationGate",
+    "RISK_PRECEDENCE",
+    "STEP_RISK_BY_TYPE",
+    "STEP_WARNING_CODE_BY_TYPE",
+    "STEP_WARNING_DETAIL_BY_TYPE",
 ]
