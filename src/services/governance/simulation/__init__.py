@@ -8,10 +8,18 @@ from .simulation_report import (
 )
 
 __all__ = [
+    "BatchScenarioReport",
+    "CandidateComparison",
+
     "AIAdvice",
     "ConflictFinding",
     "EvidenceOnlyAIAdvisor",
     "GovernanceSimulationEngine",
     "GovernanceSimulationReport",
+    "ScenarioReport",
+    "SimulationScenarioEngine",
     "RiskFinding",
 ]
+
+from .scenario_engine import SimulationScenarioEngine
+from .scenario_models import BatchScenarioReport, CandidateComparison, ScenarioReport
