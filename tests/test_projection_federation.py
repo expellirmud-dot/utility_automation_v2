@@ -1,3 +1,4 @@
+import ast
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -300,3 +301,76 @@ def test_projection_contract_fixture_rejects_unknown_status_values():
         assert "Unknown projection status values" in str(exc)
     else:
         raise AssertionError("Expected unknown status validation to fail")
+
+
+ADAPTER_MODULES = (
+    "src/ui/projection_federation_providers.py",
+    "src/ui/incident_review/projection_providers.py",
+    "src/ui/incident_review/projection_source.py",
+)
+
+FORBIDDEN_IMPORT_PATTERNS = (
+    "control_plane",
+    "authority",
+    "mesh_orchestrator",
+    "integrated_control_plane",
+    "dashboard_api",
+    "control_actions",
+)
+
+
+def _module_import_names(path: str) -> set[str]:
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                names.add(node.module)
+    return names
+
+
+def test_task_045_adapter_forbidden_import_guards_s4_to_s6_modules():
+    for module_path in ADAPTER_MODULES:
+        imports = _module_import_names(module_path)
+        imported_blob = "\n".join(sorted(imports)).lower()
+        for forbidden in FORBIDDEN_IMPORT_PATTERNS:
+            assert forbidden not in imported_blob, (
+                f"{module_path} must not import control-plane/authority mutation modules containing: {forbidden}"
+            )
+
+
+def test_task_045_federation_wide_forbidden_import_aggregate_guard():
+    imported_blob = "\n".join(
+        sorted({name for path in ADAPTER_MODULES for name in _module_import_names(path)})
+    ).lower()
+    offenders = [item for item in FORBIDDEN_IMPORT_PATTERNS if item in imported_blob]
+    assert not offenders, f"Federation adapter import graph includes forbidden modules: {offenders}"
+
+
+def test_task_045_ops_projection_routes_do_not_expose_mutation_actions():
+    for path in ("/ops/api/overview", "/ops/api/projections"):
+        for method in ("post", "put", "patch", "delete"):
+            response = getattr(client, method)(path)
+            assert response.status_code == 405, f"{method.upper()} {path} unexpectedly exposed"
+
+
+def test_task_045_federation_cards_never_report_mutation_capable_flags():
+    payload = client.get("/ops/api/projections").json()
+    cards = payload["cards"]
+    assert cards
+    for card in cards:
+        assert card["read_only"] is True
+        assert card["authority_coupled"] is False
+
+
+def test_task_045_ops_federation_paths_do_not_fallback_to_legacy_authority_services():
+    for module_path in ("src/ui/ops_overview_api.py", "src/ui/projection_federation.py"):
+        imports = _module_import_names(module_path)
+        imported_blob = "\n".join(sorted(imports)).lower()
+        for forbidden in FORBIDDEN_IMPORT_PATTERNS:
+            assert forbidden not in imported_blob, (
+                f"{module_path} must remain federation-only and not import legacy direct authority services ({forbidden})"
+            )
