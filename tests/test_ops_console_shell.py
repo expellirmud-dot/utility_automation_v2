@@ -61,6 +61,8 @@ def test_ops_shell_static_assets_safe_rendering_read_only():
 def test_overview_ops_js_fetches_route_governance_and_no_actions():
     js = client.get('/ops/ops_console.js').text
     assert "fetch('/ops/api/route-governance')" in js
+    for endpoint in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system-health']:
+        assert f"'/ops/api/{endpoint}'" in js
     forbidden_labels = ['approve', 'reject', 'retry', 'execute', 'repair', 'promote']
     for label in forbidden_labels:
         assert label not in js.lower()
@@ -93,3 +95,25 @@ def test_overview_forbidden_imports_absent():
     ]
     for token in forbidden:
         assert token not in source
+
+
+def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
+    endpoints = [
+        ('recovery', 2),
+        ('simulation', 1),
+        ('mesh', 3),
+        ('policy', 1),
+        ('replay', 2),
+        ('system-health', 1),
+    ]
+    for endpoint, expected_count in endpoints:
+        response = client.get(f'/ops/api/{endpoint}')
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload['status'] in {'connected', 'empty', 'degraded'}
+        assert len(payload['items']) == expected_count
+        ids = [item.get('id', '') for item in payload['items']]
+        assert ids == sorted(ids)
+
+        for method in ['post', 'put', 'patch', 'delete']:
+            assert getattr(client, method)(f'/ops/api/{endpoint}').status_code == 405
