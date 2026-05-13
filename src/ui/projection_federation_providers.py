@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 import json
+from pathlib import Path
+
+from src.services.governance.simulation import simulation_api
 
 
 @dataclass(frozen=True)
@@ -49,20 +51,65 @@ class JsonArrayTelemetryProvider(FederationProvider):
             )
 
 
+class RecoveryReadModelProvider(FederationProvider):
+    def __init__(self, *, key: str, snapshot_path: Path) -> None:
+        self.key = key
+        self._snapshot_path = snapshot_path
+
+    def read_metadata(self) -> FederationReadMetadata:
+        try:
+            payload = json.loads(self._snapshot_path.read_text(encoding="utf-8"))
+            items = payload.get("items", []) if isinstance(payload, dict) else []
+            item_count = len(items) if isinstance(items, list) else 0
+            return FederationReadMetadata(
+                label="Connected",
+                status="connected",
+                source_type="recovery_read_model",
+                fallback_active=False,
+                item_count=item_count,
+            )
+        except (OSError, ValueError, TypeError, AttributeError):
+            return FederationReadMetadata(
+                label="Recovery read-model unavailable",
+                status="degraded",
+                source_type="deterministic_fallback",
+                fallback_active=True,
+                item_count=0,
+            )
+
+
+class SimulationReadModelProvider(FederationProvider):
+    def __init__(self, *, key: str) -> None:
+        self.key = key
+
+    def read_metadata(self) -> FederationReadMetadata:
+        reports = simulation_api._simulation_reports
+        if isinstance(reports, dict):
+            return FederationReadMetadata(
+                label="Connected",
+                status="connected",
+                source_type="simulation_read_model",
+                fallback_active=False,
+                item_count=len(reports),
+            )
+        return FederationReadMetadata(
+            label="Simulation read-model unavailable",
+            status="degraded",
+            source_type="deterministic_fallback",
+            fallback_active=True,
+            item_count=0,
+        )
+
+
 class ProjectionFederationProviderFactory:
     @staticmethod
     def build_defaults(base_dir: Path) -> dict[str, FederationProvider]:
         return {
-            "recovery": JsonArrayTelemetryProvider(
+            "recovery": RecoveryReadModelProvider(
                 key="recovery",
                 snapshot_path=base_dir / "recovery_projection_snapshot.json",
-                source_type="recovery_projection",
             ),
-            "simulation": JsonArrayTelemetryProvider(
-                key="simulation",
-                snapshot_path=base_dir / "simulation_projection_snapshot.json",
-                source_type="simulation_projection",
-            ),
+            "simulation": SimulationReadModelProvider(key="simulation"),
             "mesh": JsonArrayTelemetryProvider(
                 key="mesh",
                 snapshot_path=base_dir / "mesh_projection_snapshot.json",
