@@ -6,17 +6,29 @@
   <title>Ops Console</title>
   <link rel="stylesheet" href="/ops/ops_console.css">
 </head>
-<body>
+<body class="operator-console">
   <main class="layout">
-    <header>
-      <h1>Ops Console</h1>
-      <p>Read-only projection health status.</p>
+    <header class="topbar" aria-label="Operator Console Status">
+      <div>
+        <h1>Ops Console</h1>
+        <p class="subtitle">Read-only projection visibility for operators.</p>
+      </div>
+      <ul class="guardrail-chips" aria-label="Read-only Guarantees">
+        <li class="chip chip-readonly">Read-only</li>
+        <li class="chip chip-advisory">Advisory</li>
+        <li class="chip chip-safe">No authority coupling</li>
+        <li class="chip chip-get">GET-only</li>
+      </ul>
     </header>
+
     <section aria-label="Sections" class="sections">
-      <ul id="section-nav" class="section-nav"></ul>
+      <h2 class="section-title">Sections</h2>
+      <ul id="section-nav" class="section-nav" aria-label="Ops sections"></ul>
     </section>
-    <section aria-label="Section Content">
-      <div id="section-content" class="cards"></div>
+
+    <section aria-label="Section Content" class="content-wrap">
+      <h2 id="content-title" class="section-title">Overview</h2>
+      <div id="section-content" class="cards" aria-live="polite"></div>
     </section>
   </main>
   <script src="/ops/ops_console.js"></script>
