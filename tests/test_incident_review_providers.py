@@ -42,3 +42,13 @@ def test_provider_exposes_source_metadata_without_private_access(tmp_path: Path)
     assert metadata.read_only is True
     assert metadata.authority_coupled is False
     assert metadata.fallback_active is True
+
+
+def test_source_metadata_status_labels_and_no_absolute_path(tmp_path: Path):
+    snapshot = tmp_path / 'projection_snapshot.json'
+    snapshot.write_text('{"incident_explorer": []}', encoding='utf-8')
+    provider = IncidentReviewProviderFactory.build_live_default(snapshot)
+    metadata = provider.source_metadata()
+    assert metadata.status_label == 'file_projection_fallback'
+    assert metadata.source_ref == 'projection_snapshot.json'
+    assert '/' not in metadata.source_ref

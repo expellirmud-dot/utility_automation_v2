@@ -30,7 +30,7 @@ def get_source_status() -> IncidentReviewSourceStatusResponse:
         read_only=metadata.read_only,
         authority_coupled=metadata.authority_coupled,
         fallback_active=metadata.fallback_active,
-        source_path=metadata.source_path,
+        source_ref=metadata.source_ref,
         status_label=metadata.status_label,
     )
 
