@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from fastapi.testclient import TestClient
 
@@ -98,14 +99,19 @@ def test_overview_forbidden_imports_absent():
 
 
 def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
-    endpoints = [
-        ('recovery', 2),
-        ('simulation', 1),
-        ('mesh', 3),
-        ('policy', 1),
-        ('replay', 2),
-        ('system-health', 1),
-    ]
+    endpoint_to_snapshot = {
+        'recovery': 'recovery_projection_snapshot.json',
+        'simulation': 'simulation_projection_snapshot.json',
+        'mesh': 'mesh_projection_snapshot.json',
+        'policy': 'policy_projection_snapshot.json',
+        'replay': 'replay_projection_snapshot.json',
+        'system-health': 'system_health_telemetry_snapshot.json',
+    }
+    snapshot_dir = Path(__file__).resolve().parents[1] / 'src' / 'ui'
+    endpoints = []
+    for endpoint, snapshot_name in endpoint_to_snapshot.items():
+        payload = json.loads((snapshot_dir / snapshot_name).read_text(encoding='utf-8'))
+        endpoints.append((endpoint, len(payload.get('items', []))))
     for endpoint, expected_count in endpoints:
         response = client.get(f'/ops/api/{endpoint}')
         assert response.status_code == 200
@@ -113,6 +119,8 @@ def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
         assert payload['status'] in {'connected', 'empty', 'degraded'}
         assert payload['advisory_only'] is True
         assert payload['item_count'] == expected_count
+        assert payload['summaries'] == payload['items']
+        assert payload['metadata']['deterministic_ordering'] == 'id_asc'
         assert len(payload['items']) == expected_count
         ids = [item.get('id', '') for item in payload['items']]
         assert ids == sorted(ids)

@@ -123,8 +123,12 @@
       addLine(livePanel, 'Mode', 'Read-only advisory');
       addLine(livePanel, 'Advisory Only', domainPanelCache[panelKey].advisory_only);
       addLine(livePanel, 'Item Count', domainPanelCache[panelKey].item_count);
+      addLine(livePanel, 'Ordering', (domainPanelCache[panelKey].metadata || {}).deterministic_ordering || 'unknown');
       if (!domainPanelCache[panelKey].items || domainPanelCache[panelKey].items.length === 0) {
         addLine(livePanel, 'Items', 'No items available');
+        if (domainPanelCache[panelKey].diagnostics && domainPanelCache[panelKey].diagnostics.length > 0) {
+          addLine(livePanel, 'Diagnostics', domainPanelCache[panelKey].diagnostics[0].code || 'degraded');
+        }
       } else {
         domainPanelCache[panelKey].items.forEach(function (entry) {
           var row = document.createElement('p');

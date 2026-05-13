@@ -108,6 +108,9 @@ class OpsDomainPanelResponse(BaseModel):
     source: str
     item_count: int
     advisory_only: bool
+    summaries: list[dict[str, object]]
+    diagnostics: list[dict[str, object]]
+    metadata: dict[str, object]
     items: list[dict[str, object]]
 
 
@@ -145,6 +148,9 @@ def _read_snapshot_items(snapshot_name: str, *, source: str) -> OpsDomainPanelRe
             source=source,
             item_count=len(normalized_items),
             advisory_only=True,
+            summaries=normalized_items,
+            diagnostics=[],
+            metadata={"deterministic_ordering": "id_asc", "snapshot": snapshot_name},
             items=normalized_items,
         )
     except (OSError, ValueError, TypeError, AttributeError):
@@ -154,6 +160,9 @@ def _read_snapshot_items(snapshot_name: str, *, source: str) -> OpsDomainPanelRe
             source="deterministic_fallback",
             item_count=0,
             advisory_only=True,
+            summaries=[],
+            diagnostics=[{"code": "snapshot_unavailable", "domain": source}],
+            metadata={"deterministic_ordering": "id_asc", "snapshot": snapshot_name},
             items=[],
         )
 
