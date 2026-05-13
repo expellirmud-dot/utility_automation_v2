@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from enum import StrEnum
+import logging
 from pathlib import Path
+from typing import Callable
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
 from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
@@ -42,6 +44,13 @@ class ProjectionFederationReport:
     cards: tuple[ProjectionSummaryCard, ...]
 
 
+@dataclass(frozen=True)
+class ProjectionProviderFailureMetadata:
+    provider_key: str
+    failure_class: str
+    correlation_id: str | None
+
+
 class ProjectionFallbackReason(StrEnum):
     NONE = "none"
     PROVIDER_EXCEPTION = "provider_exception"
@@ -62,9 +71,17 @@ class ProjectionFederationService:
         ("system_health", "System Health", "system_health", 70),
     )
 
-    def __init__(self, incident_service: IncidentReviewService, providers: dict[str, FederationProvider]) -> None:
+    _logger = logging.getLogger(__name__)
+
+    def __init__(
+        self,
+        incident_service: IncidentReviewService,
+        providers: dict[str, FederationProvider],
+        failure_emitter: Callable[[ProjectionProviderFailureMetadata], None] | None = None,
+    ) -> None:
         self._incident_service = incident_service
         self._providers = providers
+        self._failure_emitter = failure_emitter or self._emit_provider_failure
 
     @classmethod
     def build_default(cls) -> "ProjectionFederationService":
@@ -84,7 +101,14 @@ class ProjectionFederationService:
                     card = self._build_incident_card(title=title, domain=domain, stable_order=stable_order)
                 else:
                     card = self._build_domain_card(key=key, title=title, domain=domain, stable_order=stable_order)
-            except Exception:
+            except Exception as exc:
+                self._failure_emitter(
+                    ProjectionProviderFailureMetadata(
+                        provider_key=key,
+                        failure_class=self._classify_failure(exc),
+                        correlation_id=self._extract_correlation_id(exc),
+                    )
+                )
                 card = self._build_fallback_card(key=key, title=title, domain=domain, stable_order=stable_order)
             cards_by_key[key] = card
         ordered = tuple(cards_by_key[key] for key, *_ in self._ORDER)
@@ -117,6 +141,33 @@ class ProjectionFederationService:
             item_count=len(incidents),
             stable_order=stable_order,
         )
+
+    def _emit_provider_failure(self, metadata: ProjectionProviderFailureMetadata) -> None:
+        self._logger.warning(
+            "projection_provider_failure",
+            extra={
+                "provider_key": metadata.provider_key,
+                "failure_class": metadata.failure_class,
+                "correlation_id": metadata.correlation_id,
+            },
+        )
+
+    def _classify_failure(self, error: Exception) -> str:
+        name = error.__class__.__name__.lower()
+        if isinstance(error, TimeoutError) or "timeout" in name:
+            return "timeout"
+        if "unavailable" in name or "connection" in name:
+            return "unavailable"
+        if "payload" in name or "decode" in name or "parse" in name:
+            return "invalid_payload"
+        return "unexpected"
+
+    def _extract_correlation_id(self, error: Exception) -> str | None:
+        for attr_name in ("correlation_id", "request_id", "trace_id"):
+            value = getattr(error, attr_name, None)
+            if value:
+                return str(value)
+        return None
 
     def _build_domain_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
         provider = self._providers[key]

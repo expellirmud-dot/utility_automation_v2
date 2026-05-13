@@ -152,6 +152,11 @@ class _FailProvider:
         raise RuntimeError("sensitive provider internals")
 
 
+class _TimeoutProvider:
+    def read_metadata(self):
+        raise TimeoutError("request timeout")
+
+
 def test_one_provider_failure_is_isolated_and_endpoint_stays_200(monkeypatch):
     original_builder = ProjectionFederationService.build_default
 
@@ -175,6 +180,7 @@ def test_one_provider_failure_is_isolated_and_endpoint_stays_200(monkeypatch):
     assert cards["mesh"]["fallback_active"] is True
     assert cards["policy"]["status"] == "connected"
     assert cards["policy"]["item_count"] == 7
+    assert "traceback" not in response.text.lower()
 
 
 def test_fallback_payload_is_deterministic_for_same_failure():
@@ -198,6 +204,58 @@ def test_failure_status_is_truthful_degraded_or_not_connected():
 
     failing_card = {c.key: c for c in unstable.report().cards}["replay"]
     assert failing_card.status in {"degraded", "not_connected"}
+
+
+def test_provider_failure_emits_one_structured_event_per_failed_provider():
+    service = ProjectionFederationService.build_default()
+    providers = dict(service._providers)
+    providers["simulation"] = _FailProvider()
+    providers["replay"] = _TimeoutProvider()
+
+    emitted = []
+
+    def _emit(metadata):
+        emitted.append(metadata)
+
+    unstable = ProjectionFederationService(
+        incident_service=service._incident_service,
+        providers=providers,
+        failure_emitter=_emit,
+    )
+
+    report = unstable.report()
+    cards = {c.key: c for c in report.cards}
+    assert cards["simulation"].status == "degraded"
+    assert cards["replay"].status == "degraded"
+
+    assert len(emitted) == 2
+    by_key = {item.provider_key: item for item in emitted}
+    assert set(by_key) == {"simulation", "replay"}
+    assert by_key["simulation"].failure_class == "unexpected"
+    assert by_key["replay"].failure_class == "timeout"
+    assert by_key["simulation"].correlation_id is None
+
+
+def test_api_payload_does_not_leak_provider_stack_traces(monkeypatch):
+    original_builder = ProjectionFederationService.build_default
+
+    def _build_faulty():
+        service = original_builder()
+        providers = dict(service._providers)
+        providers["mesh"] = _FailProvider()
+        return ProjectionFederationService(incident_service=service._incident_service, providers=providers)
+
+    monkeypatch.setattr("src.ui.ops_overview_api.ProjectionFederationService.build_default", _build_faulty)
+
+    from src.ui import ops_overview_api
+
+    ops_overview_api._federation_service = _build_faulty()
+    response = client.get('/ops/api/projections')
+
+    assert response.status_code == 200
+    payload_text = response.text.lower()
+    assert "traceback" not in payload_text
+    assert "sensitive provider internals" not in payload_text
 
 def test_ops_projection_contract_snapshot_and_backward_compatibility_guard():
     fixture = _load_projection_contract_fixture()
