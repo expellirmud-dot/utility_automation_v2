@@ -36,6 +36,7 @@ def test_incident_and_domain_providers_connected_deterministically():
     expected_status = "connected" if expected_connected else "not_connected"
     assert incident_card.status == expected_status
     assert incident_card.provider_status.connected is expected_connected
+    assert incident_card.provider_status.source_ref == "projection_snapshot.json"
 
     expected = {
         "recovery": (2, "Connected", "connected", "recovery_projection"),
