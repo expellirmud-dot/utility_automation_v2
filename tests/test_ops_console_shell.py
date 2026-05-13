@@ -125,5 +125,24 @@ def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
         ids = [item.get('id', '') for item in payload['items']]
         assert ids == sorted(ids)
 
+        if endpoint == 'recovery':
+            assert 'recovery_summaries' in payload
+            assert 'diagnoses' in payload
+        if endpoint == 'simulation':
+            assert 'scenario_summaries' in payload
+            assert 'advisory_outcomes' in payload
+        if endpoint == 'mesh':
+            assert 'node_summaries' in payload
+            assert 'quorum_metadata' in payload
+        if endpoint == 'policy':
+            assert 'active_policy' in payload
+            assert 'lineage' in payload
+        if endpoint == 'replay':
+            assert 'replay_certification' in payload
+            assert 'determinism_verification' in payload
+        if endpoint == 'system-health':
+            assert 'health_summaries' in payload
+            assert 'provider_status' in payload
+
         for method in ['post', 'put', 'patch', 'delete']:
             assert getattr(client, method)(f'/ops/api/{endpoint}').status_code == 405

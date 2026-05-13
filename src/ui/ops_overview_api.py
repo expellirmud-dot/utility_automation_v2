@@ -114,6 +114,49 @@ class OpsDomainPanelResponse(BaseModel):
     items: list[dict[str, object]]
 
 
+class RecoveryPanelResponse(OpsDomainPanelResponse):
+    recovery_summaries: list[dict[str, object]]
+    diagnoses: list[dict[str, object]]
+    recovery_reports: list[dict[str, object]]
+    recovery_classifications: list[dict[str, object]]
+    advisory_plans_recent: list[dict[str, object]]
+
+
+class SimulationPanelResponse(OpsDomainPanelResponse):
+    scenario_summaries: list[dict[str, object]]
+    advisory_outcomes: list[dict[str, object]]
+
+
+class MeshPanelResponse(OpsDomainPanelResponse):
+    node_summaries: list[dict[str, object]]
+    convergence_state: dict[str, object]
+    anti_entropy_health: dict[str, object]
+    quorum_metadata: dict[str, object]
+    topology_summaries: list[dict[str, object]]
+
+
+class PolicyPanelResponse(OpsDomainPanelResponse):
+    active_policy: dict[str, object]
+    lineage: list[dict[str, object]]
+    ancestry: list[dict[str, object]]
+    rollback_metadata: dict[str, object]
+    policy_health: dict[str, object]
+
+
+class ReplayPanelResponse(OpsDomainPanelResponse):
+    replay_certification: dict[str, object]
+    determinism_verification: dict[str, object]
+    replay_history_metadata: list[dict[str, object]]
+
+
+class SystemHealthPanelResponse(OpsDomainPanelResponse):
+    health_summaries: list[dict[str, object]]
+    telemetry_rollups: list[dict[str, object]]
+    diagnostics_rollup: list[dict[str, object]]
+    degraded_indicators: list[dict[str, object]]
+    provider_status: list[dict[str, object]]
+
+
 def _strict_route_governance_enabled() -> bool:
     return os.getenv("OPS_ROUTE_GOVERNANCE_STRICT", "0") == "1"
 
@@ -249,34 +292,73 @@ def get_route_governance() -> RouteGovernanceResponse:
     return _build_route_governance_response()
 
 
-@router.get("/api/recovery", response_model=OpsDomainPanelResponse)
-def get_recovery_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("recovery_projection_snapshot.json", source="recovery")
+@router.get("/api/recovery", response_model=RecoveryPanelResponse)
+def get_recovery_panel() -> RecoveryPanelResponse:
+    base = _read_snapshot_items("recovery_projection_snapshot.json", source="recovery")
+    return RecoveryPanelResponse(
+        **base.model_dump(),
+        recovery_summaries=base.items,
+        diagnoses=base.items,
+        recovery_reports=base.items,
+        recovery_classifications=base.items,
+        advisory_plans_recent=base.items,
+    )
 
 
-@router.get("/api/simulation", response_model=OpsDomainPanelResponse)
-def get_simulation_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("simulation_projection_snapshot.json", source="simulation")
+@router.get("/api/simulation", response_model=SimulationPanelResponse)
+def get_simulation_panel() -> SimulationPanelResponse:
+    base = _read_snapshot_items("simulation_projection_snapshot.json", source="simulation")
+    return SimulationPanelResponse(**base.model_dump(), scenario_summaries=base.items, advisory_outcomes=base.items)
 
 
-@router.get("/api/mesh", response_model=OpsDomainPanelResponse)
-def get_mesh_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("mesh_projection_snapshot.json", source="mesh")
+@router.get("/api/mesh", response_model=MeshPanelResponse)
+def get_mesh_panel() -> MeshPanelResponse:
+    base = _read_snapshot_items("mesh_projection_snapshot.json", source="mesh")
+    return MeshPanelResponse(
+        **base.model_dump(),
+        node_summaries=base.items,
+        convergence_state={"status": base.status},
+        anti_entropy_health={"status": base.status},
+        quorum_metadata={"advisory_only": True},
+        topology_summaries=base.items,
+    )
 
 
-@router.get("/api/policy", response_model=OpsDomainPanelResponse)
-def get_policy_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("policy_projection_snapshot.json", source="policy")
+@router.get("/api/policy", response_model=PolicyPanelResponse)
+def get_policy_panel() -> PolicyPanelResponse:
+    base = _read_snapshot_items("policy_projection_snapshot.json", source="policy")
+    return PolicyPanelResponse(
+        **base.model_dump(),
+        active_policy=base.items[0] if base.items else {},
+        lineage=base.items,
+        ancestry=base.items,
+        rollback_metadata={"available": False, "advisory_only": True},
+        policy_health={"status": base.status},
+    )
 
 
-@router.get("/api/replay", response_model=OpsDomainPanelResponse)
-def get_replay_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("replay_projection_snapshot.json", source="replay")
+@router.get("/api/replay", response_model=ReplayPanelResponse)
+def get_replay_panel() -> ReplayPanelResponse:
+    base = _read_snapshot_items("replay_projection_snapshot.json", source="replay")
+    return ReplayPanelResponse(
+        **base.model_dump(),
+        replay_certification={"status": base.status},
+        determinism_verification={"ordering": "id_asc", "status": base.status},
+        replay_history_metadata=base.items,
+    )
 
 
-@router.get("/api/system-health", response_model=OpsDomainPanelResponse)
-def get_system_health_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("system_health_telemetry_snapshot.json", source="system_health")
+@router.get("/api/system-health", response_model=SystemHealthPanelResponse)
+def get_system_health_panel() -> SystemHealthPanelResponse:
+    base = _read_snapshot_items("system_health_telemetry_snapshot.json", source="system_health")
+    return SystemHealthPanelResponse(
+        **base.model_dump(),
+        health_summaries=base.items,
+        telemetry_rollups=base.items,
+        diagnostics_rollup=base.diagnostics,
+        degraded_indicators=base.diagnostics,
+        provider_status=base.items,
+    )
 
 
 app = FastAPI(title="Ops Overview Console")
