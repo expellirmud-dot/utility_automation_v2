@@ -65,6 +65,36 @@ class StubProvider:
         return self.metadata
 
 
+@dataclass(frozen=True)
+class StubIncidentProvider:
+    fallback_active: bool
+
+    def source_metadata(self):
+        from src.ui.incident_review.projection_source import ProjectionSourceMetadata
+
+        return ProjectionSourceMetadata(
+            source_type="file_projection",
+            read_only=True,
+            authority_coupled=False,
+            fallback_active=self.fallback_active,
+            source_ref="projection_snapshot.json",
+        )
+
+    def list_incidents(self):
+        return []
+
+
+def test_incident_provider_status_not_connected_when_fallback_active():
+    default_service = ProjectionFederationService.build_default()
+    incident_service = type(default_service._incident_service)(StubIncidentProvider(fallback_active=True))  # noqa: SLF001
+    service = ProjectionFederationService(incident_service, default_service._providers)  # noqa: SLF001
+
+    card = {item.key: item for item in service.report().cards}["incident_review"]
+    assert card.status == "not_connected"
+    assert card.provider_status.connected is False
+    assert card.provider_status.stale is True
+
+
 def test_provider_status_truthful_mapping_for_unavailable_provider_data():
     default_service = ProjectionFederationService.build_default()
     unavailable = StubProvider(

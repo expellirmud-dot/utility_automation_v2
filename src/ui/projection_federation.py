@@ -78,14 +78,15 @@ class ProjectionFederationService:
     def _build_incident_card(self, *, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
         metadata = self._incident_service.source_metadata()
         incidents = self._incident_service.list_incidents()
+        incident_connected = not metadata.fallback_active
         status = ProjectionProviderStatus(
             key="incident_review",
-            status="connected" if not metadata.fallback_active else "not_connected",
+            status="connected" if incident_connected else "not_connected",
             label=metadata.status_label,
             source_ref=metadata.source_type,
             provider_kind="incident_review_provider",
-            connected=not metadata.fallback_active,
-            stale=metadata.fallback_active,
+            connected=incident_connected,
+            stale=not incident_connected,
         )
         return ProjectionSummaryCard(
             key=status.key,
