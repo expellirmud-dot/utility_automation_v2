@@ -17,6 +17,7 @@ def test_extraction():
     
     # Save output
     output_path = os.path.join("output", "bill_data.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(bill.__dict__, f, indent=4, ensure_ascii=False)
     

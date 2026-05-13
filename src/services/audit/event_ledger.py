@@ -59,6 +59,11 @@ class EventLedger:
                 seq = self.sequence_manager.next_sequence()
                 
                 metadata_json = json.dumps(event.metadata) if hasattr(event, 'metadata') else "{}"
+                system_state_value = (
+                    json.dumps(event.system_state, sort_keys=True)
+                    if isinstance(event.system_state, (dict, list))
+                    else str(event.system_state)
+                )
                 
                 cursor = conn.execute("""
                     INSERT INTO ledger (
@@ -67,7 +72,7 @@ class EventLedger:
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     seq, event.event_id, event.timestamp, event.event_type,
-                    event.role, event.action, event.decision, event.system_state,
+                    event.role, event.action, event.decision, system_state_value,
                     metadata_json, idempotency_key
                 ))
                 cursor.close()

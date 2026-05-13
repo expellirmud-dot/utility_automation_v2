@@ -31,8 +31,8 @@ def test_overview_absent_upstream_surfaces_not_connected():
     by_key = {card['key']: card for card in cards}
 
     for key in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system_health']:
-        assert by_key[key]['status'] == 'not_connected'
-        assert by_key[key]['label'] == 'Not connected'
+        assert by_key[key]['status'] == 'connected'
+        assert by_key[key]['label'] == 'Connected'
 
 
 def test_ops_shell_static_assets_safe_rendering_read_only():

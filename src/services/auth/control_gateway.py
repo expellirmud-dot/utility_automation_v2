@@ -20,11 +20,20 @@ class ControlGateway:
             return "REJECTED_NO_TRUST"
 
         # 🧠 DETERMINISTIC RULE ENGINE
-        decision_result = self.rule_engine.evaluate(
-            role=trusted_context.role,
-            action=action,
-            system_state=system_state
-        )
+        if hasattr(self.rule_engine, "evaluate"):
+            decision_result = self.rule_engine.evaluate(
+                role=trusted_context.role,
+                action=action,
+                system_state=system_state
+            )
+        else:
+            decision_effect = self.rule_engine.validate(trusted_context.role, action, system_state)
+            decision_result = {
+                "decision": decision_effect,
+                "rule_name": "action_validator_compat",
+                "rule_id": "compat.validate",
+                "priority": 0,
+            }
 
         decision_effect = decision_result["decision"]
         if decision_effect == "DENY":
