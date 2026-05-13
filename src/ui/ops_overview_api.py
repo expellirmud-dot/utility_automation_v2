@@ -12,6 +12,7 @@ from src.ui.read_only_route_governance import (
     inspect_read_only_routes,
     validate_read_only_route_governance,
 )
+from src.ui.projection_federation import ProjectionFederationService, card_to_dict
 from src.ui.read_only_surface_registry import list_ops_exposed_surfaces, list_read_only_surfaces
 
 router = APIRouter(prefix="/ops", tags=["Ops Overview"])
@@ -23,6 +24,7 @@ _incident_service = IncidentReviewService(
     )
 )
 validate_read_only_route_governance()
+_federation_service = ProjectionFederationService.build_default()
 
 
 class OpsOverviewCard(BaseModel):
@@ -44,6 +46,10 @@ class RouteGovernanceSummary(BaseModel):
     valid: bool
     checked_routes: int
     violations: int
+
+
+class ProjectionFederationResponse(BaseModel):
+    cards: list[dict[str, object]]
 
 
 class OpsSurfaceEntry(BaseModel):
@@ -157,6 +163,13 @@ def get_overview() -> OpsOverviewResponse:
     )
     return OpsOverviewResponse(cards=cards)
 
+
+
+
+@router.get("/api/projections", response_model=ProjectionFederationResponse)
+def get_projection_federation() -> ProjectionFederationResponse:
+    report = _federation_service.report()
+    return ProjectionFederationResponse(cards=[card_to_dict(item) for item in report.cards])
 
 @router.get("/api/surfaces", response_model=OpsSurfaceResponse)
 def get_ops_surfaces() -> OpsSurfaceResponse:
