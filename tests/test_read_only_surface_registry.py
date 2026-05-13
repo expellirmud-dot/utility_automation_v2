@@ -1,3 +1,6 @@
+import importlib
+import os
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -126,3 +129,38 @@ def test_route_introspection_rejects_action_keywords_and_is_stably_sorted():
     assert report.valid is False
     assert [item.path for item in report.violations] == sorted(item.path for item in report.violations)
     assert any(item.reason == "forbidden_action_keyword" for item in report.violations)
+
+
+def test_strict_flag_default_disabled():
+    assert os.getenv('OPS_ROUTE_GOVERNANCE_STRICT', '0') != '1'
+
+
+def test_strict_flag_enabled_fails_invalid_routes():
+    module = importlib.import_module('src.ui.ops_overview_api')
+    original = module.inspect_read_only_routes
+
+    class _BadReport:
+        valid = False
+        checked_routes = 2
+        registry_surface_count = 1
+        violations = (object(),)
+
+    try:
+        module.inspect_read_only_routes = lambda app=None: _BadReport()
+        os.environ['OPS_ROUTE_GOVERNANCE_STRICT'] = '1'
+        try:
+            if module._strict_route_governance_enabled():
+                strict_report = module.inspect_read_only_routes(app=module.app)
+                if not strict_report.valid:
+                    raise module.ReadOnlyRouteGovernanceError(
+                        'OPS_ROUTE_GOVERNANCE_STRICT=1 and route governance is invalid: '
+                        f'checked_routes={strict_report.checked_routes}, violations={len(strict_report.violations)}'
+                    )
+            assert False, 'expected strict governance failure'
+        except module.ReadOnlyRouteGovernanceError as exc:
+            assert 'OPS_ROUTE_GOVERNANCE_STRICT=1' in str(exc)
+            assert 'checked_routes=2' in str(exc)
+            assert 'violations=1' in str(exc)
+    finally:
+        module.inspect_read_only_routes = original
+        os.environ.pop('OPS_ROUTE_GOVERNANCE_STRICT', None)

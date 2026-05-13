@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
@@ -6,7 +7,11 @@ from pydantic import BaseModel
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
 from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
-from src.ui.read_only_route_governance import inspect_read_only_routes, validate_read_only_route_governance
+from src.ui.read_only_route_governance import (
+    ReadOnlyRouteGovernanceError,
+    inspect_read_only_routes,
+    validate_read_only_route_governance,
+)
 from src.ui.read_only_surface_registry import list_ops_exposed_surfaces, list_read_only_surfaces
 
 router = APIRouter(prefix="/ops", tags=["Ops Overview"])
@@ -33,6 +38,12 @@ class OpsOverviewCard(BaseModel):
 
 class OpsOverviewResponse(BaseModel):
     cards: list[OpsOverviewCard]
+
+
+class RouteGovernanceSummary(BaseModel):
+    valid: bool
+    checked_routes: int
+    violations: int
 
 
 class OpsSurfaceEntry(BaseModel):
@@ -64,6 +75,22 @@ class RouteGovernanceResponse(BaseModel):
     registry_surface_count: int
     violations: list[RouteGovernanceViolationEntry]
 
+
+def _strict_route_governance_enabled() -> bool:
+    return os.getenv("OPS_ROUTE_GOVERNANCE_STRICT", "0") == "1"
+
+
+def _build_route_governance_response() -> RouteGovernanceResponse:
+    report = inspect_read_only_routes(app=app)
+    return RouteGovernanceResponse(
+        valid=report.valid,
+        checked_routes=report.checked_routes,
+        registry_surface_count=report.registry_surface_count,
+        violations=[
+            RouteGovernanceViolationEntry(path=item.path, method=item.method, reason=item.reason)
+            for item in report.violations
+        ],
+    )
 
 @router.get("", response_class=FileResponse)
 def get_ops_console() -> FileResponse:
@@ -111,6 +138,23 @@ def get_overview() -> OpsOverviewResponse:
                 label="Not connected" if surface.status == "not_connected" else surface.status,
             )
         )
+    governance = _build_route_governance_response()
+    cards.append(
+        OpsOverviewCard(
+            key="route_governance",
+            title="Route Governance",
+            projection_source="/ops/api/route-governance",
+            read_only=True,
+            authority_coupled=False,
+            fallback_active=False,
+            status="connected" if governance.valid else "not_connected",
+            label=(
+                f"valid | checked_routes={governance.checked_routes} | violations={len(governance.violations)}"
+                if governance.valid
+                else f"invalid | checked_routes={governance.checked_routes} | violations={len(governance.violations)}"
+            ),
+        )
+    )
     return OpsOverviewResponse(cards=cards)
 
 
@@ -136,17 +180,16 @@ def get_ops_surfaces() -> OpsSurfaceResponse:
 
 @router.get("/api/route-governance", response_model=RouteGovernanceResponse)
 def get_route_governance() -> RouteGovernanceResponse:
-    report = inspect_read_only_routes(app=app)
-    return RouteGovernanceResponse(
-        valid=report.valid,
-        checked_routes=report.checked_routes,
-        registry_surface_count=report.registry_surface_count,
-        violations=[
-            RouteGovernanceViolationEntry(path=item.path, method=item.method, reason=item.reason)
-            for item in report.violations
-        ],
-    )
+    return _build_route_governance_response()
 
 
 app = FastAPI(title="Ops Overview Console")
 app.include_router(router)
+
+if _strict_route_governance_enabled():
+    strict_report = inspect_read_only_routes(app=app)
+    if not strict_report.valid:
+        raise ReadOnlyRouteGovernanceError(
+            "OPS_ROUTE_GOVERNANCE_STRICT=1 and route governance is invalid: "
+            f"checked_routes={strict_report.checked_routes}, violations={len(strict_report.violations)}"
+        )
