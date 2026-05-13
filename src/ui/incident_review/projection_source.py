@@ -21,17 +21,17 @@ class ProjectionSourceMetadata:
     read_only: bool
     authority_coupled: bool
     fallback_active: bool
-    source_path: str
+    source_ref: str
 
     @property
     def status_label(self) -> str:
-        if self.source_type == "runtime_projection":
-            return "runtime_projection"
-        if self.source_type == "snapshot_test":
-            return "snapshot_test"
-        if self.fallback_active:
+        if self.source_type == "runtime_projection" and not self.fallback_active:
+            return "runtime_projection_active"
+        if self.source_type == "file_projection" and self.fallback_active:
             return "file_projection_fallback"
-        return self.source_type
+        if self.source_type == "snapshot_test":
+            return "snapshot_test_source"
+        return f"{self.source_type}_active"
 
 
 class IncidentReviewProjectionSource(Protocol):
@@ -117,7 +117,7 @@ class JsonFileProjectionSource:
             read_only=True,
             authority_coupled=False,
             fallback_active=self._fallback_active,
-            source_path=str(self._snapshot_path),
+            source_ref=self._snapshot_path.name,
         )
 
 

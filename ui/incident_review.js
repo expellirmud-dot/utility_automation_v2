@@ -3,13 +3,10 @@
   const banner = document.getElementById('source-banner');
 
   function bannerText(payload) {
-    if (payload.source_type === 'runtime_projection') {
-      return 'Runtime read-only projection source active.';
-    }
-    if (payload.source_type === 'snapshot_test') {
-      return 'Snapshot test projection source active.';
-    }
-    return 'File-backed projection fallback active.';
+    if (payload.status_label === 'runtime_projection_active') return 'Runtime read-only projection source active.';
+    if (payload.status_label === 'snapshot_test_source') return 'Snapshot test projection source active.';
+    if (payload.status_label === 'file_projection_fallback') return 'File-backed projection fallback active.';
+    return 'Projection source active.';
   }
 
   fetch('/incident-review/api/source-status')

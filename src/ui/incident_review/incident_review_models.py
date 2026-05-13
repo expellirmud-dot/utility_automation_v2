@@ -19,5 +19,5 @@ class IncidentReviewSourceStatusResponse(BaseModel):
     read_only: bool
     authority_coupled: bool
     fallback_active: bool
-    source_path: str
+    source_ref: str
     status_label: str

@@ -64,7 +64,9 @@ def test_source_status_get_only_and_deterministic_shape():
     assert payload['fallback_active'] is True
     assert payload['source_type'] == 'file_projection'
     assert payload['status_label'] == 'file_projection_fallback'
-    assert 'source_path' in payload
+    assert payload['source_ref'] == 'projection_snapshot.json'
+    assert '/workspace/' not in str(payload)
+    assert 'source_path' not in payload
 
     for method in ['post', 'put', 'patch', 'delete']:
         assert getattr(client, method)('/incident-review/api/source-status').status_code == 405
