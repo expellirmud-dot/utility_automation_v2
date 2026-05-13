@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
 from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
-from src.ui.projection_federation_providers import ProjectionFederationProviderFactory
+from src.ui.projection_federation_providers import FederationProvider, ProjectionFederationProviderFactory
 
 
 @dataclass(frozen=True)
@@ -13,6 +13,10 @@ class ProjectionProviderStatus:
     key: str
     status: str
     label: str
+    source_ref: str
+    provider_kind: str
+    connected: bool
+    stale: bool
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,7 @@ class ProjectionSummaryCard:
     domain: str
     status: str
     label: str
+    provider_status: ProjectionProviderStatus
     read_only: bool
     authority_coupled: bool
     source_type: str
@@ -46,7 +51,7 @@ class ProjectionFederationService:
         ("system_health", "System Health", "system_health", 70),
     )
 
-    def __init__(self, incident_service: IncidentReviewService, providers: dict[str, object]) -> None:
+    def __init__(self, incident_service: IncidentReviewService, providers: dict[str, FederationProvider]) -> None:
         self._incident_service = incident_service
         self._providers = providers
 
@@ -73,13 +78,22 @@ class ProjectionFederationService:
     def _build_incident_card(self, *, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
         metadata = self._incident_service.source_metadata()
         incidents = self._incident_service.list_incidents()
-        status = ProjectionProviderStatus(key="incident_review", status="connected", label=metadata.status_label)
+        status = ProjectionProviderStatus(
+            key="incident_review",
+            status="connected",
+            label=metadata.status_label,
+            source_ref=metadata.source_type,
+            provider_kind="incident_review_provider",
+            connected=True,
+            stale=metadata.fallback_active,
+        )
         return ProjectionSummaryCard(
             key=status.key,
             title=title,
             domain=domain,
             status=status.status,
             label=status.label,
+            provider_status=status,
             read_only=metadata.read_only,
             authority_coupled=metadata.authority_coupled,
             source_type=metadata.source_type,
@@ -91,12 +105,22 @@ class ProjectionFederationService:
     def _build_domain_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
         provider = self._providers[key]
         metadata = provider.read_metadata()
+        provider_status = ProjectionProviderStatus(
+            key=key,
+            status=metadata.status,
+            label=metadata.label,
+            source_ref=metadata.source_type,
+            provider_kind=provider.__class__.__name__,
+            connected=metadata.status == "connected",
+            stale=metadata.fallback_active or metadata.status in {"degraded", "not_connected"},
+        )
         return ProjectionSummaryCard(
             key=key,
             title=title,
             domain=domain,
             status=metadata.status,
             label=metadata.label,
+            provider_status=provider_status,
             read_only=True,
             authority_coupled=False,
             source_type=metadata.source_type,

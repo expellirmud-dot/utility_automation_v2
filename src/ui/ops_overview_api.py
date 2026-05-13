@@ -41,8 +41,33 @@ class RouteGovernanceSummary(BaseModel):
     violations: int
 
 
+class ProjectionProviderStatusEntry(BaseModel):
+    key: str
+    status: str
+    label: str
+    source_ref: str
+    provider_kind: str
+    connected: bool
+    stale: bool
+
+
+class ProjectionFederationCardEntry(BaseModel):
+    key: str
+    title: str
+    domain: str
+    status: str
+    label: str
+    provider_status: ProjectionProviderStatusEntry
+    read_only: bool
+    authority_coupled: bool
+    source_type: str
+    fallback_active: bool
+    item_count: int
+    stable_order: int
+
+
 class ProjectionFederationResponse(BaseModel):
-    cards: list[dict[str, object]]
+    cards: list[ProjectionFederationCardEntry]
 
 
 class OpsSurfaceEntry(BaseModel):
