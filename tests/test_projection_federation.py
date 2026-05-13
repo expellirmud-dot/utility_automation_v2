@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 from fastapi.testclient import TestClient
 
 from src.ui.ops_overview_api import app
 from src.ui.projection_federation import ProjectionFederationService
+from src.ui.projection_federation_providers import FederationReadMetadata
 
 
 client = TestClient(app)
@@ -29,6 +32,7 @@ def test_incident_and_domain_providers_connected_deterministically():
 
     assert by_key["incident_review"].status == "connected"
     assert by_key["incident_review"].source_type in {"runtime_projection", "file_projection"}
+    assert by_key["incident_review"].provider_status.connected is True
 
     expected = {
         "recovery": (2, "Connected", "connected", "recovery_projection"),
@@ -45,6 +49,40 @@ def test_incident_and_domain_providers_connected_deterministically():
         assert card.status == status
         assert card.source_type == source_type
         assert card.fallback_active is False
+        assert card.provider_status.source_ref == source_type
+        assert card.provider_status.connected is True
+        assert card.provider_status.stale is False
+
+
+@dataclass(frozen=True)
+class StubProvider:
+    metadata: FederationReadMetadata
+
+    def read_metadata(self) -> FederationReadMetadata:
+        return self.metadata
+
+
+def test_provider_status_truthful_mapping_for_unavailable_provider_data():
+    default_service = ProjectionFederationService.build_default()
+    unavailable = StubProvider(
+        metadata=FederationReadMetadata(
+            label="Unavailable",
+            status="not_connected",
+            source_type="deterministic_fallback",
+            fallback_active=True,
+            item_count=0,
+        )
+    )
+    providers = {
+        key: unavailable
+        for key in ["recovery", "simulation", "mesh", "policy", "replay", "system_health"]
+    }
+    service = ProjectionFederationService(default_service._incident_service, providers)  # noqa: SLF001
+
+    card = {item.key: item for item in service.report().cards}["recovery"]
+    assert card.status == "not_connected"
+    assert card.provider_status.connected is False
+    assert card.provider_status.stale is True
 
 
 def test_ops_projections_get_only_and_shape():
@@ -60,12 +98,22 @@ def test_ops_projections_get_only_and_shape():
         "domain",
         "status",
         "label",
+        "provider_status",
         "read_only",
         "authority_coupled",
         "source_type",
         "fallback_active",
         "item_count",
         "stable_order",
+    ]
+    assert list(first["provider_status"].keys()) == [
+        "key",
+        "status",
+        "label",
+        "source_ref",
+        "provider_kind",
+        "connected",
+        "stale",
     ]
 
     for method in ['post', 'put', 'patch', 'delete']:
