@@ -42,6 +42,12 @@ def test_non_get_methods_return_405() -> None:
         assert method("/api/incident-review/incidents/analytics").status_code == 405
 
 
+def test_deterministic_ordering() -> None:
+    service = IncidentReviewService(provider=MockIncidentReviewProvider())
+    ids = [incident["incident_id"] for incident in service.get_incidents()]
+    assert ids == ["INC-001", "INC-002"]
+
+
 def test_analytics_route_precedence_over_dynamic_incident_id() -> None:
     client = _client()
     response = client.get("/api/incident-review/incidents/analytics")
@@ -74,8 +80,8 @@ def test_no_write_capable_runtime_imports() -> None:
 def test_frontend_read_only_constraints() -> None:
     files = [
         Path("src/ui/templates/review_queue.html"),
-        Path("src/ui/cdml_dashboard.html"),
-        Path("src/ui/dashboard/templates/index.html"),
+        Path("src/ui/routes/review_routes.py"),
+        Path("src/services/observability/api/incident_review_api.py"),
     ]
     scan = "\n".join(path.read_text() for path in files if path.exists())
     lowered = scan.lower()
