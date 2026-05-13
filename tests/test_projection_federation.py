@@ -64,9 +64,75 @@ def test_ops_projections_get_only_and_shape():
         "authority_coupled",
         "source_type",
         "fallback_active",
+        "fallback_reason",
         "item_count",
         "stable_order",
     ]
 
     for method in ['post', 'put', 'patch', 'delete']:
         assert getattr(client, method)('/ops/api/projections').status_code == 405
+
+
+class _OkProvider:
+    def read_metadata(self):
+        class _Meta:
+            status = "connected"
+            label = "Connected"
+            source_type = "ok_source"
+            fallback_active = False
+            item_count = 7
+
+        return _Meta()
+
+
+class _FailProvider:
+    def read_metadata(self):
+        raise RuntimeError("sensitive provider internals")
+
+
+def test_one_provider_failure_is_isolated_and_endpoint_stays_200(monkeypatch):
+    original_builder = ProjectionFederationService.build_default
+
+    def _build_faulty():
+        service = original_builder()
+        providers = dict(service._providers)
+        providers["mesh"] = _FailProvider()
+        providers["policy"] = _OkProvider()
+        return ProjectionFederationService(incident_service=service._incident_service, providers=providers)
+
+    monkeypatch.setattr("src.ui.ops_overview_api.ProjectionFederationService.build_default", _build_faulty)
+
+    from src.ui import ops_overview_api
+
+    ops_overview_api._federation_service = _build_faulty()
+    response = client.get('/ops/api/projections')
+
+    assert response.status_code == 200
+    cards = {item["key"]: item for item in response.json()["cards"]}
+    assert cards["mesh"]["status"] == "degraded"
+    assert cards["mesh"]["fallback_active"] is True
+    assert cards["policy"]["status"] == "connected"
+    assert cards["policy"]["item_count"] == 7
+
+
+def test_fallback_payload_is_deterministic_for_same_failure():
+    service = ProjectionFederationService.build_default()
+    providers = dict(service._providers)
+    providers["simulation"] = _FailProvider()
+    unstable = ProjectionFederationService(incident_service=service._incident_service, providers=providers)
+
+    first = {c.key: c for c in unstable.report().cards}["simulation"]
+    second = {c.key: c for c in unstable.report().cards}["simulation"]
+
+    assert first == second
+    assert first.fallback_reason == "provider_exception"
+
+
+def test_failure_status_is_truthful_degraded_or_not_connected():
+    service = ProjectionFederationService.build_default()
+    providers = dict(service._providers)
+    providers["replay"] = _FailProvider()
+    unstable = ProjectionFederationService(incident_service=service._incident_service, providers=providers)
+
+    failing_card = {c.key: c for c in unstable.report().cards}["replay"]
+    assert failing_card.status in {"degraded", "not_connected"}

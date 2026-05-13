@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
@@ -26,6 +27,7 @@ class ProjectionSummaryCard:
     authority_coupled: bool
     source_type: str
     fallback_active: bool
+    fallback_reason: str
     item_count: int
     stable_order: int
 
@@ -33,6 +35,11 @@ class ProjectionSummaryCard:
 @dataclass(frozen=True)
 class ProjectionFederationReport:
     cards: tuple[ProjectionSummaryCard, ...]
+
+
+class ProjectionFallbackReason(StrEnum):
+    NONE = "none"
+    PROVIDER_EXCEPTION = "provider_exception"
 
 
 class ProjectionFederationService:
@@ -63,10 +70,14 @@ class ProjectionFederationService:
     def report(self) -> ProjectionFederationReport:
         cards = []
         for key, title, domain, stable_order in self._ORDER:
-            if key == "incident_review":
-                cards.append(self._build_incident_card(title=title, domain=domain, stable_order=stable_order))
-            else:
-                cards.append(self._build_domain_card(key=key, title=title, domain=domain, stable_order=stable_order))
+            try:
+                if key == "incident_review":
+                    card = self._build_incident_card(title=title, domain=domain, stable_order=stable_order)
+                else:
+                    card = self._build_domain_card(key=key, title=title, domain=domain, stable_order=stable_order)
+            except Exception:
+                card = self._build_fallback_card(key=key, title=title, domain=domain, stable_order=stable_order)
+            cards.append(card)
         ordered = tuple(sorted(cards, key=lambda item: item.stable_order))
         return ProjectionFederationReport(cards=ordered)
 
@@ -84,6 +95,7 @@ class ProjectionFederationService:
             authority_coupled=metadata.authority_coupled,
             source_type=metadata.source_type,
             fallback_active=metadata.fallback_active,
+            fallback_reason=ProjectionFallbackReason.NONE.value,
             item_count=len(incidents),
             stable_order=stable_order,
         )
@@ -101,7 +113,24 @@ class ProjectionFederationService:
             authority_coupled=False,
             source_type=metadata.source_type,
             fallback_active=metadata.fallback_active,
+            fallback_reason=ProjectionFallbackReason.NONE.value if not metadata.fallback_active else ProjectionFallbackReason.PROVIDER_EXCEPTION.value,
             item_count=metadata.item_count,
+            stable_order=stable_order,
+        )
+
+    def _build_fallback_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
+        return ProjectionSummaryCard(
+            key=key,
+            title=title,
+            domain=domain,
+            status="degraded",
+            label="Provider unavailable",
+            read_only=True,
+            authority_coupled=False,
+            source_type="deterministic_fallback",
+            fallback_active=True,
+            fallback_reason=ProjectionFallbackReason.PROVIDER_EXCEPTION.value,
+            item_count=0,
             stable_order=stable_order,
         )
 
