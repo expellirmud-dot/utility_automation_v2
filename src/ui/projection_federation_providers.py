@@ -113,6 +113,16 @@ class SimulationReadModelProvider(FederationProvider):
         )
 
 
+class SystemHealthReadModelProvider(SnapshotReadModelProvider):
+    def __init__(self, *, key: str, snapshot_path: Path) -> None:
+        super().__init__(
+            key=key,
+            snapshot_path=snapshot_path,
+            source_type="system_health_read_model",
+            degraded_label="System health read-model unavailable",
+        )
+
+
 class ProjectionFederationProviderFactory:
     @staticmethod
     def build_defaults(base_dir: Path) -> dict[str, FederationProvider]:
@@ -140,9 +150,8 @@ class ProjectionFederationProviderFactory:
                 source_type="replay_read_model",
                 degraded_label="Replay read-model unavailable",
             ),
-            "system_health": JsonArrayTelemetryProvider(
+            "system_health": SystemHealthReadModelProvider(
                 key="system_health",
                 snapshot_path=base_dir / "system_health_telemetry_snapshot.json",
-                source_type="system_health_telemetry",
             ),
         }

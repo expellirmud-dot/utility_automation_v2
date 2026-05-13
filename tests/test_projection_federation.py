@@ -58,7 +58,7 @@ def test_incident_and_domain_providers_connected_deterministically(monkeypatch):
         "mesh": (3, "Connected", "connected", "mesh_read_model"),
         "policy": (1, "Connected", "connected", "policy_read_model"),
         "replay": (2, "Connected", "connected", "replay_read_model"),
-        "system_health": (1, "Connected", "connected", "system_health_telemetry"),
+        "system_health": (1, "Connected", "connected", "system_health_read_model"),
     }
     for key, (count, label, status, source_type) in expected.items():
         card = by_key[key]
