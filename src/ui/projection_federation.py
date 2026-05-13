@@ -48,6 +48,10 @@ class ProjectionFallbackReason(StrEnum):
 
 
 class ProjectionFederationService:
+    # Canonical projection card order for /ops/api/projections. This ordering is the
+    # single source of truth for both the domain mapping and serialized output order.
+    # Test fixtures refer to this sequence by key:
+    # incident_review, recovery, simulation, mesh, policy, replay, system_health.
     _ORDER = (
         ("incident_review", "Incident Review", "incident", 10),
         ("recovery", "Recovery", "recovery", 20),
@@ -73,7 +77,7 @@ class ProjectionFederationService:
         return cls(incident_service=incident_service, providers=providers)
 
     def report(self) -> ProjectionFederationReport:
-        cards = []
+        cards_by_key: dict[str, ProjectionSummaryCard] = {}
         for key, title, domain, stable_order in self._ORDER:
             try:
                 if key == "incident_review":
@@ -82,8 +86,8 @@ class ProjectionFederationService:
                     card = self._build_domain_card(key=key, title=title, domain=domain, stable_order=stable_order)
             except Exception:
                 card = self._build_fallback_card(key=key, title=title, domain=domain, stable_order=stable_order)
-            cards.append(card)
-        ordered = tuple(sorted(cards, key=lambda item: item.stable_order))
+            cards_by_key[key] = card
+        ordered = tuple(cards_by_key[key] for key, *_ in self._ORDER)
         return ProjectionFederationReport(cards=ordered)
 
     def _build_incident_card(self, *, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
@@ -143,15 +147,25 @@ class ProjectionFederationService:
         )
 
     def _build_fallback_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
+        status = ProjectionProviderStatus(
+            key=key,
+            status="degraded",
+            label="Provider unavailable",
+            source_ref="deterministic_fallback",
+            provider_kind="FallbackProvider",
+            connected=False,
+            stale=True,
+        )
         return ProjectionSummaryCard(
             key=key,
             title=title,
             domain=domain,
-            status="degraded",
-            label="Provider unavailable",
+            status=status.status,
+            label=status.label,
+            provider_status=status,
             read_only=True,
             authority_coupled=False,
-            source_type="deterministic_fallback",
+            source_type=status.source_ref,
             fallback_active=True,
             fallback_reason=ProjectionFallbackReason.PROVIDER_EXCEPTION.value,
             item_count=0,
