@@ -11,10 +11,11 @@ def test_overview_get_only_and_stable_order():
     payload = response.json()
 
     assert [card['key'] for card in payload['cards']] == [
+        'ops_console',
         'incident_review',
         'recovery_dashboard',
         'simulation_dashboard',
-        'certifier_determinism',
+        'telemetry_dashboard',
     ]
 
     for method in ['post', 'put', 'patch', 'delete']:
@@ -29,8 +30,8 @@ def test_overview_absent_upstream_surfaces_not_connected():
     assert by_key['recovery_dashboard']['label'] == 'Not connected'
     assert by_key['simulation_dashboard']['status'] == 'not_connected'
     assert by_key['simulation_dashboard']['label'] == 'Not connected'
-    assert by_key['certifier_determinism']['status'] == 'not_connected'
-    assert by_key['certifier_determinism']['label'] == 'Not connected'
+    assert by_key['telemetry_dashboard']['status'] == 'not_connected'
+    assert by_key['telemetry_dashboard']['label'] == 'Not connected'
 
 
 def test_ops_shell_static_assets_safe_rendering_read_only():
