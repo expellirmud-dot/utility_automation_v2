@@ -65,7 +65,9 @@ def test_overview_ops_js_fetches_route_governance_and_no_actions():
     for endpoint in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system-health']:
         assert f"'/ops/api/{endpoint}'" in js
     assert 'domainPanelLoadFailed' in js
+    assert 'domainPanelLoading' in js
     assert "'degraded'" in js
+    assert "'loading'" in js
     forbidden_labels = ['approve', 'reject', 'retry', 'execute', 'repair', 'promote']
     for label in forbidden_labels:
         assert label not in js.lower()
@@ -155,3 +157,20 @@ def test_domain_panel_api_forbidden_action_routes_absent():
     forbidden = ['execute', 'retry', 'promote', 'rollback now', 'trigger replay', 'restart node']
     for token in forbidden:
         assert token not in source
+
+
+def test_domain_panel_routes_registered_get_only():
+    ops_routes = [route for route in app.routes if getattr(route, 'path', '').startswith('/ops/api/')]
+    expected = {
+        '/ops/api/recovery',
+        '/ops/api/simulation',
+        '/ops/api/mesh',
+        '/ops/api/policy',
+        '/ops/api/replay',
+        '/ops/api/system-health',
+    }
+    actual = {route.path for route in ops_routes}
+    assert expected.issubset(actual)
+    for route in ops_routes:
+        if route.path in expected:
+            assert route.methods == {'GET'}

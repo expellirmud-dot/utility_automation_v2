@@ -10,6 +10,8 @@
   var routeGovernanceCache = null;
   var domainPanelCache = {};
   var domainPanelLoadFailed = false;
+  var domainPanelLoading = true;
+  var domainPanelEndpoints = ['/ops/api/recovery', '/ops/api/simulation', '/ops/api/mesh', '/ops/api/policy', '/ops/api/replay', '/ops/api/system-health'];
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -141,6 +143,15 @@
       container.appendChild(livePanel);
       return;
     }
+    if (panelKey && domainPanelLoading) {
+      clearNode(container);
+      var loading = createCard(sectionTitle, 'stale');
+      addLine(loading, 'Status', 'loading');
+      addLine(loading, 'Label', 'Loading read-only domain panel');
+      addLine(loading, 'Mode', 'Read-only advisory');
+      container.appendChild(loading);
+      return;
+    }
     if (panelKey && domainPanelLoadFailed) {
       clearNode(container);
       var degraded = createCard(sectionTitle, 'degraded');
@@ -200,13 +211,14 @@
   }
 
   function fetchDomainPanels() {
-    var endpoints = ['/ops/api/recovery', '/ops/api/simulation', '/ops/api/mesh', '/ops/api/policy', '/ops/api/replay', '/ops/api/system-health'];
-    return Promise.all(endpoints.map(function (endpoint) {
+    return Promise.all(domainPanelEndpoints.map(function (endpoint) {
       return fetch(endpoint)
         .then(function (response) { return response.json(); })
         .then(function (payload) { domainPanelCache[endpoint.replace('/ops/api/', '')] = payload; });
     })).catch(function () {
       domainPanelLoadFailed = true;
+    }).finally(function () {
+      domainPanelLoading = false;
     });
   }
 
