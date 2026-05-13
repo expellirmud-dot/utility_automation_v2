@@ -9,6 +9,7 @@
   var incidentListCache = null;
   var routeGovernanceCache = null;
   var domainPanelCache = {};
+  var domainPanelLoadFailed = false;
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -140,6 +141,15 @@
       container.appendChild(livePanel);
       return;
     }
+    if (panelKey && domainPanelLoadFailed) {
+      clearNode(container);
+      var degraded = createCard(sectionTitle, 'degraded');
+      addLine(degraded, 'Status', 'degraded');
+      addLine(degraded, 'Label', 'Domain panel source unavailable');
+      addLine(degraded, 'Mode', 'Read-only advisory');
+      container.appendChild(degraded);
+      return;
+    }
     clearNode(container);
     var placeholder = createCard(sectionTitle, 'not_connected');
     addLine(placeholder, 'Status', 'Not connected');
@@ -195,7 +205,9 @@
       return fetch(endpoint)
         .then(function (response) { return response.json(); })
         .then(function (payload) { domainPanelCache[endpoint.replace('/ops/api/', '')] = payload; });
-    }));
+    })).catch(function () {
+      domainPanelLoadFailed = true;
+    });
   }
 
   buildNav();

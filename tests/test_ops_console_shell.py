@@ -64,6 +64,8 @@ def test_overview_ops_js_fetches_route_governance_and_no_actions():
     assert "fetch('/ops/api/route-governance')" in js
     for endpoint in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system-health']:
         assert f"'/ops/api/{endpoint}'" in js
+    assert 'domainPanelLoadFailed' in js
+    assert "'degraded'" in js
     forbidden_labels = ['approve', 'reject', 'retry', 'execute', 'repair', 'promote']
     for label in forbidden_labels:
         assert label not in js.lower()
@@ -146,3 +148,10 @@ def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
 
         for method in ['post', 'put', 'patch', 'delete']:
             assert getattr(client, method)(f'/ops/api/{endpoint}').status_code == 405
+
+
+def test_domain_panel_api_forbidden_action_routes_absent():
+    source = (Path(__file__).resolve().parents[1] / 'src' / 'ui' / 'ops_overview_api.py').read_text().lower()
+    forbidden = ['execute', 'retry', 'promote', 'rollback now', 'trigger replay', 'restart node']
+    for token in forbidden:
+        assert token not in source
