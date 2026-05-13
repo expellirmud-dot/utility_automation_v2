@@ -1,0 +1,28 @@
+from pathlib import Path
+
+from src.ui.incident_review.projection_providers import (
+    JsonSnapshotProjectionProvider,
+    LiveIncidentReviewProjectionProvider,
+)
+
+
+def test_projection_provider_empty_snapshot(tmp_path: Path):
+    snapshot = tmp_path / 'snapshot.json'
+    snapshot.write_text('{}', encoding='utf-8')
+    provider = JsonSnapshotProjectionProvider(snapshot)
+    live = LiveIncidentReviewProjectionProvider(provider, provider, provider, provider, provider)
+    assert live.list_incidents() == []
+
+
+def test_projection_provider_deterministic_ordering(tmp_path: Path):
+    snapshot = tmp_path / 'snapshot.json'
+    snapshot.write_text(
+        '{"incident_explorer": ['
+        '{"incident_id":"INC-9","title":"t","severity":"LOW","status":"OPEN","summary":"s"},'
+        '{"incident_id":"INC-1","title":"t","severity":"LOW","status":"OPEN","summary":"s"}'
+        '] }',
+        encoding='utf-8',
+    )
+    provider = JsonSnapshotProjectionProvider(snapshot)
+    live = LiveIncidentReviewProjectionProvider(provider, provider, provider, provider, provider)
+    assert [x.incident_id for x in live.list_incidents()] == ['INC-1', 'INC-9']
