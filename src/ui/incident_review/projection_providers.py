@@ -2,157 +2,55 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
-import json
 
 from .incident_review_models import IncidentReviewItem
+from .projection_source import IncidentReviewProjectionSource, JsonFileProjectionSource
+from .runtime_projection_source import ProjectionSourceMetadata, RuntimeProjectionSource
 
 
 @dataclass(frozen=True)
-class ProjectionSnapshot:
-    incidents: tuple[dict, ...]
-    replay_events: tuple[dict, ...]
-    mesh_diagnostics: tuple[dict, ...]
-    policy_impacts: tuple[dict, ...]
-    lineage: tuple[dict, ...]
+class ProviderMetadata:
+    source_type: str
+    read_only: bool
+    authority_coupled: bool
 
 
-class IncidentProjectionProvider(Protocol):
-    def read_incidents(self) -> tuple[dict, ...]: ...
-
-
-class ReplayProjectionProvider(Protocol):
-    def read_replay_events(self) -> tuple[dict, ...]: ...
-
-
-class MeshDiagnosticsProjectionProvider(Protocol):
-    def read_mesh_snapshot(self) -> tuple[dict, ...]: ...
-
-
-class PolicyImpactProjectionProvider(Protocol):
-    def read_policy_impacts(self) -> tuple[dict, ...]: ...
-
-
-class LineageProjectionProvider(Protocol):
-    def read_lineage(self) -> tuple[dict, ...]: ...
-
-
-class JsonSnapshotProjectionProvider(
-    IncidentProjectionProvider,
-    ReplayProjectionProvider,
-    MeshDiagnosticsProjectionProvider,
-    PolicyImpactProjectionProvider,
-    LineageProjectionProvider,
-):
+class SnapshotIncidentReviewProvider:
     def __init__(self, snapshot_path: Path) -> None:
-        self._snapshot_path = snapshot_path
+        self._source = JsonFileProjectionSource(snapshot_path)
+        self.metadata = ProviderMetadata("snapshot_test", True, False)
 
-    @staticmethod
-    def _stable_sort(records: list[dict], sort_keys: tuple[str, ...]) -> tuple[dict, ...]:
-        def stable_key(item: dict) -> tuple[str, ...]:
-            return tuple(str(item.get(key, "")) for key in sort_keys)
-
-        normalized = [dict(record) for record in records]
-        return tuple(sorted(normalized, key=stable_key))
-
-    def _load(self) -> ProjectionSnapshot:
-        payload = json.loads(self._snapshot_path.read_text(encoding="utf-8"))
-
-        incidents = [
-            {
-                "incident_id": item.get("incident_id", ""),
-                "title": item.get("title", ""),
-                "severity": item.get("severity", "UNKNOWN"),
-                "status": item.get("status", "UNKNOWN"),
-                "summary": item.get("summary", ""),
-                "artifact_hash": item.get("artifact_hash", ""),
-            }
-            for item in payload.get("incident_explorer", [])
+    def list_incidents(self) -> list[IncidentReviewItem]:
+        snapshot = self._source.read_snapshot()
+        return [
+            IncidentReviewItem(
+                incident_id=item["incident_id"],
+                title=item["title"],
+                severity=item["severity"],
+                status=item["status"],
+                summary=item["summary"],
+                operator_note="snapshot",
+            )
+            for item in snapshot.incidents
         ]
-        replay_events = [
-            {
-                "incident_id": item.get("incident_id", ""),
-                "event_hash": item.get("event_hash", ""),
-                "causal_depth": item.get("causal_depth", 0),
-                "artifact_hash": item.get("artifact_hash", ""),
-            }
-            for item in payload.get("replay_trace", [])
-        ]
-        mesh_diagnostics = [
-            {
-                "incident_id": item.get("incident_id", ""),
-                "event_hash": item.get("event_hash", ""),
-                "causal_depth": item.get("causal_depth", 0),
-                "artifact_hash": item.get("artifact_hash", ""),
-                "health_score": item.get("health_score", 0.0),
-                "healing_success": item.get("healing_success", 0.0),
-            }
-            for item in payload.get("mesh_incident_viewer", [])
-        ]
-        policy_impacts = [
-            {
-                "incident_id": item.get("incident_id", ""),
-                "event_hash": item.get("event_hash", ""),
-                "causal_depth": item.get("causal_depth", 0),
-                "artifact_hash": item.get("artifact_hash", ""),
-            }
-            for item in payload.get("policy_impact", [])
-        ]
-        lineage = [
-            {
-                "incident_id": item.get("incident_id", ""),
-                "event_hash": item.get("event_hash", ""),
-                "causal_depth": item.get("causal_depth", 0),
-                "artifact_hash": item.get("artifact_hash", ""),
-            }
-            for item in payload.get("decision_lineage", [])
-        ]
-
-        return ProjectionSnapshot(
-            incidents=self._stable_sort(incidents, ("incident_id", "artifact_hash")),
-            replay_events=self._stable_sort(replay_events, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
-            mesh_diagnostics=self._stable_sort(mesh_diagnostics, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
-            policy_impacts=self._stable_sort(policy_impacts, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
-            lineage=self._stable_sort(lineage, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
-        )
-
-    def read_incidents(self) -> tuple[dict, ...]:
-        return self._load().incidents
-
-    def read_replay_events(self) -> tuple[dict, ...]:
-        return self._load().replay_events
-
-    def read_mesh_snapshot(self) -> tuple[dict, ...]:
-        return self._load().mesh_diagnostics
-
-    def read_policy_impacts(self) -> tuple[dict, ...]:
-        return self._load().policy_impacts
-
-    def read_lineage(self) -> tuple[dict, ...]:
-        return self._load().lineage
 
 
 class LiveIncidentReviewProjectionProvider:
-    def __init__(
-        self,
-        incident_provider: IncidentProjectionProvider,
-        replay_provider: ReplayProjectionProvider,
-        mesh_provider: MeshDiagnosticsProjectionProvider,
-        policy_provider: PolicyImpactProjectionProvider,
-        lineage_provider: LineageProjectionProvider,
-    ) -> None:
-        self._incident_provider = incident_provider
-        self._replay_provider = replay_provider
-        self._mesh_provider = mesh_provider
-        self._policy_provider = policy_provider
-        self._lineage_provider = lineage_provider
+    def __init__(self, source: IncidentReviewProjectionSource) -> None:
+        self._source = source
+
+    @property
+    def metadata(self) -> ProviderMetadata:
+        source_metadata = getattr(self._source, "metadata", ProjectionSourceMetadata("file_projection", True, False))
+        return ProviderMetadata(source_metadata.source_type, source_metadata.read_only, source_metadata.authority_coupled)
 
     def list_incidents(self) -> list[IncidentReviewItem]:
-        incidents = self._incident_provider.read_incidents()
-        replay_events = self._replay_provider.read_replay_events()
-        mesh_snapshot = self._mesh_provider.read_mesh_snapshot()
-        policy_impacts = self._policy_provider.read_policy_impacts()
-        lineage = self._lineage_provider.read_lineage()
+        snapshot = self._source.read_snapshot()
+        incidents = snapshot.incidents
+        replay_events = snapshot.replay_events
+        mesh_snapshot = snapshot.mesh_diagnostics
+        policy_impacts = snapshot.policy_impacts
+        lineage = snapshot.lineage
 
         replay_count = {item["incident_id"]: 0 for item in incidents}
         policy_count = {item["incident_id"]: 0 for item in incidents}
@@ -191,3 +89,19 @@ class LiveIncidentReviewProjectionProvider:
             )
             for item in incidents
         ]
+
+
+class IncidentReviewProviderFactory:
+    @staticmethod
+    def build_live_default(snapshot_path: Path):
+        runtime_path = Path("ledger/projections/incident_review_projection.json")
+        source = RuntimeProjectionSource(runtime_projection_path=runtime_path, fallback_source=JsonFileProjectionSource(snapshot_path))
+        return LiveIncidentReviewProjectionProvider(source=source)
+
+    @staticmethod
+    def build_file_backed_projection(snapshot_path: Path):
+        return LiveIncidentReviewProjectionProvider(source=JsonFileProjectionSource(snapshot_path))
+
+    @staticmethod
+    def build_snapshot_for_tests(snapshot_path: Path):
+        return SnapshotIncidentReviewProvider(snapshot_path=snapshot_path)

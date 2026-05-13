@@ -5,18 +5,11 @@ from fastapi.responses import FileResponse
 
 from .incident_review_models import IncidentReviewListResponse
 from .incident_review_service import IncidentReviewService
-from .projection_providers import JsonSnapshotProjectionProvider, LiveIncidentReviewProjectionProvider
+from .projection_providers import IncidentReviewProviderFactory
 
 router = APIRouter(prefix="/incident-review", tags=["Incident Review"])
-_snapshot_provider = JsonSnapshotProjectionProvider(Path(__file__).with_name("projection_snapshot.json"))
 service = IncidentReviewService(
-    provider=LiveIncidentReviewProjectionProvider(
-        incident_provider=_snapshot_provider,
-        replay_provider=_snapshot_provider,
-        mesh_provider=_snapshot_provider,
-        policy_provider=_snapshot_provider,
-        lineage_provider=_snapshot_provider,
-    )
+    provider=IncidentReviewProviderFactory.build_live_default(Path(__file__).with_name("projection_snapshot.json"))
 )
 
 _UI_ROOT = Path(__file__).resolve().parents[3] / "ui"
