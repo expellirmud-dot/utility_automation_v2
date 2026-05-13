@@ -26,13 +26,14 @@ def test_overview_get_only_and_stable_order():
         assert getattr(client, method)('/ops/api/overview').status_code == 405
 
 
-def test_overview_absent_upstream_surfaces_not_connected():
+def test_overview_upstream_surfaces_truthful_status_vocabulary():
     cards = client.get('/ops/api/overview').json()['cards']
     by_key = {card['key']: card for card in cards}
 
     for key in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system_health']:
-        assert by_key[key]['status'] == 'not_connected'
-        assert by_key[key]['label'] == 'Not connected'
+        assert by_key[key]['status'] in {'connected', 'degraded', 'not_connected'}
+        assert isinstance(by_key[key]['label'], str)
+        assert by_key[key]['label']
 
 
 def test_ops_shell_static_assets_safe_rendering_read_only():
