@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from src.ui.routes import dashboard_routes, review_routes
 from src.services.observability.api.dashboard_api import router as dash_router
 from src.services.control_plane.api.ops import router as ops_router
+from src.services.observability.api.incident_review_api import router as incident_review_api_router
 from src.services.observability.telemetry_middleware import observability_middleware
 
 app = FastAPI(title="Utility Automation V2 - Review Dashboard")
@@ -16,6 +17,7 @@ app.include_router(dashboard_routes.router)
 app.include_router(review_routes.router)
 app.include_router(dash_router)
 app.include_router(ops_router)
+app.include_router(incident_review_api_router)
 
 @app.get("/")
 async def root():

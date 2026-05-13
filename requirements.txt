@@ -1,3 +1,7 @@
+fastapi
+starlette
+pydantic
+httpx
 pymupdf
 pillow
 pytesseract
