@@ -8,6 +8,7 @@
   var incidentStatusCache = null;
   var incidentListCache = null;
   var routeGovernanceCache = null;
+  var domainPanelCache = {};
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -106,6 +107,35 @@
   }
 
   function renderPlaceholder(sectionTitle) {
+    var keyBySection = {
+      Recovery: 'recovery',
+      Simulation: 'simulation',
+      Mesh: 'mesh',
+      Policy: 'policy',
+      Replay: 'replay',
+      'System Health': 'system-health'
+    };
+    var panelKey = keyBySection[sectionTitle];
+    if (panelKey && domainPanelCache[panelKey]) {
+      clearNode(container);
+      var livePanel = createCard(sectionTitle, domainPanelCache[panelKey].status);
+      addLine(livePanel, 'Source', domainPanelCache[panelKey].source);
+      addLine(livePanel, 'Mode', 'Read-only advisory');
+      addLine(livePanel, 'Advisory Only', domainPanelCache[panelKey].advisory_only);
+      addLine(livePanel, 'Item Count', domainPanelCache[panelKey].item_count);
+      if (!domainPanelCache[panelKey].items || domainPanelCache[panelKey].items.length === 0) {
+        addLine(livePanel, 'Items', 'No items available');
+      } else {
+        domainPanelCache[panelKey].items.forEach(function (entry) {
+          var row = document.createElement('p');
+          row.className = 'meta';
+          row.textContent = String(entry.id || 'unknown_id');
+          livePanel.appendChild(row);
+        });
+      }
+      container.appendChild(livePanel);
+      return;
+    }
     clearNode(container);
     var placeholder = createCard(sectionTitle, 'not_connected');
     addLine(placeholder, 'Status', 'Not connected');
@@ -155,6 +185,15 @@
       .then(function (payload) { incidentListCache = payload; });
   }
 
+  function fetchDomainPanels() {
+    var endpoints = ['/ops/api/recovery', '/ops/api/simulation', '/ops/api/mesh', '/ops/api/policy', '/ops/api/replay', '/ops/api/system-health'];
+    return Promise.all(endpoints.map(function (endpoint) {
+      return fetch(endpoint)
+        .then(function (response) { return response.json(); })
+        .then(function (payload) { domainPanelCache[endpoint.replace('/ops/api/', '')] = payload; });
+    }));
+  }
+
   buildNav();
   renderActiveSection();
 
@@ -166,7 +205,7 @@
         .then(function (response) { return response.json(); })
         .then(function (governancePayload) {
           routeGovernanceCache = governancePayload;
-          return fetchIncidents();
+          return fetchIncidents().then(function () { return fetchDomainPanels(); });
         });
     })
     .then(function () { renderActiveSection(); })

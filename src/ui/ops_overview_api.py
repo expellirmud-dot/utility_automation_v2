@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import json
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
@@ -101,6 +102,15 @@ class RouteGovernanceResponse(BaseModel):
     violations: list[RouteGovernanceViolationEntry]
 
 
+class OpsDomainPanelResponse(BaseModel):
+    domain: str
+    status: str
+    source: str
+    item_count: int
+    advisory_only: bool
+    items: list[dict[str, object]]
+
+
 def _strict_route_governance_enabled() -> bool:
     return os.getenv("OPS_ROUTE_GOVERNANCE_STRICT", "0") == "1"
 
@@ -116,6 +126,36 @@ def _build_route_governance_response() -> RouteGovernanceResponse:
             for item in report.violations
         ],
     )
+
+
+def _read_snapshot_items(snapshot_name: str, *, source: str) -> OpsDomainPanelResponse:
+    snapshot_path = Path(__file__).resolve().parent / snapshot_name
+    try:
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        raw_items = payload.get("items", []) if isinstance(payload, dict) else []
+        normalized_items = raw_items if isinstance(raw_items, list) else []
+        normalized_items = sorted(
+            [item for item in normalized_items if isinstance(item, dict)],
+            key=lambda item: str(item.get("id", "")),
+        )
+        status = "connected" if normalized_items else "empty"
+        return OpsDomainPanelResponse(
+            domain=source,
+            status=status,
+            source=source,
+            item_count=len(normalized_items),
+            advisory_only=True,
+            items=normalized_items,
+        )
+    except (OSError, ValueError, TypeError, AttributeError):
+        return OpsDomainPanelResponse(
+            domain=source,
+            status="degraded",
+            source="deterministic_fallback",
+            item_count=0,
+            advisory_only=True,
+            items=[],
+        )
 
 @router.get("", response_class=FileResponse)
 def get_ops_console() -> FileResponse:
@@ -198,6 +238,36 @@ def get_ops_surfaces() -> OpsSurfaceResponse:
 @router.get("/api/route-governance", response_model=RouteGovernanceResponse)
 def get_route_governance() -> RouteGovernanceResponse:
     return _build_route_governance_response()
+
+
+@router.get("/api/recovery", response_model=OpsDomainPanelResponse)
+def get_recovery_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("recovery_projection_snapshot.json", source="recovery")
+
+
+@router.get("/api/simulation", response_model=OpsDomainPanelResponse)
+def get_simulation_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("simulation_projection_snapshot.json", source="simulation")
+
+
+@router.get("/api/mesh", response_model=OpsDomainPanelResponse)
+def get_mesh_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("mesh_projection_snapshot.json", source="mesh")
+
+
+@router.get("/api/policy", response_model=OpsDomainPanelResponse)
+def get_policy_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("policy_projection_snapshot.json", source="policy")
+
+
+@router.get("/api/replay", response_model=OpsDomainPanelResponse)
+def get_replay_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("replay_projection_snapshot.json", source="replay")
+
+
+@router.get("/api/system-health", response_model=OpsDomainPanelResponse)
+def get_system_health_panel() -> OpsDomainPanelResponse:
+    return _read_snapshot_items("system_health_telemetry_snapshot.json", source="system_health")
 
 
 app = FastAPI(title="Ops Overview Console")
