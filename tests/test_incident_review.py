@@ -22,6 +22,23 @@ def test_non_get_methods_not_allowed():
         assert response.status_code == 405
 
 
+def test_stable_serialization_and_projection_panels_present():
+    payload = client.get('/incident-review/api/incidents').json()
+    first = payload['incidents'][0]
+    assert list(first.keys()) == [
+        'incident_id',
+        'title',
+        'severity',
+        'status',
+        'summary',
+        'operator_note',
+    ]
+    assert 'replay=' in first['summary']
+    assert 'policyImpact=' in first['summary']
+    assert 'health=' in first['summary']
+    assert 'lineage=' in first['operator_note']
+
+
 def test_static_assets_available_and_safe_patterns_present():
     html = client.get('/incident-review').text
     js = client.get('/incident-review/incident_review.js').text

@@ -1,0 +1,26 @@
+{
+  "incident_explorer": [
+    {"incident_id": "INC-1002", "title": "Replay parity mismatch", "severity": "MEDIUM", "status": "INVESTIGATING", "summary": "Replay trace diverged for one non-authoritative projection.", "artifact_hash": "A-2"},
+    {"incident_id": "INC-1001", "title": "Fork drift at node A", "severity": "HIGH", "status": "OPEN", "summary": "Consensus lag detected in committed view.", "artifact_hash": "A-1"},
+    {"incident_id": "INC-1003", "title": "Policy impact saturation", "severity": "LOW", "status": "MONITORING", "summary": "Policy graph impact trending up in read-only analyzer.", "artifact_hash": "A-3"}
+  ],
+  "decision_lineage": [
+    {"incident_id": "INC-1001", "event_hash": "L-002", "causal_depth": 2, "artifact_hash": "LA-2"},
+    {"incident_id": "INC-1001", "event_hash": "L-001", "causal_depth": 1, "artifact_hash": "LA-1"},
+    {"incident_id": "INC-1002", "event_hash": "L-003", "causal_depth": 1, "artifact_hash": "LA-3"}
+  ],
+  "replay_trace": [
+    {"incident_id": "INC-1002", "event_hash": "R-002", "causal_depth": 1, "artifact_hash": "RA-2"},
+    {"incident_id": "INC-1001", "event_hash": "R-001", "causal_depth": 1, "artifact_hash": "RA-1"},
+    {"incident_id": "INC-1002", "event_hash": "R-003", "causal_depth": 2, "artifact_hash": "RA-3"}
+  ],
+  "mesh_incident_viewer": [
+    {"incident_id": "INC-1002", "event_hash": "M-002", "causal_depth": 2, "artifact_hash": "MA-2", "health_score": 0.88, "healing_success": 0.67},
+    {"incident_id": "INC-1001", "event_hash": "M-001", "causal_depth": 1, "artifact_hash": "MA-1", "health_score": 0.93, "healing_success": 1.0},
+    {"incident_id": "INC-1003", "event_hash": "M-003", "causal_depth": 1, "artifact_hash": "MA-3", "health_score": 0.91, "healing_success": 1.0}
+  ],
+  "policy_impact": [
+    {"incident_id": "INC-1003", "event_hash": "P-002", "causal_depth": 2, "artifact_hash": "PA-2"},
+    {"incident_id": "INC-1001", "event_hash": "P-001", "causal_depth": 1, "artifact_hash": "PA-1"}
+  ]
+}
