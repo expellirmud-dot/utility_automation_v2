@@ -62,6 +62,7 @@ class ProjectionFederationCardEntry(BaseModel):
     authority_coupled: bool
     source_type: str
     fallback_active: bool
+    fallback_reason: str
     item_count: int
     stable_order: int
 
