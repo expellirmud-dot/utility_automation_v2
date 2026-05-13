@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 
-from .incident_review_models import IncidentReviewListResponse
+from .incident_review_models import IncidentReviewListResponse, IncidentReviewSourceStatusResponse
 from .incident_review_service import IncidentReviewService
 from .projection_providers import IncidentReviewProviderFactory
 
@@ -18,6 +18,21 @@ _UI_ROOT = Path(__file__).resolve().parents[3] / "ui"
 @router.get("/api/incidents", response_model=IncidentReviewListResponse)
 def get_incidents() -> IncidentReviewListResponse:
     return IncidentReviewListResponse(incidents=service.list_incidents())
+
+
+
+
+@router.get("/api/source-status", response_model=IncidentReviewSourceStatusResponse)
+def get_source_status() -> IncidentReviewSourceStatusResponse:
+    metadata = service.source_metadata()
+    return IncidentReviewSourceStatusResponse(
+        source_type=metadata.source_type,
+        read_only=metadata.read_only,
+        authority_coupled=metadata.authority_coupled,
+        fallback_active=metadata.fallback_active,
+        source_path=metadata.source_path,
+        status_label=metadata.status_label,
+    )
 
 
 @router.get("", response_class=FileResponse)

@@ -32,3 +32,13 @@ def test_provider_factory_uses_live_default(tmp_path: Path):
     snapshot.write_text('{"incident_explorer": []}', encoding='utf-8')
     provider = IncidentReviewProviderFactory.build_live_default(snapshot)
     assert provider.__class__.__name__ == 'LiveIncidentReviewProjectionProvider'
+
+
+def test_provider_exposes_source_metadata_without_private_access(tmp_path: Path):
+    snapshot = tmp_path / 'snapshot.json'
+    snapshot.write_text('{"incident_explorer": []}', encoding='utf-8')
+    provider = IncidentReviewProviderFactory.build_live_default(snapshot)
+    metadata = provider.source_metadata()
+    assert metadata.read_only is True
+    assert metadata.authority_coupled is False
+    assert metadata.fallback_active is True

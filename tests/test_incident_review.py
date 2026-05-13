@@ -48,7 +48,23 @@ def test_static_assets_available_and_safe_patterns_present():
 
     assert 'fetch(' in js
     assert "fetch('/incident-review/api/incidents')" in js
+    assert "fetch('/incident-review/api/source-status')" in js
     assert 'innerHTML' not in js
     assert 'method:' not in js
     assert '.sort(' not in js
     assert '.filter(' not in js
+
+
+def test_source_status_get_only_and_deterministic_shape():
+    response = client.get('/incident-review/api/source-status')
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['read_only'] is True
+    assert payload['authority_coupled'] is False
+    assert payload['fallback_active'] is True
+    assert payload['source_type'] == 'file_projection'
+    assert payload['status_label'] == 'file_projection_fallback'
+    assert 'source_path' in payload
+
+    for method in ['post', 'put', 'patch', 'delete']:
+        assert getattr(client, method)('/incident-review/api/source-status').status_code == 405

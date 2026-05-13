@@ -3,12 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from .incident_review_models import IncidentReviewItem
-from .projection_source import IncidentReviewProjectionSource, JsonFileProjectionSource
+from .projection_source import IncidentReviewProjectionSource, JsonFileProjectionSource, RuntimeProjectionSource
+
+
+LIVE_PROJECTION_PATH = Path("ledger/projections/incident_review_projection.json")
 
 
 class SnapshotIncidentReviewProvider:
     def __init__(self, snapshot_path: Path) -> None:
-        self._source = JsonFileProjectionSource(snapshot_path)
+        self._source = JsonFileProjectionSource(snapshot_path, source_type="snapshot_test", fallback_active=False)
+
+    def source_metadata(self):
+        return self._source.metadata()
 
     def list_incidents(self) -> list[IncidentReviewItem]:
         snapshot = self._source.read_snapshot()
@@ -28,6 +34,9 @@ class SnapshotIncidentReviewProvider:
 class LiveIncidentReviewProjectionProvider:
     def __init__(self, source: IncidentReviewProjectionSource) -> None:
         self._source = source
+
+    def source_metadata(self):
+        return self._source.metadata()
 
     def list_incidents(self) -> list[IncidentReviewItem]:
         snapshot = self._source.read_snapshot()
@@ -79,7 +88,11 @@ class LiveIncidentReviewProjectionProvider:
 class IncidentReviewProviderFactory:
     @staticmethod
     def build_live_default(snapshot_path: Path):
-        return LiveIncidentReviewProjectionProvider(source=JsonFileProjectionSource(snapshot_path))
+        if LIVE_PROJECTION_PATH.exists():
+            return LiveIncidentReviewProjectionProvider(source=RuntimeProjectionSource(LIVE_PROJECTION_PATH))
+        return LiveIncidentReviewProjectionProvider(
+            source=JsonFileProjectionSource(snapshot_path, source_type="file_projection", fallback_active=True)
+        )
 
     @staticmethod
     def build_snapshot_for_tests(snapshot_path: Path):
