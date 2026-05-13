@@ -30,9 +30,12 @@ def test_incident_and_domain_providers_connected_deterministically():
     cards = ProjectionFederationService.build_default().report().cards
     by_key = {card.key: card for card in cards}
 
-    assert by_key["incident_review"].status == "connected"
-    assert by_key["incident_review"].source_type in {"runtime_projection", "file_projection"}
-    assert by_key["incident_review"].provider_status.connected is True
+    incident_card = by_key["incident_review"]
+    assert incident_card.source_type in {"runtime_projection", "file_projection"}
+    expected_connected = not incident_card.fallback_active
+    expected_status = "connected" if expected_connected else "not_connected"
+    assert incident_card.status == expected_status
+    assert incident_card.provider_status.connected is expected_connected
 
     expected = {
         "recovery": (2, "Connected", "connected", "recovery_projection"),

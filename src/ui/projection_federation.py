@@ -80,11 +80,11 @@ class ProjectionFederationService:
         incidents = self._incident_service.list_incidents()
         status = ProjectionProviderStatus(
             key="incident_review",
-            status="connected",
+            status="connected" if not metadata.fallback_active else "not_connected",
             label=metadata.status_label,
             source_ref=metadata.source_type,
             provider_kind="incident_review_provider",
-            connected=True,
+            connected=not metadata.fallback_active,
             stale=metadata.fallback_active,
         )
         return ProjectionSummaryCard(
