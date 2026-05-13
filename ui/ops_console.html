@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unified Governance Operations Console</title>
+  <link rel="stylesheet" href="/ops/ops_console.css">
+</head>
+<body>
+  <div class="ops-shell">
+    <header class="top-status-bar" aria-label="Top Status Bar">
+      <h1>Unified Governance Operations Console</h1>
+      <p id="ops-source-status">Loading read-only source status…</p>
+    </header>
+
+    <aside class="left-nav" aria-label="Operator Navigation">
+      <nav>
+        <ul id="ops-nav-list"></ul>
+      </nav>
+    </aside>
+
+    <main class="main-dashboard" aria-label="Main Dashboard Area">
+      <section class="summary-cards" aria-label="Summary Status Cards" id="summary-cards"></section>
+      <section>
+        <h2>Read-only Placeholder Views</h2>
+        <p>This shell unifies governance visibility surfaces without changing authority boundaries.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="/ops/ops_console.js"></script>
+</body>
+</html>

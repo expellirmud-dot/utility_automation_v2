@@ -50,5 +50,35 @@ def get_console_js() -> FileResponse:
     return FileResponse(_UI_ROOT / "incident_review.js")
 
 
+@router.get("/ops", response_class=FileResponse)
+def get_ops_console() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.html")
+
+
+@router.get("/ops/ops_console.css", response_class=FileResponse)
+def get_ops_console_css() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.css")
+
+
+@router.get("/ops/ops_console.js", response_class=FileResponse)
+def get_ops_console_js() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.js")
+
+
 app = FastAPI(title="Incident Review Console")
 app.include_router(router)
+
+
+@app.get("/ops", response_class=FileResponse)
+def get_ops_console_root() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.html")
+
+
+@app.get("/ops/ops_console.css", response_class=FileResponse)
+def get_ops_console_css_root() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.css")
+
+
+@app.get("/ops/ops_console.js", response_class=FileResponse)
+def get_ops_console_js_root() -> FileResponse:
+    return FileResponse(_UI_ROOT / "ops_console.js")
