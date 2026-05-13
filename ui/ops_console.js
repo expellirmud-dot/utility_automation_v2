@@ -11,7 +11,6 @@
   var domainPanelCache = {};
   var domainPanelLoadFailed = false;
   var domainPanelLoading = true;
-  var domainPanelEndpoints = ['/ops/api/recovery', '/ops/api/simulation', '/ops/api/mesh', '/ops/api/policy', '/ops/api/replay', '/ops/api/system-health'];
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -211,15 +210,17 @@
   }
 
   function fetchDomainPanels() {
-    return Promise.all(domainPanelEndpoints.map(function (endpoint) {
-      return fetch(endpoint)
-        .then(function (response) { return response.json(); })
-        .then(function (payload) { domainPanelCache[endpoint.replace('/ops/api/', '')] = payload; });
-    })).catch(function () {
-      domainPanelLoadFailed = true;
-    }).finally(function () {
-      domainPanelLoading = false;
-    });
+    return fetch('/ops/api/panels')
+      .then(function (response) { return response.json(); })
+      .then(function (payload) {
+        domainPanelCache = payload.panels || {};
+      })
+      .catch(function () {
+        domainPanelLoadFailed = true;
+      })
+      .finally(function () {
+        domainPanelLoading = false;
+      });
   }
 
   buildNav();

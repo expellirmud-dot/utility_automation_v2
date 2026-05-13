@@ -158,6 +158,10 @@ class SystemHealthPanelResponse(OpsDomainPanelResponse):
     provider_status: list[dict[str, object]]
 
 
+class OpsPanelsBundleResponse(BaseModel):
+    panels: dict[str, OpsDomainPanelResponse]
+
+
 @dataclass(frozen=True)
 class DomainPanelConfig:
     source: str
@@ -380,6 +384,20 @@ def get_system_health_panel() -> SystemHealthPanelResponse:
         diagnostics_rollup=base.diagnostics,
         degraded_indicators=base.diagnostics,
         provider_status=base.items,
+    )
+
+
+@router.get("/api/panels", response_model=OpsPanelsBundleResponse)
+def get_ops_panels_bundle() -> OpsPanelsBundleResponse:
+    return OpsPanelsBundleResponse(
+        panels={
+            "recovery": _read_domain_base("recovery"),
+            "simulation": _read_domain_base("simulation"),
+            "mesh": _read_domain_base("mesh"),
+            "policy": _read_domain_base("policy"),
+            "replay": _read_domain_base("replay"),
+            "system-health": _read_domain_base("system_health"),
+        }
     )
 
 

@@ -62,8 +62,7 @@ def test_ops_shell_static_assets_safe_rendering_read_only():
 def test_overview_ops_js_fetches_route_governance_and_no_actions():
     js = client.get('/ops/ops_console.js').text
     assert "fetch('/ops/api/route-governance')" in js
-    for endpoint in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system-health']:
-        assert f"'/ops/api/{endpoint}'" in js
+    assert "fetch('/ops/api/panels')" in js
     assert 'domainPanelLoadFailed' in js
     assert 'domainPanelLoading' in js
     assert "'degraded'" in js
@@ -168,9 +167,20 @@ def test_domain_panel_routes_registered_get_only():
         '/ops/api/policy',
         '/ops/api/replay',
         '/ops/api/system-health',
+        '/ops/api/panels',
     }
     actual = {route.path for route in ops_routes}
     assert expected.issubset(actual)
     for route in ops_routes:
         if route.path in expected:
             assert route.methods == {'GET'}
+
+
+def test_ops_panels_bundle_endpoint_shape():
+    response = client.get('/ops/api/panels')
+    assert response.status_code == 200
+    payload = response.json()
+    assert sorted(payload['panels'].keys()) == ['mesh', 'policy', 'recovery', 'replay', 'simulation', 'system-health']
+    for panel in payload['panels'].values():
+        assert panel['advisory_only'] is True
+        assert panel['metadata']['deterministic_ordering'] == 'id_asc'
