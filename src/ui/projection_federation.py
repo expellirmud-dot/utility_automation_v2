@@ -83,7 +83,7 @@ class ProjectionFederationService:
             key="incident_review",
             status="connected" if incident_connected else "not_connected",
             label=metadata.status_label,
-            source_ref=metadata.source_type,
+            source_ref=metadata.source_ref,
             provider_kind="incident_review_provider",
             connected=incident_connected,
             stale=not incident_connected,
