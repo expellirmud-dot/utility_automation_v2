@@ -94,6 +94,7 @@ def test_incident_provider_status_not_connected_when_fallback_active():
     assert card.status == "not_connected"
     assert card.provider_status.connected is False
     assert card.provider_status.stale is True
+    assert card.provider_status.provider_kind == "StubIncidentProvider"
 
 
 def test_provider_status_truthful_mapping_for_unavailable_provider_data():
