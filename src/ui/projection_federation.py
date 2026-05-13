@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
 from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
+from src.ui.projection_federation_providers import ProjectionFederationProviderFactory
 
 
 @dataclass(frozen=True)
@@ -45,8 +46,9 @@ class ProjectionFederationService:
         ("system_health", "System Health", "system_health", 70),
     )
 
-    def __init__(self, incident_service: IncidentReviewService) -> None:
+    def __init__(self, incident_service: IncidentReviewService, providers: dict[str, object]) -> None:
         self._incident_service = incident_service
+        self._providers = providers
 
     @classmethod
     def build_default(cls) -> "ProjectionFederationService":
@@ -55,7 +57,8 @@ class ProjectionFederationService:
                 Path(__file__).resolve().parent / "incident_review" / "projection_snapshot.json"
             )
         )
-        return cls(incident_service=incident_service)
+        providers = ProjectionFederationProviderFactory.build_defaults(Path(__file__).resolve().parent)
+        return cls(incident_service=incident_service, providers=providers)
 
     def report(self) -> ProjectionFederationReport:
         cards = []
@@ -63,7 +66,7 @@ class ProjectionFederationService:
             if key == "incident_review":
                 cards.append(self._build_incident_card(title=title, domain=domain, stable_order=stable_order))
             else:
-                cards.append(self._placeholder_card(key=key, title=title, domain=domain, stable_order=stable_order))
+                cards.append(self._build_domain_card(key=key, title=title, domain=domain, stable_order=stable_order))
         ordered = tuple(sorted(cards, key=lambda item: item.stable_order))
         return ProjectionFederationReport(cards=ordered)
 
@@ -85,20 +88,20 @@ class ProjectionFederationService:
             stable_order=stable_order,
         )
 
-    @staticmethod
-    def _placeholder_card(*, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
-        status = ProjectionProviderStatus(key=key, status="not_connected", label="Not connected")
+    def _build_domain_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
+        provider = self._providers[key]
+        metadata = provider.read_metadata()
         return ProjectionSummaryCard(
-            key=status.key,
+            key=key,
             title=title,
             domain=domain,
-            status=status.status,
-            label=status.label,
+            status=metadata.status,
+            label=metadata.label,
             read_only=True,
             authority_coupled=False,
-            source_type="not_connected",
-            fallback_active=True,
-            item_count=0,
+            source_type=metadata.source_type,
+            fallback_active=metadata.fallback_active,
+            item_count=metadata.item_count,
             stable_order=stable_order,
         )
 

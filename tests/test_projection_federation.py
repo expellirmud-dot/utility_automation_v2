@@ -23,16 +23,28 @@ def test_federation_stable_order_and_read_only_contract():
     assert all(card.authority_coupled is False for card in report.cards)
 
 
-def test_incident_adapter_connected_and_placeholders_not_connected():
+def test_incident_and_domain_providers_connected_deterministically():
     cards = ProjectionFederationService.build_default().report().cards
     by_key = {card.key: card for card in cards}
 
     assert by_key["incident_review"].status == "connected"
     assert by_key["incident_review"].source_type in {"runtime_projection", "file_projection"}
 
-    for key in ["recovery", "simulation", "mesh", "policy", "replay", "system_health"]:
-        assert by_key[key].status == "not_connected"
-        assert by_key[key].label == "Not connected"
+    expected = {
+        "recovery": (2, "Connected", "connected", "recovery_projection"),
+        "simulation": (1, "Connected", "connected", "simulation_projection"),
+        "mesh": (3, "Connected", "connected", "mesh_projection"),
+        "policy": (1, "Connected", "connected", "policy_projection"),
+        "replay": (2, "Connected", "connected", "replay_projection"),
+        "system_health": (1, "Connected", "connected", "system_health_telemetry"),
+    }
+    for key, (count, label, status, source_type) in expected.items():
+        card = by_key[key]
+        assert card.item_count == count
+        assert card.label == label
+        assert card.status == status
+        assert card.source_type == source_type
+        assert card.fallback_active is False
 
 
 def test_ops_projections_get_only_and_shape():
