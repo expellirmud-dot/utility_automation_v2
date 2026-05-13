@@ -1,16 +1,16 @@
 from pathlib import Path
 
 from src.ui.incident_review.projection_providers import (
-    JsonSnapshotProjectionProvider,
+    IncidentReviewProviderFactory,
     LiveIncidentReviewProjectionProvider,
 )
+from src.ui.incident_review.projection_source import JsonFileProjectionSource
 
 
 def test_projection_provider_empty_snapshot(tmp_path: Path):
     snapshot = tmp_path / 'snapshot.json'
     snapshot.write_text('{}', encoding='utf-8')
-    provider = JsonSnapshotProjectionProvider(snapshot)
-    live = LiveIncidentReviewProjectionProvider(provider, provider, provider, provider, provider)
+    live = LiveIncidentReviewProjectionProvider(JsonFileProjectionSource(snapshot))
     assert live.list_incidents() == []
 
 
@@ -23,6 +23,12 @@ def test_projection_provider_deterministic_ordering(tmp_path: Path):
         '] }',
         encoding='utf-8',
     )
-    provider = JsonSnapshotProjectionProvider(snapshot)
-    live = LiveIncidentReviewProjectionProvider(provider, provider, provider, provider, provider)
+    live = LiveIncidentReviewProjectionProvider(JsonFileProjectionSource(snapshot))
     assert [x.incident_id for x in live.list_incidents()] == ['INC-1', 'INC-9']
+
+
+def test_provider_factory_uses_live_default(tmp_path: Path):
+    snapshot = tmp_path / 'snapshot.json'
+    snapshot.write_text('{"incident_explorer": []}', encoding='utf-8')
+    provider = IncidentReviewProviderFactory.build_live_default(snapshot)
+    assert provider.__class__.__name__ == 'LiveIncidentReviewProjectionProvider'
