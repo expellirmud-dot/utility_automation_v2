@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -8,6 +10,18 @@ from src.ui.projection_federation_providers import FederationReadMetadata
 
 
 client = TestClient(app)
+
+
+CONTRACT_FIXTURE_PATH = Path(__file__).resolve().parent / "projections_contract_fixture.json"
+
+
+def _load_projection_contract_fixture() -> dict:
+    return json.loads(CONTRACT_FIXTURE_PATH.read_text(encoding="utf-8"))
+
+
+def _validate_status_vocab(statuses: list[str], allowed: set[str]) -> None:
+    unknown = sorted(set(statuses) - allowed)
+    assert not unknown, f"Unknown projection status values in contract fixture: {unknown}"
 
 
 def test_federation_stable_order_and_read_only_contract():
@@ -184,3 +198,47 @@ def test_failure_status_is_truthful_degraded_or_not_connected():
 
     failing_card = {c.key: c for c in unstable.report().cards}["replay"]
     assert failing_card.status in {"degraded", "not_connected"}
+
+def test_ops_projection_contract_snapshot_and_backward_compatibility_guard():
+    fixture = _load_projection_contract_fixture()
+    status_vocab = set(fixture["deterministic_status_vocabulary"])
+
+    response = client.get('/ops/api/projections')
+    assert response.status_code == 200
+    cards = response.json()["cards"]
+    assert cards
+
+    provider_required = set(fixture["ProjectionProviderStatus"]["required_fields"])
+
+    for card in cards:
+        provider_status = card["provider_status"]
+        missing_provider_fields = provider_required - set(provider_status.keys())
+        assert not missing_provider_fields, (
+            "ProjectionProviderStatus contract changed (field removal/rename): "
+            f"{sorted(missing_provider_fields)}"
+        )
+
+        assert card["status"] in status_vocab
+        assert provider_status["status"] in status_vocab
+
+        assert card["key"] == provider_status["key"]
+        assert card["label"] == provider_status["label"]
+        assert card["source_type"] == provider_status["source_ref"]
+        assert isinstance(provider_status["connected"], bool)
+        assert isinstance(provider_status["stale"], bool)
+
+
+def test_projection_contract_fixture_rejects_unknown_status_values():
+    fixture = _load_projection_contract_fixture()
+    allowed = set(fixture["deterministic_status_vocabulary"])
+
+    _validate_status_vocab(fixture["ProjectionProviderStatus"]["status_values"], allowed)
+    _validate_status_vocab(fixture["ProjectionSummaryCard"]["status_values"], allowed)
+
+    mutated = list(fixture["ProjectionProviderStatus"]["status_values"]) + ["flaky"]
+    try:
+        _validate_status_vocab(mutated, allowed)
+    except AssertionError as exc:
+        assert "Unknown projection status values" in str(exc)
+    else:
+        raise AssertionError("Expected unknown status validation to fail")

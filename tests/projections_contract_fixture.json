@@ -1,0 +1,31 @@
+{
+  "deterministic_status_vocabulary": ["connected", "degraded", "not_connected"],
+  "ProjectionProviderStatus": {
+    "required_fields": [
+      "key",
+      "status",
+      "label",
+      "source_ref",
+      "provider_kind",
+      "connected",
+      "stale"
+    ],
+    "status_field": "status",
+    "status_values": ["connected", "degraded", "not_connected"]
+  },
+  "ProjectionSummaryCard": {
+    "semantic_fields": [
+      "key",
+      "status",
+      "label"
+    ],
+    "provider_semantic_fields": [
+      "source_ref",
+      "provider_kind",
+      "connected",
+      "stale"
+    ],
+    "status_field": "status",
+    "status_values": ["connected", "degraded", "not_connected"]
+  }
+}
