@@ -2,7 +2,7 @@
 
 ## Current Status
 Latest completed scope:
-TASK 039.5 — Recovery Operations Dashboard
+TASK 041 — Operator Incident Review Console ✅
 
 Repository contains:
 - Distributed deterministic governance mesh
@@ -10,6 +10,44 @@ Repository contains:
 - Advisory governance simulation platform
 - Recovery governance platform
 - Read-only recovery operations dashboard
+- Read-only forensic incident review console
+
+---
+
+## Latest Completed Scope
+
+TASK 041 — Operator Incident Review Console ✅
+
+Completed:
+- Read-only forensic incident review console
+- Provider protocol architecture
+- Snapshot-backed live projection adapters
+- Incident Explorer
+- Decision Lineage Viewer
+- Replay Trace Inspector
+- Mesh Incident Viewer
+- Policy Impact Explorer
+- Deterministic analytics summaries
+- Expanded provider + API safety tests
+
+Architecture constraints preserved:
+- zero write-capable runtime imports
+- zero authority coupling
+- GET-only API
+- deterministic normalization only
+- stable sorting keys only
+- no timestamp ordering
+- snapshot-input only
+
+Validation:
+- pip install -r requirements.txt
+- pytest tests/test_incident_review.py -q
+- pytest tests/test_incident_review_providers.py -q
+- pytest tests/validation/test_ledger_integrity.py tests/integration/test_replay_determinism.py -q
+- PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
+
+Result:
+overall_score: 100.0
 
 ---
 
