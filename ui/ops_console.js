@@ -7,6 +7,7 @@
   var overviewCache = null;
   var incidentStatusCache = null;
   var incidentListCache = null;
+  var routeGovernanceCache = null;
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -55,6 +56,17 @@
       addLine(card, 'Status Label', item.label);
       container.appendChild(card);
     });
+
+    if (routeGovernanceCache) {
+      var govCard = createCard('Route Governance', routeGovernanceCache.valid ? 'connected' : 'not_connected');
+      addLine(govCard, 'Route Governance', routeGovernanceCache.valid ? 'valid' : 'invalid');
+      addLine(govCard, 'Checked Routes', routeGovernanceCache.checked_routes);
+      addLine(govCard, 'Violations', (routeGovernanceCache.violations || []).length);
+      if (!routeGovernanceCache.valid) {
+        addLine(govCard, 'Summary', 'Deterministic violations detected');
+      }
+      container.appendChild(govCard);
+    }
   }
 
   function renderIncidentSection() {
@@ -150,7 +162,12 @@
     .then(function (response) { return response.json(); })
     .then(function (payload) {
       overviewCache = payload;
-      return fetchIncidents();
+      return fetch('/ops/api/route-governance')
+        .then(function (response) { return response.json(); })
+        .then(function (governancePayload) {
+          routeGovernanceCache = governancePayload;
+          return fetchIncidents();
+        });
     })
     .then(function () { renderActiveSection(); })
     .catch(function () {

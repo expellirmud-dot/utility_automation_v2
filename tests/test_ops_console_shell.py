@@ -16,6 +16,7 @@ def test_overview_get_only_and_stable_order():
         'recovery_dashboard',
         'simulation_dashboard',
         'telemetry_dashboard',
+        'route_governance',
     ]
 
     for method in ['post', 'put', 'patch', 'delete']:
@@ -55,3 +56,20 @@ def test_ops_shell_static_assets_safe_rendering_read_only():
     assert 'method:' not in js
     assert '.sort(' not in js
     assert '.filter(' not in js
+
+
+def test_overview_ops_js_fetches_route_governance_and_no_actions():
+    js = client.get('/ops/ops_console.js').text
+    assert "fetch('/ops/api/route-governance')" in js
+    forbidden_labels = ['approve', 'reject', 'retry', 'execute', 'repair', 'promote']
+    for label in forbidden_labels:
+        assert label not in js.lower()
+
+
+def test_overview_renders_route_governance_metadata():
+    cards = client.get('/ops/api/overview').json()['cards']
+    governance_card = next(card for card in cards if card['key'] == 'route_governance')
+    assert governance_card['read_only'] is True
+    assert governance_card['authority_coupled'] is False
+    assert 'checked_routes=' in governance_card['label']
+    assert 'violations=' in governance_card['label']
