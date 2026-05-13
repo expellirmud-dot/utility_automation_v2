@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from src.ui.incident_review.incident_review_service import IncidentReviewService
 from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
-from src.ui.read_only_route_governance import validate_read_only_route_governance
+from src.ui.read_only_route_governance import inspect_read_only_routes, validate_read_only_route_governance
 from src.ui.read_only_surface_registry import list_ops_exposed_surfaces, list_read_only_surfaces
 
 router = APIRouter(prefix="/ops", tags=["Ops Overview"])
@@ -50,6 +50,19 @@ class OpsSurfaceEntry(BaseModel):
 
 class OpsSurfaceResponse(BaseModel):
     surfaces: list[OpsSurfaceEntry]
+
+
+class RouteGovernanceViolationEntry(BaseModel):
+    path: str
+    method: str
+    reason: str
+
+
+class RouteGovernanceResponse(BaseModel):
+    valid: bool
+    checked_routes: int
+    registry_surface_count: int
+    violations: list[RouteGovernanceViolationEntry]
 
 
 @router.get("", response_class=FileResponse)
@@ -119,6 +132,20 @@ def get_ops_surfaces() -> OpsSurfaceResponse:
         for surface in list_ops_exposed_surfaces()
     ]
     return OpsSurfaceResponse(surfaces=surfaces)
+
+
+@router.get("/api/route-governance", response_model=RouteGovernanceResponse)
+def get_route_governance() -> RouteGovernanceResponse:
+    report = inspect_read_only_routes(app=app)
+    return RouteGovernanceResponse(
+        valid=report.valid,
+        checked_routes=report.checked_routes,
+        registry_surface_count=report.registry_surface_count,
+        violations=[
+            RouteGovernanceViolationEntry(path=item.path, method=item.method, reason=item.reason)
+            for item in report.violations
+        ],
+    )
 
 
 app = FastAPI(title="Ops Overview Console")
