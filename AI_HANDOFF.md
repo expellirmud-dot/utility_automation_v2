@@ -2,7 +2,7 @@
 
 ## Current Status
 Latest completed scope:
-TASK 041 — Operator Incident Review Console ✅
+TASK 046-DB -- Read-only database-backed domain panel projections ✅
 
 Repository contains:
 - Distributed deterministic governance mesh
@@ -11,10 +11,53 @@ Repository contains:
 - Recovery governance platform
 - Read-only recovery operations dashboard
 - Read-only forensic incident review console
+- Read-only DB-backed ops domain panel projections
 
 ---
 
 ## Latest Completed Scope
+
+TASK 046-DB -- Read-only database-backed domain panel projections ✅
+
+Completed:
+- Read-only database projection reader
+- DB-backed TASK 046 domain panel formatters
+- `/ops/api/recovery`
+- `/ops/api/simulation`
+- `/ops/api/mesh`
+- `/ops/api/policy`
+- `/ops/api/replay`
+- `/ops/api/system-health`
+- `/ops/api/panels`
+- Deterministic degraded fallback for missing/unavailable DB
+- Projection-only governance tests
+
+Architecture constraints preserved:
+- Ledger remains sole source of truth
+- SQLite/database remains cache/projection only
+- MeshOrchestrator remains sole quorum authority
+- AI remains advisory only
+- GET-only ops panel APIs
+- no POST/PUT/PATCH/DELETE operator routes
+- no control-plane imports
+- no authority coupling
+- no database mutation SQL in the projection reader
+- deterministic ordering by explicit stable keys only
+
+Validation:
+- pytest -q tests/test_db_projection_reader.py
+- pytest -q tests/test_panel_formatters.py
+- pytest -q tests/test_ops_domain_panel_governance.py
+- pytest -q tests/test_ops_console_shell.py
+- pytest -q
+- PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
+
+Result:
+overall_score: 100.0
+
+---
+
+## Prior Completed Scope
 
 TASK 041 — Operator Incident Review Console ✅
 
