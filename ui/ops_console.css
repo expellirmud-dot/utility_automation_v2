@@ -1,5 +1,9 @@
 body { font-family: Arial, sans-serif; margin: 0; background: #0b1021; color: #e9edf6; }
-.layout { max-width: 960px; margin: 0 auto; padding: 20px; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.layout { max-width: 980px; margin: 0 auto; padding: 20px; }
+.sections { margin-bottom: 14px; }
+.section-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.section-item { background: #161c34; border: 1px solid #2b365f; border-radius: 8px; padding: 8px 12px; cursor: pointer; color: #b9c2dd; }
+.section-item[data-active='true'] { color: #ffffff; border-color: #7f8cd8; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .card { background: #161c34; border: 1px solid #2b365f; border-radius: 8px; padding: 12px; }
 .meta { color: #b9c2dd; font-size: 0.9rem; margin: 4px 0; }
