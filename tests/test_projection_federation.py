@@ -85,16 +85,27 @@ class StubIncidentProvider:
         return []
 
 
-def test_incident_provider_status_not_connected_when_fallback_active():
+def test_incident_provider_status_tracks_fallback_state_truthfully():
     default_service = ProjectionFederationService.build_default()
-    incident_service = type(default_service._incident_service)(StubIncidentProvider(fallback_active=True))  # noqa: SLF001
-    service = ProjectionFederationService(incident_service, default_service._providers)  # noqa: SLF001
 
-    card = {item.key: item for item in service.report().cards}["incident_review"]
-    assert card.status == "not_connected"
-    assert card.provider_status.connected is False
-    assert card.provider_status.stale is True
-    assert card.provider_status.provider_kind == "StubIncidentProvider"
+    connected_service = ProjectionFederationService(
+        type(default_service._incident_service)(StubIncidentProvider(fallback_active=False)),  # noqa: SLF001
+        default_service._providers,  # noqa: SLF001
+    )
+    connected_card = {item.key: item for item in connected_service.report().cards}["incident_review"]
+    assert connected_card.status == "connected"
+    assert connected_card.provider_status.connected is True
+    assert connected_card.provider_status.stale is False
+
+    fallback_service = ProjectionFederationService(
+        type(default_service._incident_service)(StubIncidentProvider(fallback_active=True)),  # noqa: SLF001
+        default_service._providers,  # noqa: SLF001
+    )
+    fallback_card = {item.key: item for item in fallback_service.report().cards}["incident_review"]
+    assert fallback_card.status == "not_connected"
+    assert fallback_card.provider_status.connected is False
+    assert fallback_card.provider_status.stale is True
+    assert fallback_card.provider_status.provider_kind == "StubIncidentProvider"
 
 
 def test_provider_status_truthful_mapping_for_unavailable_provider_data():
