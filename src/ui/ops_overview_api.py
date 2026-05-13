@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import json
+from dataclasses import dataclass
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
@@ -157,6 +158,12 @@ class SystemHealthPanelResponse(OpsDomainPanelResponse):
     provider_status: list[dict[str, object]]
 
 
+@dataclass(frozen=True)
+class DomainPanelConfig:
+    source: str
+    snapshot_name: str
+
+
 def _strict_route_governance_enabled() -> bool:
     return os.getenv("OPS_ROUTE_GOVERNANCE_STRICT", "0") == "1"
 
@@ -208,6 +215,21 @@ def _read_snapshot_items(snapshot_name: str, *, source: str) -> OpsDomainPanelRe
             metadata={"deterministic_ordering": "id_asc", "snapshot": snapshot_name},
             items=[],
         )
+
+
+_DOMAIN_PANEL_CONFIG: dict[str, DomainPanelConfig] = {
+    "recovery": DomainPanelConfig(source="recovery", snapshot_name="recovery_projection_snapshot.json"),
+    "simulation": DomainPanelConfig(source="simulation", snapshot_name="simulation_projection_snapshot.json"),
+    "mesh": DomainPanelConfig(source="mesh", snapshot_name="mesh_projection_snapshot.json"),
+    "policy": DomainPanelConfig(source="policy", snapshot_name="policy_projection_snapshot.json"),
+    "replay": DomainPanelConfig(source="replay", snapshot_name="replay_projection_snapshot.json"),
+    "system_health": DomainPanelConfig(source="system_health", snapshot_name="system_health_telemetry_snapshot.json"),
+}
+
+
+def _read_domain_base(domain_key: str) -> OpsDomainPanelResponse:
+    config = _DOMAIN_PANEL_CONFIG[domain_key]
+    return _read_snapshot_items(config.snapshot_name, source=config.source)
 
 @router.get("", response_class=FileResponse)
 def get_ops_console() -> FileResponse:
@@ -294,7 +316,7 @@ def get_route_governance() -> RouteGovernanceResponse:
 
 @router.get("/api/recovery", response_model=RecoveryPanelResponse)
 def get_recovery_panel() -> RecoveryPanelResponse:
-    base = _read_snapshot_items("recovery_projection_snapshot.json", source="recovery")
+    base = _read_domain_base("recovery")
     return RecoveryPanelResponse(
         **base.model_dump(),
         recovery_summaries=base.items,
@@ -307,13 +329,13 @@ def get_recovery_panel() -> RecoveryPanelResponse:
 
 @router.get("/api/simulation", response_model=SimulationPanelResponse)
 def get_simulation_panel() -> SimulationPanelResponse:
-    base = _read_snapshot_items("simulation_projection_snapshot.json", source="simulation")
+    base = _read_domain_base("simulation")
     return SimulationPanelResponse(**base.model_dump(), scenario_summaries=base.items, advisory_outcomes=base.items)
 
 
 @router.get("/api/mesh", response_model=MeshPanelResponse)
 def get_mesh_panel() -> MeshPanelResponse:
-    base = _read_snapshot_items("mesh_projection_snapshot.json", source="mesh")
+    base = _read_domain_base("mesh")
     return MeshPanelResponse(
         **base.model_dump(),
         node_summaries=base.items,
@@ -326,7 +348,7 @@ def get_mesh_panel() -> MeshPanelResponse:
 
 @router.get("/api/policy", response_model=PolicyPanelResponse)
 def get_policy_panel() -> PolicyPanelResponse:
-    base = _read_snapshot_items("policy_projection_snapshot.json", source="policy")
+    base = _read_domain_base("policy")
     return PolicyPanelResponse(
         **base.model_dump(),
         active_policy=base.items[0] if base.items else {},
@@ -339,7 +361,7 @@ def get_policy_panel() -> PolicyPanelResponse:
 
 @router.get("/api/replay", response_model=ReplayPanelResponse)
 def get_replay_panel() -> ReplayPanelResponse:
-    base = _read_snapshot_items("replay_projection_snapshot.json", source="replay")
+    base = _read_domain_base("replay")
     return ReplayPanelResponse(
         **base.model_dump(),
         replay_certification={"status": base.status},
@@ -350,7 +372,7 @@ def get_replay_panel() -> ReplayPanelResponse:
 
 @router.get("/api/system-health", response_model=SystemHealthPanelResponse)
 def get_system_health_panel() -> SystemHealthPanelResponse:
-    base = _read_snapshot_items("system_health_telemetry_snapshot.json", source="system_health")
+    base = _read_domain_base("system_health")
     return SystemHealthPanelResponse(
         **base.model_dump(),
         health_summaries=base.items,
