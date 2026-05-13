@@ -162,12 +162,18 @@
     .then(function (response) { return response.json(); })
     .then(function (payload) {
       overviewCache = payload;
-      return fetch('/ops/api/route-governance')
+      return Promise.all([
+        fetch('/ops/api/route-governance')
         .then(function (response) { return response.json(); })
         .then(function (governancePayload) {
           routeGovernanceCache = governancePayload;
-          return fetchIncidents();
-        });
+        })
+        .catch(function () { routeGovernanceCache = null; }),
+        fetchIncidents().catch(function () {
+          incidentStatusCache = null;
+          incidentListCache = { incidents: [] };
+        }),
+      ]);
     })
     .then(function () { renderActiveSection(); })
     .catch(function () {
