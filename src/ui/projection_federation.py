@@ -90,18 +90,31 @@ class ProjectionFederationService:
 
     def _build_domain_card(self, *, key: str, title: str, domain: str, stable_order: int) -> ProjectionSummaryCard:
         provider = self._providers[key]
-        metadata = provider.read_metadata()
+        try:
+            metadata = provider.read_metadata()
+            status = metadata.status
+            label = metadata.label
+            source_type = metadata.source_type
+            fallback_active = metadata.fallback_active
+            item_count = metadata.item_count
+        except Exception:
+            status = "degraded"
+            label = "Deterministic fallback (provider_exception)"
+            source_type = "deterministic_fallback"
+            fallback_active = True
+            item_count = 0
+
         return ProjectionSummaryCard(
             key=key,
             title=title,
             domain=domain,
-            status=metadata.status,
-            label=metadata.label,
+            status=status,
+            label=label,
             read_only=True,
             authority_coupled=False,
-            source_type=metadata.source_type,
-            fallback_active=metadata.fallback_active,
-            item_count=metadata.item_count,
+            source_type=source_type,
+            fallback_active=fallback_active,
+            item_count=item_count,
             stable_order=stable_order,
         )
 
