@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f8fc;
+  color: #10243e;
+}
+
+.layout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.incident-list {
+  display: grid;
+  gap: 12px;
+}
+
+.incident-card {
+  background: #ffffff;
+  border: 1px solid #d8dfeb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.meta {
+  color: #3a4e6a;
+  font-size: 14px;
+}
