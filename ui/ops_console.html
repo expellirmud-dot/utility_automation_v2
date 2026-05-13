@@ -3,17 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ops Console Overview</title>
+  <title>Ops Console</title>
   <link rel="stylesheet" href="/ops/ops_console.css">
 </head>
 <body>
   <main class="layout">
     <header>
-      <h1>Ops Console Overview</h1>
+      <h1>Ops Console</h1>
       <p>Read-only projection health status.</p>
     </header>
-    <section aria-label="Overview Cards">
-      <div id="overview-cards" class="cards"></div>
+    <section aria-label="Sections" class="sections">
+      <ul id="section-nav" class="section-nav"></ul>
+    </section>
+    <section aria-label="Section Content">
+      <div id="section-content" class="cards"></div>
     </section>
   </main>
   <script src="/ops/ops_console.js"></script>
