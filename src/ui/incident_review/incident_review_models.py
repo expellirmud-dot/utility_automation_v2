@@ -12,3 +12,12 @@ class IncidentReviewItem(BaseModel):
 
 class IncidentReviewListResponse(BaseModel):
     incidents: list[IncidentReviewItem]
+
+
+class IncidentReviewSourceStatusResponse(BaseModel):
+    source_type: str
+    read_only: bool
+    authority_coupled: bool
+    fallback_active: bool
+    source_path: str
+    status_label: str

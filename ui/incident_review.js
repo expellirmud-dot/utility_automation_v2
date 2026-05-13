@@ -1,5 +1,24 @@
 (function loadIncidents() {
   const container = document.getElementById('incident-list');
+  const banner = document.getElementById('source-banner');
+
+  function bannerText(payload) {
+    if (payload.source_type === 'runtime_projection') {
+      return 'Runtime read-only projection source active.';
+    }
+    if (payload.source_type === 'snapshot_test') {
+      return 'Snapshot test projection source active.';
+    }
+    return 'File-backed projection fallback active.';
+  }
+
+  fetch('/incident-review/api/source-status')
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (payload) {
+      banner.textContent = bannerText(payload);
+    });
 
   fetch('/incident-review/api/incidents')
     .then(function (response) {

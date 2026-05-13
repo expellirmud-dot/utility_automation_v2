@@ -15,13 +15,36 @@ class ProjectionSnapshot:
     lineage: tuple[dict, ...]
 
 
+@dataclass(frozen=True)
+class ProjectionSourceMetadata:
+    source_type: str
+    read_only: bool
+    authority_coupled: bool
+    fallback_active: bool
+    source_path: str
+
+    @property
+    def status_label(self) -> str:
+        if self.source_type == "runtime_projection":
+            return "runtime_projection"
+        if self.source_type == "snapshot_test":
+            return "snapshot_test"
+        if self.fallback_active:
+            return "file_projection_fallback"
+        return self.source_type
+
+
 class IncidentReviewProjectionSource(Protocol):
     def read_snapshot(self) -> ProjectionSnapshot: ...
 
+    def metadata(self) -> ProjectionSourceMetadata: ...
+
 
 class JsonFileProjectionSource:
-    def __init__(self, snapshot_path: Path) -> None:
+    def __init__(self, snapshot_path: Path, *, source_type: str = "file_projection", fallback_active: bool = False) -> None:
         self._snapshot_path = snapshot_path
+        self._source_type = source_type
+        self._fallback_active = fallback_active
 
     @staticmethod
     def _stable_sort(records: list[dict], sort_keys: tuple[str, ...]) -> tuple[dict, ...]:
@@ -87,3 +110,17 @@ class JsonFileProjectionSource:
             policy_impacts=self._stable_sort(policy_impacts, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
             lineage=self._stable_sort(lineage, ("incident_id", "event_hash", "causal_depth", "artifact_hash")),
         )
+
+    def metadata(self) -> ProjectionSourceMetadata:
+        return ProjectionSourceMetadata(
+            source_type=self._source_type,
+            read_only=True,
+            authority_coupled=False,
+            fallback_active=self._fallback_active,
+            source_path=str(self._snapshot_path),
+        )
+
+
+class RuntimeProjectionSource(JsonFileProjectionSource):
+    def __init__(self, projection_path: Path) -> None:
+        super().__init__(projection_path, source_type="runtime_projection", fallback_active=False)
