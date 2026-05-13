@@ -5,24 +5,17 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from src.ui.incident_review.incident_review_service import IncidentReviewService
-from src.ui.incident_review.projection_providers import IncidentReviewProviderFactory
 from src.ui.read_only_route_governance import (
     ReadOnlyRouteGovernanceError,
     inspect_read_only_routes,
     validate_read_only_route_governance,
 )
 from src.ui.projection_federation import ProjectionFederationService, card_to_dict
-from src.ui.read_only_surface_registry import list_ops_exposed_surfaces, list_read_only_surfaces
+from src.ui.read_only_surface_registry import list_ops_exposed_surfaces
 
 router = APIRouter(prefix="/ops", tags=["Ops Overview"])
 
 _UI_ROOT = Path(__file__).resolve().parents[2] / "ui"
-_incident_service = IncidentReviewService(
-    provider=IncidentReviewProviderFactory.build_live_default(
-        Path(__file__).resolve().parent / "incident_review" / "projection_snapshot.json"
-    )
-)
 validate_read_only_route_governance()
 _federation_service = ProjectionFederationService.build_default()
 
@@ -115,35 +108,20 @@ def get_ops_js() -> FileResponse:
 
 @router.get("/api/overview", response_model=OpsOverviewResponse)
 def get_overview() -> OpsOverviewResponse:
-    incident_metadata = _incident_service.source_metadata()
-    cards: list[OpsOverviewCard] = []
-    for surface in list_read_only_surfaces():
-        if surface.key == "incident_review":
-            cards.append(
-                OpsOverviewCard(
-                    key=surface.key,
-                    title=surface.title,
-                    projection_source=incident_metadata.source_ref,
-                    read_only=incident_metadata.read_only,
-                    authority_coupled=incident_metadata.authority_coupled,
-                    fallback_active=incident_metadata.fallback_active,
-                    status="connected",
-                    label=incident_metadata.status_label,
-                )
-            )
-            continue
-        cards.append(
-            OpsOverviewCard(
-                key=surface.key,
-                title=surface.title,
-                projection_source="not_connected",
-                read_only=surface.read_only,
-                authority_coupled=surface.authority_coupled,
-                fallback_active=True,
-                status=surface.status,
-                label="Not connected" if surface.status == "not_connected" else surface.status,
-            )
+    report = _federation_service.report()
+    cards = [
+        OpsOverviewCard(
+            key=card.key,
+            title=card.title,
+            projection_source=card.source_type,
+            read_only=card.read_only,
+            authority_coupled=card.authority_coupled,
+            fallback_active=card.fallback_active,
+            status=card.status,
+            label=card.label,
         )
+        for card in report.cards
+    ]
     governance = _build_route_governance_response()
     cards.append(
         OpsOverviewCard(
