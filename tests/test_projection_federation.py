@@ -41,7 +41,10 @@ def test_federation_stable_order_and_read_only_contract():
     assert all(card.authority_coupled is False for card in report.cards)
 
 
-def test_incident_and_domain_providers_connected_deterministically():
+def test_incident_and_domain_providers_connected_deterministically(monkeypatch):
+    from src.services.governance.simulation import simulation_api
+
+    monkeypatch.setattr(simulation_api, "_simulation_reports", {"sim-1": {"simulation_hash": "sim-1"}})
     cards = ProjectionFederationService.build_default().report().cards
     by_key = {card.key: card for card in cards}
 
@@ -50,11 +53,11 @@ def test_incident_and_domain_providers_connected_deterministically():
     assert by_key["incident_review"].provider_status.connected is True
 
     expected = {
-        "recovery": (2, "Connected", "connected", "recovery_projection"),
-        "simulation": (1, "Connected", "connected", "simulation_projection"),
-        "mesh": (3, "Connected", "connected", "mesh_projection"),
-        "policy": (1, "Connected", "connected", "policy_projection"),
-        "replay": (2, "Connected", "connected", "replay_projection"),
+        "recovery": (2, "Connected", "connected", "recovery_read_model"),
+        "simulation": (1, "Connected", "connected", "simulation_read_model"),
+        "mesh": (3, "Connected", "connected", "mesh_read_model"),
+        "policy": (1, "Connected", "connected", "policy_read_model"),
+        "replay": (2, "Connected", "connected", "replay_read_model"),
         "system_health": (1, "Connected", "connected", "system_health_telemetry"),
     }
     for key, (count, label, status, source_type) in expected.items():
