@@ -54,3 +54,18 @@ def test_ops_shell_static_assets_safe_rendering_read_only():
     assert 'method:' not in js
     assert '.sort(' not in js
     assert '.filter(' not in js
+
+
+def test_ops_shell_read_only_labels_and_no_control_ops_exposure():
+    html = client.get('/ops').text
+    js = client.get('/ops/ops_console.js').text.lower()
+
+    assert 'Read-only' in html
+    assert 'Advisory' in html
+    assert 'No authority coupling' in html
+    assert 'GET-only' in html
+    assert 'loading...' in js
+    assert 'no incidents available' in js
+    assert 'source unavailable' in js
+
+    assert client.get('/ops/control_ops').status_code == 404

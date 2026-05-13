@@ -7,15 +7,27 @@
   <link rel="stylesheet" href="/ops/ops_console.css">
 </head>
 <body>
-  <main class="layout">
-    <header>
-      <h1>Ops Console</h1>
-      <p>Read-only projection health status.</p>
+  <main class="layout" aria-label="Operator Console">
+    <header class="top-status" aria-label="Top status bar">
+      <div>
+        <h1>Operator Console</h1>
+        <p>Read-only operational projection visibility.</p>
+      </div>
+      <div class="badge-row" aria-label="Read-only indicators">
+        <span class="badge">Read-only</span>
+        <span class="badge">Advisory</span>
+        <span class="badge">No authority coupling</span>
+        <span class="badge">GET-only</span>
+      </div>
     </header>
+
     <section aria-label="Sections" class="sections">
+      <h2 class="section-heading">Console Sections</h2>
       <ul id="section-nav" class="section-nav"></ul>
     </section>
-    <section aria-label="Section Content">
+
+    <section aria-label="Section Content" class="content-wrap">
+      <h2 id="active-section-title" class="section-heading">Overview</h2>
       <div id="section-content" class="cards"></div>
     </section>
   </main>
