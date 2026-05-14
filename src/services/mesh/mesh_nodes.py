@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import time
 from typing import List, Dict, Any, Optional
 from src.services.event_sourcing.canonical_event import CanonicalEvent
@@ -105,12 +106,13 @@ class LeaderNode(MeshNode):
     def propose_event(self, actor: str, event_type: str, payload: Dict[str, Any], quorum_sig: str):
         seq_id = len(self.event_log)
         prev_hash = self.event_log[-1].global_chain_hash if self.event_log else "GENESIS"
+        timestamp = self._next_ledger_timestamp()
         
         event_dict = {
-            "event_id": str(hashlib.sha256(f"{seq_id}{time.time()}".encode()).hexdigest()),
+            "event_id": str(hashlib.sha256(f"{seq_id}{timestamp}".encode()).hexdigest()),
             "epoch": self.epoch,
             "seq_id": seq_id,
-            "timestamp": time.time(),
+            "timestamp": timestamp,
             "actor": actor,
             "type": event_type,
             "payload": payload,
@@ -139,6 +141,16 @@ class LeaderNode(MeshNode):
 
         self.apply_event(event)
         return event
+
+    def _next_ledger_timestamp(self) -> float:
+        timestamp = time.time()
+        if not self.event_log:
+            return timestamp
+
+        previous = float(self.event_log[-1].timestamp)
+        if timestamp > previous:
+            return timestamp
+        return math.nextafter(previous, math.inf)
 
 class WorkerNode(MeshNode):
     def sync_from_leader(self, event_log: List[CanonicalEvent]):
