@@ -90,3 +90,8 @@ Completion:
 ## Additional Completed Baselines
 - TASK 051-B: Release Authorization Advisory Bundle
 - TASK 051-M: Repository Memory Layer
+- TASK 051-C: Release Governance Review Surface
+  - route /release-governance
+  - proxy /api/ops/release-governance
+  - backend GET /ops/api/release-governance
+  - validation status: passed
