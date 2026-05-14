@@ -1,11 +1,19 @@
 from pathlib import Path
 import os
-import json
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from src.projections.db_projection_reader import DBProjectionReader
+from src.ui.domain_panels.formatters import (
+    format_mesh_panel,
+    format_policy_panel,
+    format_recovery_panel,
+    format_replay_panel,
+    format_simulation_panel,
+    format_system_health_panel,
+)
 from src.ui.read_only_route_governance import (
     ReadOnlyRouteGovernanceError,
     inspect_read_only_routes,
@@ -107,6 +115,15 @@ class OpsDomainPanelResponse(BaseModel):
     status: str
     source: str
     items: list[dict[str, object]]
+    advisory_only: bool
+    item_count: int
+    summaries: list[dict[str, object]]
+    diagnostics: dict[str, object]
+    metadata: dict[str, object]
+
+
+class OpsDomainPanelsResponse(BaseModel):
+    panels: list[OpsDomainPanelResponse]
 
 
 def _strict_route_governance_enabled() -> bool:
@@ -126,30 +143,29 @@ def _build_route_governance_response() -> RouteGovernanceResponse:
     )
 
 
-def _read_snapshot_items(snapshot_name: str, *, source: str) -> OpsDomainPanelResponse:
-    snapshot_path = Path(__file__).resolve().parent / snapshot_name
-    try:
-        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
-        raw_items = payload.get("items", []) if isinstance(payload, dict) else []
-        normalized_items = raw_items if isinstance(raw_items, list) else []
-        normalized_items = sorted(
-            [item for item in normalized_items if isinstance(item, dict)],
-            key=lambda item: str(item.get("id", "")),
-        )
-        status = "connected" if normalized_items else "empty"
-        return OpsDomainPanelResponse(
-            domain=source,
-            status=status,
-            source=source,
-            items=normalized_items,
-        )
-    except (OSError, ValueError, TypeError, AttributeError):
-        return OpsDomainPanelResponse(
-            domain=source,
-            status="degraded",
-            source="deterministic_fallback",
-            items=[],
-        )
+def _projection_reader() -> DBProjectionReader:
+    return DBProjectionReader()
+
+
+def _domain_panel_payload(domain: str) -> dict[str, object]:
+    reader = _projection_reader()
+    if domain == "recovery":
+        return format_recovery_panel(reader.read_recovery())
+    if domain == "simulation":
+        return format_simulation_panel(reader.read_simulation())
+    if domain == "mesh":
+        return format_mesh_panel(reader.read_mesh())
+    if domain == "policy":
+        return format_policy_panel(reader.read_policy())
+    if domain == "replay":
+        return format_replay_panel(reader.read_replay())
+    if domain == "system_health":
+        return format_system_health_panel(reader.read_system_health())
+    raise ValueError(f"unknown domain panel: {domain}")
+
+
+def _domain_panel_response(domain: str) -> OpsDomainPanelResponse:
+    return OpsDomainPanelResponse(**_domain_panel_payload(domain))
 
 @router.get("", response_class=FileResponse)
 def get_ops_console() -> FileResponse:
@@ -236,32 +252,46 @@ def get_route_governance() -> RouteGovernanceResponse:
 
 @router.get("/api/recovery", response_model=OpsDomainPanelResponse)
 def get_recovery_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("recovery_projection_snapshot.json", source="recovery")
+    return _domain_panel_response("recovery")
 
 
 @router.get("/api/simulation", response_model=OpsDomainPanelResponse)
 def get_simulation_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("simulation_projection_snapshot.json", source="simulation")
+    return _domain_panel_response("simulation")
 
 
 @router.get("/api/mesh", response_model=OpsDomainPanelResponse)
 def get_mesh_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("mesh_projection_snapshot.json", source="mesh")
+    return _domain_panel_response("mesh")
 
 
 @router.get("/api/policy", response_model=OpsDomainPanelResponse)
 def get_policy_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("policy_projection_snapshot.json", source="policy")
+    return _domain_panel_response("policy")
 
 
 @router.get("/api/replay", response_model=OpsDomainPanelResponse)
 def get_replay_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("replay_projection_snapshot.json", source="replay")
+    return _domain_panel_response("replay")
 
 
 @router.get("/api/system-health", response_model=OpsDomainPanelResponse)
 def get_system_health_panel() -> OpsDomainPanelResponse:
-    return _read_snapshot_items("system_health_telemetry_snapshot.json", source="system_health")
+    return _domain_panel_response("system_health")
+
+
+@router.get("/api/panels", response_model=OpsDomainPanelsResponse)
+def get_domain_panels() -> OpsDomainPanelsResponse:
+    return OpsDomainPanelsResponse(
+        panels=[
+            _domain_panel_response("recovery"),
+            _domain_panel_response("simulation"),
+            _domain_panel_response("mesh"),
+            _domain_panel_response("policy"),
+            _domain_panel_response("replay"),
+            _domain_panel_response("system_health"),
+        ]
+    )
 
 
 app = FastAPI(title="Ops Overview Console")
