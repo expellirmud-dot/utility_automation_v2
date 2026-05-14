@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 from src.models.bill_data import BillData
 from src.models.ai_review_result import AIReviewResult
 

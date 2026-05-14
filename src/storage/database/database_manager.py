@@ -6,6 +6,9 @@ class DatabaseManager:
 
     @classmethod
     def get_connection(cls):
+        db_dir = os.path.dirname(cls.DB_PATH)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         return sqlite3.connect(cls.DB_PATH)
 
     @classmethod

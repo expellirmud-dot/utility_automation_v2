@@ -2,8 +2,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import httpx
 import os
+from src.services.dashboard.projection_api import router as dashboard_projection_router
+from src.services.ops_console.api import router as ops_domain_panel_router
 
 app = FastAPI(title="gov-control")
+app.include_router(dashboard_projection_router)
+app.include_router(ops_domain_panel_router)
 
 # Service URLs from env
 IDENTITY_URL = os.getenv("IDENTITY_URL", "http://gov-identity:8002")

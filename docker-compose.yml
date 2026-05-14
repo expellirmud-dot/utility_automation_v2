@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  governance-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - GOVERNANCE_API_URL=http://gov-control:8000
+    depends_on:
+      gov-control:
+        condition: service_healthy
+    restart: unless-stopped
+
   gov-audit:
     build:
       context: .
@@ -62,6 +76,8 @@ services:
       dockerfile: docker/gov-control.Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - ./data:/app/data
     depends_on:
       gov-identity:
         condition: service_healthy
