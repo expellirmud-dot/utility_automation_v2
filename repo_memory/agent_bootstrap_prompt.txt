@@ -1,0 +1,17 @@
+MANDATORY READ ORDER
+
+1. repo_memory/project_state.json
+2. repo_memory/architecture_map.md
+3. repo_memory/known_landmines.md
+4. repo_memory/task_registry.md
+5. repo_memory/module_registry.md
+6. repo_memory/validation_commands.md
+7. PROJECT_RULES.md
+8. AI_HANDOFF.md
+9. AGENTS.md
+
+Then:
+- activate Serena project
+- inspect actual source files
+- do not implement from memory alone
+- if Serena fails, stop
