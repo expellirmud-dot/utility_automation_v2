@@ -1,13 +1,19 @@
 {
   "project": "utility_automation_v2",
-  "current_completed_task": "TASK 051-A",
-  "next_task": "TASK 051-B",
+  "current_completed_task": "TASK 051-B",
+  "next_task": "TASK 051-C",
   "core_invariants": [
     "Ledger is sole source of truth",
     "SQLite is projection/cache only",
     "Mesh quorum is sole authority",
     "AI is advisory only",
     "Determinism mandatory"
+  ],
+  "governance_chain": [
+    "Certification",
+    "Promotion Gatekeeper",
+    "Promotion Governance",
+    "Release Authorization Advisory"
   ],
   "known_risks": [
     "Deferred Next.js/PostCSS vulnerabilities"

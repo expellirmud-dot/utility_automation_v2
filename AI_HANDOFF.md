@@ -86,3 +86,7 @@ Completion:
 - if runtime/governance changed:
   PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
 - report exact outputs
+
+## Additional Completed Baselines
+- TASK 051-B: Release Authorization Advisory Bundle
+- TASK 051-M: Repository Memory Layer

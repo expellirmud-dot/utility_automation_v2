@@ -27,7 +27,17 @@ TASK 051-A
 - fail-closed advisory promotion blocking
 - deterministic gatekeeper hashing
 
-## Next
-
 TASK 051-B
 - release authorization advisory bundle
+- fail-closed release governance
+- deterministic authorization hashing
+
+TASK 051-M
+- repository-local AI memory layer
+- project state persistence
+- architecture acceleration
+
+## Next
+
+TASK 051-C
+- release governance review surface
