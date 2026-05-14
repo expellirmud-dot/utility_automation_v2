@@ -35,6 +35,7 @@ def test_registered_checks_are_in_explicit_canonical_order() -> None:
         "projection_consistency",
         "api_governance_get_only_ops",
         "frontend_governance_no_mutation_ui",
+        "security_dependency_governance",
     ]
 
 
