@@ -1,0 +1,15 @@
+{
+  "project": "utility_automation_v2",
+  "current_completed_task": "TASK 051-A",
+  "next_task": "TASK 051-B",
+  "core_invariants": [
+    "Ledger is sole source of truth",
+    "SQLite is projection/cache only",
+    "Mesh quorum is sole authority",
+    "AI is advisory only",
+    "Determinism mandatory"
+  ],
+  "known_risks": [
+    "Deferred Next.js/PostCSS vulnerabilities"
+  ]
+}
