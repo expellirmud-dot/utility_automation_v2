@@ -1,20 +1,35 @@
 # Utility Automation V2
 
-## TASK 036 Status
+Deterministic governance operating platform.
 
-TASK 036 -- Deterministic Distributed Mesh is functionally complete and locally certified.
+## Core Truth Model
 
-Use "locally certified" until the evidence pack also includes:
+- Ledger is sole source of truth
+- SQLite is projection/cache only
+- Mesh quorum is sole authority
+- AI is advisory only
 
-- git diff
-- CI pipeline result
-- production deployment runbook
-- external environment validation
+## Platform Properties
 
-## TASK 036 Certification Commands
+- deterministic replay
+- auditability
+- governance integrity
+- stable canonical ordering
+- certification reproducibility
 
-```powershell
-python -m pytest tests\validation\test_ledger_integrity.py tests\integration\test_replay_determinism.py -q
-python -m src.tests.certification.deterministic_certifier
-```
+## Completed Baselines
 
+- TASK 036 Distributed deterministic mesh
+- TASK 037 Policy governance graph
+- TASK 038 Advisory simulation platform
+- TASK 039 Recovery governance visibility
+- TASK 041 Incident review console
+- TASK 046 DB-backed read-only ops projections
+- TASK 047 AI engineering workflow kit
+
+## Validation
+
+Canonical validation:
+
+python -m pytest -q
+PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
