@@ -22,10 +22,11 @@ Allowed:
 
 Forbidden:
 
-\- governance/runtime mutation APIs
+\- POST/PUT/PATCH/DELETE
 
-\- authority-mutating action controls
+\- action buttons
 
+\- replay triggers
 
 \- recovery execution
 
@@ -36,3 +37,4 @@ Forbidden:
 
 
 No frontend authority logic.
+
