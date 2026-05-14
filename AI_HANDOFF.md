@@ -12,6 +12,20 @@ Completed baselines:
 - TASK 041: Incident review console
 - TASK 046: DB-backed read-only ops projections
 - TASK 047: AI engineering workflow/tooling kit
+- TASK 048: Read-only multi-page operator observatory
+- TASK 049: Deterministic certification pipeline / governance CI gatekeeper
+
+Latest commit: 1e642ebe TASK 049 add deterministic certification pipeline
+Current validation: 301 passed
+Certification command: PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
+Certification artifact: output/certification/certification_artifact.json
+CI workflow: .github/workflows/deterministic-certification.yml
+
+Known deferred risk:
+- frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16 upgrade
+
+Recommended next task:
+- TASK 050-A Security / Dependency Hardening Baseline
 
 ## Non-Negotiable Invariants
 
