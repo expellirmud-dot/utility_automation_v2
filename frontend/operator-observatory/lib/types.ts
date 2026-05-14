@@ -7,9 +7,11 @@ import type {
   projectionCardSchema,
   projectionsResponseSchema,
   routeGovernanceResponseSchema,
+  releaseGovernanceResponseSchema,
   surfaceSchema,
   surfacesResponseSchema,
 } from "./schemas";
+
 
 export type OverviewCard = z.infer<typeof overviewCardSchema>;
 export type OverviewResponse = z.infer<typeof overviewResponseSchema>;
@@ -18,6 +20,7 @@ export type ProjectionsResponse = z.infer<typeof projectionsResponseSchema>;
 export type Surface = z.infer<typeof surfaceSchema>;
 export type SurfacesResponse = z.infer<typeof surfacesResponseSchema>;
 export type RouteGovernanceResponse = z.infer<typeof routeGovernanceResponseSchema>;
+export type ReleaseGovernanceResponse = z.infer<typeof releaseGovernanceResponseSchema>;
 export type DomainPanel = z.infer<typeof domainPanelSchema>;
 export type DomainPanelsResponse = z.infer<typeof domainPanelsResponseSchema>;
 

@@ -21,6 +21,8 @@ from src.ui.read_only_route_governance import (
 )
 from src.ui.projection_federation import ProjectionFederationService, card_to_dict
 from src.ui.read_only_surface_registry import list_ops_exposed_surfaces
+from src.ui.release_governance_api import release_router
+
 
 router = APIRouter(prefix="/ops", tags=["Ops Overview"])
 
@@ -141,7 +143,6 @@ def _build_route_governance_response() -> RouteGovernanceResponse:
             for item in report.violations
         ],
     )
-
 
 def _projection_reader() -> DBProjectionReader:
     return DBProjectionReader()
@@ -293,9 +294,9 @@ def get_domain_panels() -> OpsDomainPanelsResponse:
         ]
     )
 
-
 app = FastAPI(title="Ops Overview Console")
 app.include_router(router)
+app.include_router(release_router)
 
 if _strict_route_governance_enabled():
     strict_report = inspect_read_only_routes(app=app)

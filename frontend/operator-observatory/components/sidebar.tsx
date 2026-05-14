@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: "Projections", href: "/projections" },
   { label: "Surfaces", href: "/surfaces" },
   { label: "Route Governance", href: "/route-governance" },
+  { label: "Release Governance", href: "/release-governance" },
 ] as const;
 
 export function Sidebar() {

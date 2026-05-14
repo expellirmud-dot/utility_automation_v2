@@ -4,6 +4,7 @@ import {
   overviewResponseSchema,
   projectionsResponseSchema,
   routeGovernanceResponseSchema,
+  releaseGovernanceResponseSchema,
   surfacesResponseSchema,
 } from "./schemas";
 import type { ObservatoryData } from "./types";
@@ -26,6 +27,10 @@ const endpointSchemas = {
   routeGovernance: {
     path: "/api/ops/route-governance",
     schema: routeGovernanceResponseSchema,
+  },
+  releaseGovernance: {
+    path: "/api/ops/release-governance",
+    schema: releaseGovernanceResponseSchema,
   },
   domainPanels: {
     path: "/api/ops/panels",
@@ -75,6 +80,10 @@ export async function fetchSurfaces() {
 
 export async function fetchRouteGovernance() {
   return fetchValidated("routeGovernance");
+}
+
+export async function fetchReleaseGovernance() {
+  return fetchValidated("releaseGovernance");
 }
 
 export async function fetchDomainPanels() {

@@ -100,3 +100,28 @@ export const domainPanelSchema = z.object({
 export const domainPanelsResponseSchema = z.object({
   panels: z.array(domainPanelSchema),
 });
+
+export const certificationSummarySchema = z.object({
+  passed: z.boolean(),
+  overall_score: z.number(),
+  artifact_hash: z.string(),
+});
+
+export const gatekeeperSummarySchema = z.object({
+  passed: z.boolean(),
+  advisory_decision: z.string(),
+  report_hash: z.string(),
+});
+
+export const authorizationSummarySchema = z.object({
+  passed: z.boolean(),
+  advisory_decision: z.string(),
+  authorization_hash: z.string(),
+  reason_codes: z.array(z.string()),
+});
+
+export const releaseGovernanceResponseSchema = z.object({
+  certification: certificationSummarySchema,
+  gatekeeper: gatekeeperSummarySchema,
+  authorization: authorizationSummarySchema,
+});
