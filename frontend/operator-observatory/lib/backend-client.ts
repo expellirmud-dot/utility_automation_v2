@@ -6,6 +6,7 @@ import {
   routeGovernanceResponseSchema,
   releaseGovernanceResponseSchema,
   surfacesResponseSchema,
+  humanReviewIntentResponseSchema,
 } from "./schemas";
 import type { ObservatoryData } from "./types";
 
@@ -31,6 +32,10 @@ const endpointSchemas = {
   releaseGovernance: {
     path: "/api/ops/release-governance",
     schema: releaseGovernanceResponseSchema,
+  },
+  humanReviewIntent: {
+    path: "/api/ops/human-review-intent",
+    schema: humanReviewIntentResponseSchema,
   },
   domainPanels: {
     path: "/api/ops/panels",
@@ -84,6 +89,10 @@ export async function fetchRouteGovernance() {
 
 export async function fetchReleaseGovernance() {
   return fetchValidated("releaseGovernance");
+}
+
+export async function fetchHumanReviewIntents() {
+  return fetchValidated("humanReviewIntent");
 }
 
 export async function fetchDomainPanels() {

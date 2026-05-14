@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: "Surfaces", href: "/surfaces" },
   { label: "Route Governance", href: "/route-governance" },
   { label: "Release Governance", href: "/release-governance" },
+  { label: "Human Review Intent", href: "/human-review-intent" },
 ] as const;
 
 export function Sidebar() {

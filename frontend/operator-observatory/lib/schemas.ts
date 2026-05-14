@@ -120,6 +120,19 @@ export const authorizationSummarySchema = z.object({
   reason_codes: z.array(z.string()),
 });
 
+export const humanReviewIntentRecordSchema = z.object({
+  archive_hash: z.string(),
+  authorizer_id: z.string(),
+  review_intent: z.string(),
+  rationale: z.string(),
+  authorization_epoch: z.number(),
+  authorization_seq: z.number(),
+  record_hash: z.string(),
+  record_version: z.string(),
+});
+
+export const humanReviewIntentResponseSchema = z.array(humanReviewIntentRecordSchema);
+
 export const releaseGovernanceResponseSchema = z.object({
   certification: certificationSummarySchema,
   gatekeeper: gatekeeperSummarySchema,
