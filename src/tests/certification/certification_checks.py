@@ -11,7 +11,7 @@ import sys
 from src.services.event_sourcing.projection.state_projector import StateProjector
 from src.services.mesh.mesh_orchestrator import MeshOrchestrator
 from src.tests.certification.adversarial_fault_injector import AdversarialFaultInjector
-from src.tests.certification.certification_models import (
+from src.services.governance.certification.models import (
     CertificationCheck,
     CertificationFailure,
     CertificationResult,

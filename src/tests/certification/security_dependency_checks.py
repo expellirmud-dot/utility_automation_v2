@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from src.tests.certification.certification_models import (
+from src.services.governance.certification.models import (
     CertificationCheck,
     CertificationFailure,
     CertificationResult,

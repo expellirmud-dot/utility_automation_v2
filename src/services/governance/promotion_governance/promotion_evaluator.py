@@ -14,7 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from src.tests.certification.certification_models import CertificationArtifact
+from src.services.governance.certification.models import CertificationArtifact
+
 from src.services.governance.promotion_governance.promotion_models import (
     PromotionEligibility,
     PromotionEligibilityResult,
@@ -159,6 +160,14 @@ class PromotionEligibilityEvaluator:
                 )
             )
 
+        # Build results lookup map for deterministic matching
+        results_by_key: dict[str, PromotionEligibilityResult] = {} # Placeholder for real results if available
+        # Actually we need a map of CertificationResult, not PromotionEligibilityResult
+        # Let's use a local map for CertificationResults
+        cert_results_by_key = {}
+        if certification_artifact:
+            cert_results_by_key = {r.check.key: r for r in certification_artifact.results}
+
         # Check 2: All certification checks pass
         criterion = PromotionEligibilityEvaluator.CRITERIA[1]
         if certification_artifact and certification_artifact.passed:
@@ -221,11 +230,11 @@ class PromotionEligibilityEvaluator:
             )
 
         # Checks 4-10: Invariant compliance
-        # These are verified through certification checks that ran
+        # Map each criterion key to its corresponding certification check result
         invariant_criteria = PromotionEligibilityEvaluator.CRITERIA[3:10]
-        if certification_artifact and certification_artifact.passed:
-            # If certification passed, all invariants are satisfied
-            for criterion in invariant_criteria:
+        for criterion in invariant_criteria:
+            cert_result = cert_results_by_key.get(criterion.key)
+            if cert_result and cert_result.passed:
                 results.append(
                     PromotionEligibilityResult(
                         criterion=criterion,
@@ -233,17 +242,17 @@ class PromotionEligibilityEvaluator:
                         failure=None,
                     )
                 )
-        else:
-            # If certification failed or missing, invariants cannot be verified
-            for criterion in invariant_criteria:
+            else:
+                reason = "Invariant compliance not verified" if not cert_result else "Certification check failed"
+                detail = "Requires passing certification" if not cert_result else f"Check {criterion.key} failed"
                 results.append(
                     PromotionEligibilityResult(
                         criterion=criterion,
                         satisfied=False,
                         failure=PromotionEligibilityFailure(
                             criterion_key=criterion.key,
-                            reason="Invariant compliance not verified",
-                            detail="Requires passing certification",
+                            reason=reason,
+                            detail=detail,
                         ),
                     )
                 )

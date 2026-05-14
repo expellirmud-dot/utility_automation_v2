@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from src.tests.certification.certification_checks import registered_checks
-from src.tests.certification.certification_models import (
+from src.services.governance.certification.models import (
     CertificationArtifact,
     CertificationCheck,
     CertificationResult,

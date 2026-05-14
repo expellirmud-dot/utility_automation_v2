@@ -1,0 +1,12 @@
+{
+  "mcp": {
+    "servers": {
+      "serena": {
+        "command": "serena",
+        "args": ["start-mcp-server"],
+        "cwd": "D:\\utility_automation_v2",
+        "disabled": false
+      }
+    }
+  }
+}

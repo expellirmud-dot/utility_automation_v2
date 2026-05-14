@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pytest
 from pathlib import Path
-from src.tests.certification.certification_models import CertificationCheck
+from src.services.governance.certification.models import CertificationCheck
 from src.tests.certification.security_dependency_checks import check_security_dependencies
 
 @pytest.fixture

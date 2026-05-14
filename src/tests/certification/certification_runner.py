@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 
 from src.tests.certification.certification_checks import run_registered_checks
-from src.tests.certification.certification_models import CertificationArtifact
+from src.services.governance.certification.models import (
+    CertificationArtifact,
+)
+
 
 
 DEFAULT_ARTIFACT_PATH = Path("output/certification/certification_artifact.json")

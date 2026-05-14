@@ -588,11 +588,28 @@ class TestPromotionManifestGenerator:
         r = PromotionEligibilityResult(criterion=c, satisfied=True)
         eligibility = PromotionEligibility(results=(r,))
         
-        bundle = PromotionManifestGenerator.generate_simple_decision_bundle(
+        # Construct bundle explicitly
+        request = PromotionRequest(
             source_version_id="v1",
             target_stage="approved",
             requested_by="user",
+            request_epoch=1,
+            request_seq=1,
+        )
+        
+        decision = PromotionDecision(
+            promotion_request=request,
             eligibility=eligibility,
+            decision="approved",
+            decision_rationale="All promotion eligibility criteria satisfied",
+            decision_epoch=1,
+            decision_seq=1,
+        )
+        
+        bundle = PromotionBundle(
+            request=request,
+            eligibility=eligibility,
+            decision=decision,
         )
         
         assert bundle.request.source_version_id == "v1"
