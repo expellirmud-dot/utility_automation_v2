@@ -61,14 +61,34 @@ async function fetchValidated<K extends EndpointKey>(
   return endpoint.schema.parse(await response.json());
 }
 
+export async function fetchOverview() {
+  return fetchValidated("overview");
+}
+
+export async function fetchProjections() {
+  return fetchValidated("projections");
+}
+
+export async function fetchSurfaces() {
+  return fetchValidated("surfaces");
+}
+
+export async function fetchRouteGovernance() {
+  return fetchValidated("routeGovernance");
+}
+
+export async function fetchDomainPanels() {
+  return fetchValidated("domainPanels");
+}
+
 export async function fetchObservatoryData(): Promise<ObservatoryData> {
   const [overview, projections, surfaces, routeGovernance, domainPanels] =
     await Promise.all([
-      fetchValidated("overview"),
-      fetchValidated("projections"),
-      fetchValidated("surfaces"),
-      fetchValidated("routeGovernance"),
-      fetchValidated("domainPanels"),
+      fetchOverview(),
+      fetchProjections(),
+      fetchSurfaces(),
+      fetchRouteGovernance(),
+      fetchDomainPanels(),
     ]);
 
   return {

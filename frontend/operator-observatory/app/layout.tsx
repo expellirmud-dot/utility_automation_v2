@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ObservatoryShell } from "../components/observatory-shell";
 
 export const metadata: Metadata = {
   title: "Operator Observatory",
@@ -13,7 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ObservatoryShell>
+          {children}
+        </ObservatoryShell>
+      </body>
     </html>
   );
 }
