@@ -39,6 +39,7 @@ TASK 060 update handoff and project state
 TASK 061 update handoff and project state
 TASK 062 update handoff and project state
 TASK 063 update handoff and project state
+TASK 064 repository workflow memory hardening
 
 /evidence-review-summary = ○ Static
 no Dynamic server usage warning
