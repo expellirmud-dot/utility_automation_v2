@@ -33,12 +33,13 @@ TASK 057 housekeeping update handoff
   next build
   typecheck
 
-TASK 057 committed
-commit: 169d3472
-branch: codex/task-050-b-promotion-governance
-push: SUCCESS
+TASK 058 update handoff and project state
 
-Current validation: 379 passed
+TASK 058 implemented
+targeted tests: 8 passed
+full pytest: 387 passed
+deterministic certifier: 100%
+
 Certification command: PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
 Certification artifact: output/certification/certification_artifact.json
 CI workflow: .github/workflows/deterministic-certification.yml
