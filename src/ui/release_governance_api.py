@@ -13,8 +13,11 @@ from src.services.governance.promotion_governance.human_review_intent_provider i
 from src.services.governance.promotion_governance.evidence_package_provider import (
     EvidencePackageProvider,
 )
+from src.services.governance.promotion_governance.evidence_package_integrity_provider import (
+    EvidencePackageIntegrityProvider,
+)
 
-release_router = APIRouter(prefix="/ops", tags=["Release Governance"])
+release_router = APIRouter(prefix="/ops/api", tags=["Release Governance"])
 
 class ReleaseGovernanceResponse(BaseModel):
     certification: dict[str, Any]
@@ -24,11 +27,14 @@ class ReleaseGovernanceResponse(BaseModel):
 class EvidencePackageResponse(BaseModel):
     package: dict[str, Any]
 
-@release_router.get("/api/release-governance", response_model=ReleaseGovernanceResponse)
+class EvidencePackageIntegrityResponse(BaseModel):
+    report: dict[str, Any]
+
+@release_router.get("/release-governance", response_model=ReleaseGovernanceResponse)
 def get_release_governance() -> ReleaseGovernanceResponse:
     return get_release_governance_data()
 
-@release_router.get("/api/evidence-package", response_model=EvidencePackageResponse)
+@release_router.get("/evidence-package", response_model=EvidencePackageResponse)
 def get_evidence_package() -> EvidencePackageResponse:
     """
     Read-only surface for the Governance Evidence Package.
@@ -36,7 +42,17 @@ def get_evidence_package() -> EvidencePackageResponse:
     """
     return EvidencePackageProvider.get_evidence_package_projection()
 
-@release_router.get("/api/human-review-intent", response_model=List[dict[str, Any]])
+@release_router.get("/evidence-package-integrity", response_model=EvidencePackageIntegrityResponse)
+def get_evidence_package_integrity() -> EvidencePackageIntegrityResponse:
+    """
+    Read-only surface for the Evidence Package Integrity Report.
+    Deterministic projection data only.
+    """
+    return EvidencePackageIntegrityProvider.get_integrity_projection()
+
+@release_router.get("/human-review-intent", response_model=List[dict[str, Any]])
+
+
 
 def get_human_review_intents() -> List[dict[str, Any]]:
     """

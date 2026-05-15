@@ -11,7 +11,9 @@ const NAV_ITEMS = [
   { label: "Route Governance", href: "/route-governance" },
   { label: "Release Governance", href: "/release-governance" },
   { label: "Evidence Package", href: "/evidence-package" },
+  { label: "Evidence Package Integrity", href: "/evidence-package-integrity" },
   { label: "Human Review Intent", href: "/human-review-intent" },
+
 
 ] as const;
 

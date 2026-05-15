@@ -146,7 +146,21 @@ export const evidencePackageResponseSchema = z.object({
   }),
 });
 
+export const evidencePackageIntegrityResponseSchema = z.object({
+  report: z.object({
+    passed: z.boolean(),
+    violations: z.array(z.object({
+      field: z.string(),
+      reason: z.string(),
+    })),
+    package_id: z.string().optional(),
+    expected_version: z.string().optional(),
+    report_hash: z.string(),
+  }),
+});
+
 export const releaseGovernanceResponseSchema = z.object({
+
 
   certification: certificationSummarySchema,
   gatekeeper: gatekeeperSummarySchema,

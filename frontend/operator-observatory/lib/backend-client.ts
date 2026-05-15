@@ -6,9 +6,11 @@ import {
   routeGovernanceResponseSchema,
   releaseGovernanceResponseSchema,
   evidencePackageResponseSchema,
+  evidencePackageIntegrityResponseSchema,
   surfacesResponseSchema,
   humanReviewIntentResponseSchema,
 } from "./schemas";
+
 
 import type { ObservatoryData } from "./types";
 
@@ -39,8 +41,13 @@ const endpointSchemas = {
     path: "/api/ops/evidence-package",
     schema: evidencePackageResponseSchema,
   },
+  evidencePackageIntegrity: {
+    path: "/api/ops/evidence-package-integrity",
+    schema: evidencePackageIntegrityResponseSchema,
+  },
   humanReviewIntent: {
     path: "/api/ops/human-review-intent",
+
 
     schema: humanReviewIntentResponseSchema,
   },
@@ -102,7 +109,12 @@ export async function fetchEvidencePackage() {
   return fetchValidated("evidencePackage");
 }
 
+export async function fetchEvidencePackageIntegrity() {
+  return fetchValidated("evidencePackageIntegrity");
+}
+
 export async function fetchHumanReviewIntents() {
+
 
   return fetchValidated("humanReviewIntent");
 }
