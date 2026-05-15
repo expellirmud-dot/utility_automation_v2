@@ -22,6 +22,9 @@ from src.services.governance.promotion_governance.evidence_package_readiness_pro
 from src.services.governance.promotion_governance.evidence_review_summary_provider import (
     EvidenceReviewSummaryProvider,
 )
+from src.services.governance.review_index.review_index_provider import (
+    GovernanceReviewIndexProvider,
+)
 
 release_router = APIRouter(prefix="/ops/api", tags=["Release Governance"])
 
@@ -41,6 +44,9 @@ class EvidencePackageReadinessResponse(BaseModel):
 
 class EvidenceReviewSummaryResponse(BaseModel):
     summary: dict[str, Any]
+
+class GovernanceReviewIndexResponse(BaseModel):
+    index: dict[str, Any]
 
 @release_router.get("/release-governance", response_model=ReleaseGovernanceResponse)
 def get_release_governance() -> ReleaseGovernanceResponse:
@@ -77,6 +83,14 @@ def get_evidence_review_summary() -> EvidenceReviewSummaryResponse:
     Deterministic projection data only.
     """
     return EvidenceReviewSummaryProvider.get_summary_projection()
+
+@release_router.get("/governance-review-index", response_model=GovernanceReviewIndexResponse)
+def get_governance_review_index() -> GovernanceReviewIndexResponse:
+    """
+    Read-only surface for the Governance Review Index Bundle.
+    Deterministic projection data only.
+    """
+    return GovernanceReviewIndexProvider.get_index_projection()
 
 @release_router.get("/human-review-intent", response_model=List[dict[str, Any]])
 

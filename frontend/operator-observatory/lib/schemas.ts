@@ -183,6 +183,24 @@ export const evidenceReviewSummaryResponseSchema = z.object({
   }),
 });
 
+export const governanceReviewIndexResponseSchema = z.object({
+  index: z.object({
+    index_version: z.string(),
+    index_status: z.string(),
+    certification_artifact_hash: z.string(),
+    promotion_governance_hash: z.string(),
+    evidence_package_hash: z.string(),
+    integrity_report_hash: z.string(),
+    readiness_report_hash: z.string(),
+    review_summary_hash: z.string(),
+    readiness_decision: z.string(),
+    integrity_passed: z.boolean(),
+    invariant_keys: z.array(z.string()),
+    reason_codes: z.array(z.string()),
+    index_hash: z.string(),
+  }),
+});
+
 export const releaseGovernanceResponseSchema = z.object({
 
 

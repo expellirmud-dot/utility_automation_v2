@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: "Evidence Package Integrity", href: "/evidence-package-integrity" },
   { label: "Evidence Package Readiness", href: "/evidence-package-readiness" },
   { label: "Evidence Review Summary", href: "/evidence-review-summary" },
+  { label: "Governance Review Index", href: "/governance-review-index" },
   { label: "Human Review Intent", href: "/human-review-intent" },
 
 
