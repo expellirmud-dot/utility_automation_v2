@@ -168,6 +168,21 @@ export const evidencePackageReadinessResponseSchema = z.object({
   }),
 });
 
+export const evidenceReviewSummaryResponseSchema = z.object({
+  summary: z.object({
+    package_id: z.string(),
+    package_hash: z.string(),
+    integrity_report_hash: z.string(),
+    readiness_report_hash: z.string(),
+    readiness_decision: z.string(),
+    integrity_passed: z.boolean(),
+    package_status: z.string(),
+    reason_codes: z.array(z.string()),
+    summary_version: z.string(),
+    summary_hash: z.string(),
+  }),
+});
+
 export const releaseGovernanceResponseSchema = z.object({
 
 

@@ -11,6 +11,7 @@ import type {
   evidencePackageResponseSchema,
   evidencePackageIntegrityResponseSchema,
   evidencePackageReadinessResponseSchema,
+  evidenceReviewSummaryResponseSchema,
   humanReviewIntentResponseSchema,
   surfaceSchema,
   surfacesResponseSchema,
@@ -30,6 +31,7 @@ export type ReleaseGovernanceResponse = z.infer<typeof releaseGovernanceResponse
 export type EvidencePackageResponse = z.infer<typeof evidencePackageResponseSchema>;
 export type EvidencePackageIntegrityResponse = z.infer<typeof evidencePackageIntegrityResponseSchema>;
 export type EvidencePackageReadinessResponse = z.infer<typeof evidencePackageReadinessResponseSchema>;
+export type EvidenceReviewSummaryResponse = z.infer<typeof evidenceReviewSummaryResponseSchema>;
 export type HumanReviewIntentResponse = z.infer<typeof humanReviewIntentResponseSchema>;
 
 
