@@ -1,7 +1,7 @@
 {
   "project": "utility_automation_v2",
-  "current_completed_task": "TASK 064",
-  "next_task": "TASK 065",
+  "current_completed_task": "TASK 068",
+  "next_task": "TASK 069",
   "core_invariants": [
     "Ledger is sole source of truth",
     "SQLite is projection/cache only",
@@ -13,7 +13,10 @@
     "Certification",
     "Promotion Gatekeeper",
     "Promotion Governance",
-    "Release Authorization Advisory"
+    "Release Authorization Advisory",
+    "Governance Review Index Bundle",
+    "Governance Review Index Surface",
+    "Governance Review Index Source Reference Hardening"
   ],
   "known_risks": [
     "Deferred Next.js/PostCSS vulnerabilities"

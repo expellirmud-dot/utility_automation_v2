@@ -40,8 +40,35 @@ TASK 061 update handoff and project state
 TASK 062 update handoff and project state
 TASK 063 update handoff and project state
 TASK 064 repository workflow memory hardening
+- TASK 065 Governance Review Index Bundle
+  - Deterministic audit index consolidating governance hashes
+  -- Backend-only implementation (no API/UI/IO)
+  -- Validates hash integrity and structural readiness
+  -- Deterministic blocked statuses for missing references
+  - Validation passed: pytest, deterministic certifier
+- TASK 066 Governance Review Index Surface
+  - Read-only operator review surface for the Review Index Bundle
+  -- GET-only backend API and observational frontend page
+  -- No mutation or authority logic
+  -- Deterministic degraded state for missing references
+  - Validation passed: pytest, deterministic certifier, frontend build/typecheck
+- TASK 067 Governance Review Index Source Reference Hardening
+  - Hardened source reference extraction for the Review Index
+  -- deterministic extraction of existing hashes from source projections
+  -- no fabricated provenance
+  -- preserved blocked status for missing references
+  - Validation passed: pytest, deterministic certifier
+- TASK 068 Evidence Projection Reconstruction Hardening
+  - Fixed reconstruction of frozen domain models from projection dictionaries
+  -- strips derived fields (package_hash, report_hash) before constructor call
+  -- prevents TypeError in readiness and summary providers
+  - Validation passed: pytest, deterministic certifier
+
+
 
 /evidence-review-summary = ○ Static
+
+
 no Dynamic server usage warning
 npm build passed
 npm typecheck passed
@@ -54,7 +81,7 @@ Known deferred risk:
 - frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16 upgrade
 
 Recommended next task:
-- [Next task TBD]
+- TASK 069 [TBD]
 
 ## Non-Negotiable Invariants
 
