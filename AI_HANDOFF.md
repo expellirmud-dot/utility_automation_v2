@@ -37,10 +37,11 @@ TASK 058 update handoff and project state
 TASK 059 update handoff and project state
 TASK 060 update handoff and project state
 TASK 061 update handoff and project state
+TASK 062 update handoff and project state
 
-TASK 061 implemented
+TASK 062 implemented
 targeted tests: 5 passed
-full suite: 392 passed
+full suite: 397 passed
 deterministic certifier: 100%
 
 Certification command: PYTHONPATH=. python src/tests/certification/deterministic_certifier.py
