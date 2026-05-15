@@ -1,6 +1,8 @@
 import pytest
 from src.services.governance.review_index.review_index_builder import GovernanceReviewIndexBuilder
 from src.services.governance.review_index.review_index_models import GovernanceReviewIndexBundle
+from unittest.mock import patch, MagicMock
+from src.services.governance.review_index.review_index_provider import GovernanceReviewIndexProvider
 
 def test_build_index_success():
     # Arrange
@@ -238,3 +240,90 @@ def test_invalid_canonical_ordering_rejected():
     # To properly test ordering rejection, we need a valid hash for the unsorted input 
     # (which is impossible by definition of the class's logic) or just accept that
     # the ordering check comes before the hash check in __post_init__.
+
+def test_safe_extract_hash_success():
+    # Arrange
+    data = {"cert_hash": "real-hash-123", "other": "val"}
+    
+    # Act
+    result = GovernanceReviewIndexProvider._safe_extract_hash(data, "cert_hash")
+    
+    # Assert
+    assert result == "real-hash-123"
+
+def test_safe_extract_hash_missing():
+    # Arrange
+    data = {"other": "val"}
+    
+    # Act
+    result = GovernanceReviewIndexProvider._safe_extract_hash(data, "cert_hash")
+    
+    # Assert
+    assert result is None
+
+def test_safe_extract_hash_empty():
+    # Arrange
+    data = {"cert_hash": "   "}
+    
+    # Act
+    result = GovernanceReviewIndexProvider._safe_extract_hash(data, "cert_hash")
+    
+    # Assert
+    assert result is None
+
+def test_safe_extract_hash_invalid_type():
+    # Arrange
+    data = "not-a-dict"
+    
+    # Act
+    result = GovernanceReviewIndexProvider._safe_extract_hash(data, "cert_hash")
+    
+    # Assert
+    assert result is None
+
+def test_provider_remains_blocked():
+    # Arrange
+    # Mock providers to avoid triggering bugs in other modules (TypeError in Package reconstruction)
+    # and to ensure we are testing the extraction logic in isolation.
+    with patch('src.services.governance.review_index.review_index_provider.EvidencePackageProvider') as mock_pkg, \
+         patch('src.services.governance.review_index.review_index_provider.EvidencePackageIntegrityProvider') as mock_int, \
+         patch('src.services.governance.review_index.review_index_provider.EvidencePackageReadinessProvider') as mock_read, \
+         patch('src.services.governance.review_index.review_index_provider.EvidenceReviewSummaryProvider') as mock_sum:
+        
+        # Setup mock returns
+        mock_pkg.get_evidence_package_projection.return_value.package = {
+            "package_hash": "pkg-hash",
+            "reason_codes": []
+        }
+        mock_int.get_integrity_projection.return_value.report = {
+            "report_hash": "int-hash",
+            "passed": True
+        }
+        
+        mock_read_resp = MagicMock()
+        mock_read_resp.report = {
+            "report_hash": "read-hash",
+            "decision": "READY_FOR_HUMAN_REVIEW"
+        }
+        mock_read.get_readiness_projection.return_value = mock_read_resp
+        
+        mock_sum_resp = MagicMock()
+        mock_sum_resp.summary = {
+            "summary_hash": "sum-hash"
+        }
+        mock_sum.get_summary_projection.return_value = mock_sum_resp
+
+        
+        # Act
+        response = GovernanceReviewIndexProvider.get_index_projection()
+        index = response.index
+        
+        # Assert
+        # Since the mock package_data has no certification_hash or promotion_hash,
+        # the result must remain blocked.
+        assert index["index_status"] == "INDEX_BLOCKED_MISSING_REFERENCE"
+        assert "MISSING_CERTIFICATION_ARTIFACT_HASH" in index["reason_codes"]
+        assert "MISSING_PROMOTION_GOVERNANCE_HASH" in index["reason_codes"]
+        assert index["certification_artifact_hash"] == ""
+        assert index["promotion_governance_hash"] == ""
+

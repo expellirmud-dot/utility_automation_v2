@@ -49,10 +49,10 @@ class GovernanceReviewIndexProvider:
         summary_data = EvidenceReviewSummaryProvider.get_summary_projection().summary
         
         # 2. Extract hashes for the builder
-        # If deterministic source references are unavailable, pass None 
-        # to trigger INDEX_BLOCKED_MISSING_REFERENCE status in the builder.
-        certification_hash = None 
-        promotion_hash = None
+        # Use safe extraction to avoid fabricating provenance.
+        # Currently, source projections may not contain these hashes.
+        certification_hash = cls._safe_extract_hash(package_data, "certification_hash")
+        promotion_hash = cls._safe_extract_hash(package_data, "promotion_hash")
         
         # 3. Build the deterministic index bundle
         index_bundle = GovernanceReviewIndexBuilder.build(
@@ -71,3 +71,15 @@ class GovernanceReviewIndexProvider:
         return GovernanceReviewIndexResponse(
             index=index_bundle.to_dict()
         )
+
+    @staticmethod
+    def _safe_extract_hash(data: Any, key: str) -> Optional[str]:
+        """
+        Safely extracts a hash from a projection dictionary.
+        Returns None if the data is not a dict, the key is missing, or the value is empty.
+        """
+        if isinstance(data, dict):
+            val = data.get(key)
+            if isinstance(val, str) and val.strip():
+                return val
+        return None
