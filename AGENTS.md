@@ -14,6 +14,17 @@ Core invariants:
 
 ---
 
+## Serena Bootstrap
+
+Project path:
+D:\utility_automation_v2
+
+If Serena activation fails:
+STOP
+Do not implement from memory.
+
+---
+
 ## Mandatory Read Order
 
 Before making changes:
