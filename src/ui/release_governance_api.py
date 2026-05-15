@@ -10,6 +10,9 @@ from src.services.governance.promotion_governance.release_governance_provider im
 from src.services.governance.promotion_governance.human_review_intent_provider import (
     HumanReviewIntentProvider,
 )
+from src.services.governance.promotion_governance.evidence_package_provider import (
+    EvidencePackageProvider,
+)
 
 release_router = APIRouter(prefix="/ops", tags=["Release Governance"])
 
@@ -18,11 +21,23 @@ class ReleaseGovernanceResponse(BaseModel):
     gatekeeper: dict[str, Any]
     authorization: dict[str, Any]
 
+class EvidencePackageResponse(BaseModel):
+    package: dict[str, Any]
+
 @release_router.get("/api/release-governance", response_model=ReleaseGovernanceResponse)
 def get_release_governance() -> ReleaseGovernanceResponse:
     return get_release_governance_data()
 
+@release_router.get("/api/evidence-package", response_model=EvidencePackageResponse)
+def get_evidence_package() -> EvidencePackageResponse:
+    """
+    Read-only surface for the Governance Evidence Package.
+    Deterministic projection data only.
+    """
+    return EvidencePackageProvider.get_evidence_package_projection()
+
 @release_router.get("/api/human-review-intent", response_model=List[dict[str, Any]])
+
 def get_human_review_intents() -> List[dict[str, Any]]:
     """
     Read-only surface for human review intent records.

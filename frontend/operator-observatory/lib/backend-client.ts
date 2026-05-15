@@ -5,9 +5,11 @@ import {
   projectionsResponseSchema,
   routeGovernanceResponseSchema,
   releaseGovernanceResponseSchema,
+  evidencePackageResponseSchema,
   surfacesResponseSchema,
   humanReviewIntentResponseSchema,
 } from "./schemas";
+
 import type { ObservatoryData } from "./types";
 
 const DEFAULT_OPS_API_BASE_URL = "http://127.0.0.1:8000";
@@ -33,8 +35,13 @@ const endpointSchemas = {
     path: "/api/ops/release-governance",
     schema: releaseGovernanceResponseSchema,
   },
+  evidencePackage: {
+    path: "/api/ops/evidence-package",
+    schema: evidencePackageResponseSchema,
+  },
   humanReviewIntent: {
     path: "/api/ops/human-review-intent",
+
     schema: humanReviewIntentResponseSchema,
   },
   domainPanels: {
@@ -91,7 +98,12 @@ export async function fetchReleaseGovernance() {
   return fetchValidated("releaseGovernance");
 }
 
+export async function fetchEvidencePackage() {
+  return fetchValidated("evidencePackage");
+}
+
 export async function fetchHumanReviewIntents() {
+
   return fetchValidated("humanReviewIntent");
 }
 

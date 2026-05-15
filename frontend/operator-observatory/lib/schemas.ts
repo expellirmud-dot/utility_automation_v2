@@ -133,7 +133,21 @@ export const humanReviewIntentRecordSchema = z.object({
 
 export const humanReviewIntentResponseSchema = z.array(humanReviewIntentRecordSchema);
 
+export const evidencePackageResponseSchema = z.object({
+  package: z.object({
+    package_id: z.string(),
+    package_version: z.string(),
+    archive_hash: z.string(),
+    human_record_hash: z.string(),
+    evidence_link_hash: z.string(),
+    package_status: z.string(),
+    reason_codes: z.array(z.string()),
+    package_hash: z.string(),
+  }),
+});
+
 export const releaseGovernanceResponseSchema = z.object({
+
   certification: certificationSummarySchema,
   gatekeeper: gatekeeperSummarySchema,
   authorization: authorizationSummarySchema,
