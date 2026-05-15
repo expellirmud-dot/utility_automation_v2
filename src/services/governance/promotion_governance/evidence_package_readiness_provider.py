@@ -50,8 +50,9 @@ class EvidencePackageReadinessProvider:
         from src.services.governance.promotion_governance.evidence_package_integrity import EvidencePackageIntegrityReport
         from src.services.governance.promotion_governance.evidence_package_integrity import EvidencePackageIntegrityViolation
 
-        # Reconstruct Package
-        package = GovernanceEvidencePackage(**package_data)
+        # Reconstruct Package - sanitize derived fields first
+        package_params = {k: v for k, v in package_data.items() if k != "package_hash"}
+        package = GovernanceEvidencePackage(**package_params)
         
         # Reconstruct Integrity Report
         violations = tuple(

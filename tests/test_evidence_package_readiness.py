@@ -147,3 +147,31 @@ def test_report_determinism(mock_archive, mock_human_record, verified_link):
     # Assert
     assert report1.report_hash == report2.report_hash
     assert report1.to_dict() == report2.to_dict()
+
+def test_readiness_projection_reconstruction_with_hash():
+    # Arrange
+    # Simulate projection data that includes the derived package_hash
+    package_data = {
+        "package_id": "PKG-HASH-TEST",
+        "package_version": "v1",
+        "archive_hash": "a" * 64,
+        "human_record_hash": "b" * 64,
+        "evidence_link_hash": "c" * 64,
+        "package_status": "PACKAGE_VERIFIED",
+        "reason_codes": ("OK",),
+        "package_hash": "some-derived-hash", # This should be stripped
+    }
+    
+    # Act
+    from unittest.mock import patch
+    from src.services.governance.promotion_governance.evidence_package_provider import EvidencePackageProvider
+    from src.services.governance.promotion_governance.evidence_package_readiness_provider import EvidencePackageReadinessProvider
+    
+    with patch.object(EvidencePackageProvider, 'get_evidence_package_projection') as mock_proj:
+        from src.services.governance.promotion_governance.evidence_package_provider import EvidencePackageResponse
+        mock_proj.return_value = EvidencePackageResponse(package=package_data)
+        result = EvidencePackageReadinessProvider.get_readiness_projection()
+        
+        # Assert
+        assert result.report["package_id"] == "PKG-HASH-TEST"
+

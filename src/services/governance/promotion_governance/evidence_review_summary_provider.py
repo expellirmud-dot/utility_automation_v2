@@ -58,7 +58,9 @@ class EvidenceReviewSummaryProvider:
             EvidencePackageReadinessReport,
         )
 
-        package = GovernanceEvidencePackage(**package_data)
+        # Reconstruct Package - sanitize derived fields first
+        package_params = {k: v for k, v in package_data.items() if k != "package_hash"}
+        package = GovernanceEvidencePackage(**package_params)
         
         violations = tuple(
             EvidencePackageIntegrityViolation(**v) for v in integrity_data.get("violations", [])
@@ -74,7 +76,6 @@ class EvidenceReviewSummaryProvider:
             package_id=readiness_data.get("package_id"),
             decision=readiness_data.get("decision"),
             reason_codes=tuple(readiness_data.get("reason_codes", [])),
-            report_hash=readiness_data.get("report_hash"),
         )
         
         # 4. Build the deterministic summary bundle

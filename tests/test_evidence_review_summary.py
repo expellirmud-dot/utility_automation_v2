@@ -158,3 +158,29 @@ def test_reason_codes_canonicalization(mock_archive, mock_human_record, verified
     # Assert
     # sorted("Z", "A", "PACKAGE_VERIFIED") -> ("A", "PACKAGE_VERIFIED", "Z")
     assert summary.reason_codes == tuple(sorted(list(package.reason_codes) + list(readiness_report.reason_codes)))
+
+def test_summary_projection_reconstruction_with_hash():
+    # Arrange
+    package_data = {
+        "package_id": "PKG-HASH-TEST",
+        "package_version": "v1",
+        "archive_hash": "a" * 64,
+        "human_record_hash": "b" * 64,
+        "evidence_link_hash": "c" * 64,
+        "package_status": "PACKAGE_VERIFIED",
+        "reason_codes": ("OK",),
+        "package_hash": "some-derived-hash",
+    }
+    
+    from unittest.mock import patch
+    from src.services.governance.promotion_governance.evidence_package_provider import EvidencePackageProvider
+    from src.services.governance.promotion_governance.evidence_review_summary_provider import EvidenceReviewSummaryProvider
+    
+    with patch.object(EvidencePackageProvider, 'get_evidence_package_projection') as mock_proj:
+        from src.services.governance.promotion_governance.evidence_package_provider import EvidencePackageResponse
+        mock_proj.return_value = EvidencePackageResponse(package=package_data)
+        result = EvidenceReviewSummaryProvider.get_summary_projection()
+        
+        # Assert
+        assert result.summary["package_id"] == "PKG-HASH-TEST"
+
