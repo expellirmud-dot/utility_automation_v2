@@ -36,8 +36,9 @@ TASK 057 housekeeping update handoff
 TASK 058 update handoff and project state
 TASK 059 update handoff and project state
 TASK 060 update handoff and project state
+TASK 061 update handoff and project state
 
-TASK 060 implemented
+TASK 061 implemented
 targeted tests: 5 passed
 full suite: 392 passed
 deterministic certifier: 100%
