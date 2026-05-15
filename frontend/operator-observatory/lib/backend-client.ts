@@ -7,6 +7,7 @@ import {
   releaseGovernanceResponseSchema,
   evidencePackageResponseSchema,
   evidencePackageIntegrityResponseSchema,
+  evidencePackageReadinessResponseSchema,
   surfacesResponseSchema,
   humanReviewIntentResponseSchema,
 } from "./schemas";
@@ -44,6 +45,10 @@ const endpointSchemas = {
   evidencePackageIntegrity: {
     path: "/api/ops/evidence-package-integrity",
     schema: evidencePackageIntegrityResponseSchema,
+  },
+  evidencePackageReadiness: {
+    path: "/api/ops/evidence-package-readiness",
+    schema: evidencePackageReadinessResponseSchema,
   },
   humanReviewIntent: {
     path: "/api/ops/human-review-intent",
@@ -111,6 +116,10 @@ export async function fetchEvidencePackage() {
 
 export async function fetchEvidencePackageIntegrity() {
   return fetchValidated("evidencePackageIntegrity");
+}
+
+export async function fetchEvidencePackageReadiness() {
+  return fetchValidated("evidencePackageReadiness");
 }
 
 export async function fetchHumanReviewIntents() {

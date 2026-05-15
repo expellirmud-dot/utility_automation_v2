@@ -159,6 +159,15 @@ export const evidencePackageIntegrityResponseSchema = z.object({
   }),
 });
 
+export const evidencePackageReadinessResponseSchema = z.object({
+  report: z.object({
+    package_id: z.string(),
+    decision: z.string(),
+    reason_codes: z.array(z.string()),
+    report_hash: z.string(),
+  }),
+});
+
 export const releaseGovernanceResponseSchema = z.object({
 
 

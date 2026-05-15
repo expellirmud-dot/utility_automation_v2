@@ -10,6 +10,7 @@ import type {
   releaseGovernanceResponseSchema,
   evidencePackageResponseSchema,
   evidencePackageIntegrityResponseSchema,
+  evidencePackageReadinessResponseSchema,
   humanReviewIntentResponseSchema,
   surfaceSchema,
   surfacesResponseSchema,
@@ -28,6 +29,7 @@ export type RouteGovernanceResponse = z.infer<typeof routeGovernanceResponseSche
 export type ReleaseGovernanceResponse = z.infer<typeof releaseGovernanceResponseSchema>;
 export type EvidencePackageResponse = z.infer<typeof evidencePackageResponseSchema>;
 export type EvidencePackageIntegrityResponse = z.infer<typeof evidencePackageIntegrityResponseSchema>;
+export type EvidencePackageReadinessResponse = z.infer<typeof evidencePackageReadinessResponseSchema>;
 export type HumanReviewIntentResponse = z.infer<typeof humanReviewIntentResponseSchema>;
 
 

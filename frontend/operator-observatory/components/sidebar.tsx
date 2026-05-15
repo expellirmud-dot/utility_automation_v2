@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Release Governance", href: "/release-governance" },
   { label: "Evidence Package", href: "/evidence-package" },
   { label: "Evidence Package Integrity", href: "/evidence-package-integrity" },
+  { label: "Evidence Package Readiness", href: "/evidence-package-readiness" },
   { label: "Human Review Intent", href: "/human-review-intent" },
 
 

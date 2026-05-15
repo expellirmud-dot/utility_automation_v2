@@ -16,6 +16,9 @@ from src.services.governance.promotion_governance.evidence_package_provider impo
 from src.services.governance.promotion_governance.evidence_package_integrity_provider import (
     EvidencePackageIntegrityProvider,
 )
+from src.services.governance.promotion_governance.evidence_package_readiness_provider import (
+    EvidencePackageReadinessProvider,
+)
 
 release_router = APIRouter(prefix="/ops/api", tags=["Release Governance"])
 
@@ -28,6 +31,9 @@ class EvidencePackageResponse(BaseModel):
     package: dict[str, Any]
 
 class EvidencePackageIntegrityResponse(BaseModel):
+    report: dict[str, Any]
+
+class EvidencePackageReadinessResponse(BaseModel):
     report: dict[str, Any]
 
 @release_router.get("/release-governance", response_model=ReleaseGovernanceResponse)
@@ -49,6 +55,14 @@ def get_evidence_package_integrity() -> EvidencePackageIntegrityResponse:
     Deterministic projection data only.
     """
     return EvidencePackageIntegrityProvider.get_integrity_projection()
+
+@release_router.get("/evidence-package-readiness", response_model=EvidencePackageReadinessResponse)
+def get_evidence_package_readiness() -> EvidencePackageReadinessResponse:
+    """
+    Read-only surface for the Evidence Package Readiness Report.
+    Deterministic projection data only.
+    """
+    return EvidencePackageReadinessProvider.get_readiness_projection()
 
 @release_router.get("/human-review-intent", response_model=List[dict[str, Any]])
 
