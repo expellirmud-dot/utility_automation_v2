@@ -64,7 +64,7 @@ TASK 064 repository workflow memory hardening
   -- prevents TypeError in readiness and summary providers
   - Validation passed: pytest, deterministic certifier
 
-
+TASK 070 add governance review index export manifest
 
 /evidence-review-summary = ○ Static
 
