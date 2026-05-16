@@ -81,7 +81,7 @@ Known deferred risk:
 - frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16 upgrade
 
 Recommended next task:
-- TASK 068 Evidence Projection Reconstruction Hardening
+- TASK 069 [TBD]
 
 ## Non-Negotiable Invariants
 
