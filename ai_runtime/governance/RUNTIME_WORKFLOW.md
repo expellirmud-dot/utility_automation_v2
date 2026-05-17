@@ -24,18 +24,22 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   v
 +------------------------------------+
 | 3.1 generate runtime evidence      |  (Artifact Manifestation)
-|     artifacts (transcript, trace,  |
-|     worker report)                 |
+|     artifacts                      |
 +------------------------------------+
                   |
                   v
 +------------------------------------+
-| 3.5 generate_completion_evidence   |  (Evidence Provenance Manifest)
+| 3.2 validate artifact bundle       |  (Completeness Validator)
 +------------------------------------+
                   |
                   v
 +------------------------------------+
-| 4. validate_completion_evidence    |  (Post-Completion Gate)
+| 3.5 generate completion evidence   |  (Evidence Provenance Manifest)
++------------------------------------+
+                  |
+                  v
++------------------------------------+
+| 4. validate completion evidence    |  (Post-Completion Gate)
 +------------------------------------+
 ```
 
@@ -44,11 +48,11 @@ The Controller issues a deterministic execution contract specifying allowed read
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/issue_execution_contract.py \
-    --task-id TASK-075 \
+    --task-id TASK-076 \
     --actor-id WORKER-01 \
     --allow-read src/ tests/ ai_runtime/ \
     --allow-write src/tools/runtime/ ai_runtime/ \
-    --expected-output src/tools/runtime/generate_completion_evidence.py \
+    --expected-output src/tools/runtime/validate_runtime_artifact_bundle.py \
     --duration-mins 60
 ```
 - **Output**: Canonical JSON representing the signed contract stored at `ai_runtime/contracts/{TASK-ID}.json`.
@@ -59,7 +63,7 @@ Before any code modification or file creation begins, the worker MUST verify tha
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
-    --task-id TASK-075 \
+    --task-id TASK-076 \
     --actor-id WORKER-01
 ```
 - **Output**: Deterministic JSON readiness result (`{"is_allowed": true, ...}`).
@@ -76,6 +80,19 @@ Upon completing task execution, the worker documents runtime activity using esta
 - **Execution Transcript**: Markdown log of the sequence of actions (`ai_runtime/reports/TASK-XXX-execution-transcript.md`).
 - **Tool Trace**: Canonical JSON log of tools executed (`ai_runtime/reports/TASK-XXX-tool-trace.json`).
 - **Worker Report**: Summary report (`ai_runtime/reports/TASK-XXX-worker-report.md`).
+- **Validation Output**: Terminal test execution log (`ai_runtime/reports/TASK-XXX-validation-output.txt`).
+
+### Step 3.2: Artifact Bundle Validation (`validate_runtime_artifact_bundle`)
+The worker validates that all canonical runtime artifacts exist, follow correct naming conventions, and adhere strictly to mandatory templates and schemas.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/validate_runtime_artifact_bundle.py \
+    --task-id TASK-076 \
+    --reports-dir ai_runtime/reports \
+    --generate-manifest
+```
+- **Output**: Deterministic JSON completeness and standardization validation report (`{"is_valid": true, "manifest": {...}}`).
+- **Behavior**: Fail-closed if any artifact is missing, incorrectly named, or fails schema/template structure validation.
 
 ### Step 3.5: Evidence Manifest Generation (`generate_completion_evidence`)
 The worker compiles raw runtime artifacts into a canonical, deterministically hashed `CompletionEvidence` manifest.
@@ -84,11 +101,11 @@ The worker compiles raw runtime artifacts into a canonical, deterministically ha
 $env:PYTHONPATH="."; python src/tools/runtime/generate_completion_evidence.py \
     --contract-id CONT-1234 \
     --worker-id WORKER-01 \
-    --tool-trace-file ai_runtime/reports/TASK-075-tool-trace.json \
-    --execution-transcript ai_runtime/reports/TASK-075-execution-transcript.md \
-    --worker-report ai_runtime/reports/TASK-075-worker-report.md \
-    --actual-output src/tools/runtime/generate_completion_evidence.py \
-    --output-file ai_runtime/reports/TASK-075-evidence.json
+    --tool-trace-file ai_runtime/reports/TASK-076-tool-trace.json \
+    --execution-transcript ai_runtime/reports/TASK-076-execution-transcript.md \
+    --worker-report ai_runtime/reports/TASK-076-worker-report.md \
+    --actual-output src/tools/runtime/validate_runtime_artifact_bundle.py \
+    --output-file ai_runtime/reports/TASK-076-evidence.json
 ```
 - **Output**: Canonical JSON `CompletionEvidence` with computed `evidence_hash`.
 - **Behavior**: Verifies physical existence of all actual outputs on disk. Fail-closed if outputs are missing or trace files are malformed.
@@ -98,8 +115,8 @@ Before declaring a task complete, the worker MUST validate the generated evidenc
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/validate_completion_evidence.py \
-    --task-id TASK-075 \
-    --evidence-file ai_runtime/reports/TASK-075-evidence.json
+    --task-id TASK-076 \
+    --evidence-file ai_runtime/reports/TASK-076-evidence.json
 ```
 - **Output**: Canonical JSON validation report (`{"is_valid": true, ...}`).
 - **Behavior**: Exits with code 1 if any expected output is missing or if any unauthorized write occurred in the execution trace.

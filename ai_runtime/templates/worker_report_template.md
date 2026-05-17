@@ -1,34 +1,24 @@
-# Worker Report Template
+# Worker Report: TASK-XXX
 
-## Task ID
-TASK-XXX
+## Objective
+Describe the objective and goals.
 
-## State
-WAITING_GPT_REVIEW
+## Scope completed
+Explicit scope items completed during execution.
 
-## Serena
-YES / NO
+## Artifacts produced
+- `ai_runtime/reports/TASK-XXX-execution-transcript.md`
+- `ai_runtime/reports/TASK-XXX-tool-trace.json`
+- `ai_runtime/reports/TASK-XXX-worker-report.md`
+- `ai_runtime/reports/TASK-XXX-validation-output.txt`
+- `ai_runtime/reports/TASK-XXX-evidence.json`
+- `ai_runtime/reports/TASK-XXX-runtime-manifest.json`
 
-## Files inspected
-- ...
+## Validation results
+Results of exact validation commands executed.
 
-## Findings
-...
+## Risks
+Any identified technical or governance risks.
 
-## Root cause
-...
-
-## Proposed implementation
-...
-
-## Files likely to change
-- ...
-
-## Validation plan
-...
-
-## Risks / blockers
-...
-
-## Files edited
-YES / NO
+## Controller handoff
+Summary and status for controller review.

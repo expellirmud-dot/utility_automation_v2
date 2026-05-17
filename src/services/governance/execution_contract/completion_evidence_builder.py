@@ -63,12 +63,16 @@ class CompletionEvidenceBuilder:
         if isinstance(data, list):
             items = data
         elif isinstance(data, dict):
-            # Extract trace array if wrapped in object
-            for k, v in data.items():
-                if isinstance(v, list):
-                    items.extend(v)
-            if not items:
-                items = [data]
+            if "events" in data and isinstance(data["events"], list):
+                items = data["events"]
+            elif "trace" in data and isinstance(data["trace"], list):
+                items = data["trace"]
+            else:
+                for k, v in data.items():
+                    if isinstance(v, list):
+                        items.extend(v)
+                if not items:
+                    items = [data]
         else:
             raise EvidenceValidationError(f"Invalid tool trace JSON structure: expected list or object, got {type(data)}")
 

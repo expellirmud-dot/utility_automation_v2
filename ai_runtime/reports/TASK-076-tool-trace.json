@@ -1,0 +1,71 @@
+{
+  "schema_version": "runtime-tool-trace-v1",
+  "task_id": "TASK-076",
+  "worker_id": "WORKER-01",
+  "generated_at": "2026-05-18T05:00:00",
+  "events": [
+    {
+      "tool": "serena_read_file",
+      "argument": {
+        "relative_path": "ai_runtime/templates/worker_report_template.md"
+      },
+      "purpose": "Inspect existing report template headings"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "src/services/governance/execution_contract/artifact_bundle_validator.py"
+      },
+      "purpose": "Implement bundle validation and standardization service"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "src/tools/runtime/validate_runtime_artifact_bundle.py"
+      },
+      "purpose": "Implement artifact bundle validation CLI tool"
+    },
+    {
+      "tool": "replace_file_content",
+      "argument": {
+        "relative_path": "src/services/governance/execution_contract/completion_evidence_builder.py"
+      },
+      "purpose": "Ensure tool trace parsing explicitly prioritizes canonical events list"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_tool_trace_schema.py"
+      },
+      "purpose": "Create unit tests for tool trace schema standardization"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_report_template_validation.py"
+      },
+      "purpose": "Create unit tests for report template validation"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_runtime_artifact_bundle.py"
+      },
+      "purpose": "Create integration tests for runtime artifact bundle validator"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "python -m pytest -q"
+      },
+      "purpose": "Run repository-wide test suite"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "$env:PYTHONPATH=\".\"; python src/tests/certification/deterministic_certifier.py"
+      },
+      "purpose": "Verify 100.0% deterministic mesh certification"
+    }
+  ]
+}
