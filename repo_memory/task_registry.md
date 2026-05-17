@@ -55,6 +55,9 @@ TASK 075
 TASK 076
 - Runtime Evidence Standardization & Completeness Enforcement
 
+TASK 077
+- Runtime Execution Enforcement Gate
+
 ## Next
 
-TASK 077 [TBD]
+TASK 078 [TBD]
