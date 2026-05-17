@@ -67,6 +67,9 @@ TASK 079
 TASK 080
 - Runtime Contract Lifecycle Inspector
 
+TASK 081
+- Controller Runtime Automation Harness
+
 ## Next
 
-TASK 081 [TBD]
+TASK 082 [TBD]
