@@ -39,5 +39,4 @@ TASK 051-M
 
 ## Next
 
-TASK 051-C
-- release governance review surface
+TASK 071 [TBD]
