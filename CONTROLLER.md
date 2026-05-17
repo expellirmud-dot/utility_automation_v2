@@ -41,9 +41,20 @@ PASS requires:
 - git status
 - remaining risks
 
+**Completion Evidence Gate**:
+Controller MUST reject any completion claim that lacks:
+- final `git status`
+- final `git diff`
+- exact list of changed files
+- exact validation commands and outputs
+- proof of artifact existence
+
 FAIL if:
 - fake validation
 - fabricated inspection
 - hidden scope expansion
 - authority mutation
 - deterministic invariant risk
+- dirty working tree without approval
+- unrelated changes mixed into task certification
+- missing git diff or validation output

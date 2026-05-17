@@ -1,17 +1,48 @@
-MANDATORY READ ORDER
+# utility_automation_v2 agent bootstrap
 
-1. repo_memory/project_state.json
-2. repo_memory/architecture_map.md
-3. repo_memory/known_landmines.md
-4. repo_memory/task_registry.md
-5. repo_memory/module_registry.md
-6. repo_memory/validation_commands.md
-7. PROJECT_RULES.md
-8. AI_HANDOFF.md
-9. AGENTS.md
+You are operating inside utility_automation_v2.
 
-Then:
-- activate Serena project
-- inspect actual source files
-- do not implement from memory alone
-- if Serena fails, stop
+Mandatory startup sequence:
+
+READ FIRST:
+1. AGENTS.md
+2. GEMINI.md
+3. PROJECT_RULES.md
+4. AI_HANDOFF.md
+5. repo_memory/project_state.json
+6. repo_memory/architecture_map.md
+7. repo_memory/known_landmines.md
+8. repo_memory/task_registry.md
+9. repo_memory/module_registry.md
+10. repo_memory/validation_commands.md
+
+TOOLING:
+- Activate Serena for this repository.
+- If Serena activation fails: STOP.
+- Use repository inspection, not memory.
+- Use symbol-aware inspection when possible.
+
+RULES:
+- No speculative implementation
+- No fabricated validation
+- No hidden scope expansion
+- No task invention
+- No authority mutation
+- Exact scoped implementation only
+- Determinism mandatory
+- **Clean Tree Gate**: Run `git status` before implementation; STOP if dirty without approval.
+- **Evidence Gate**: Completion claims are invalid without `git status`, `git diff`, and exact validation output.
+- **Mixed Change Failure**: FAIL if unrelated changes are mixed into task certification.
+
+REQUIRED FIRST RESPONSE:
+A. Serena activated? YES/NO
+B. exact files inspected
+C. task spec found? YES/NO
+D. intended scope
+E. exact files likely to change
+F. validation commands
+G. risks
+H. no code edited yet
+
+IMPLEMENTATION RULE:
+Do not edit code until the READ-FIRST report is complete and scope is explicit.

@@ -37,6 +37,15 @@ Do not proceed without understanding repository constraints.
 
 ---
 
+## Pre-Implementation Repository Gate
+
+Before initiating any implementation:
+1. Run `git status`.
+2. Verify a clean working tree.
+3. **STOP** if the tree is dirty unless the controller explicitly approves mixed-state work.
+
+---
+
 ## Scope Discipline
 
 Allowed:
@@ -145,6 +154,16 @@ python -m pytest -q
 If governance/runtime affected:
 python src/tests/certification/deterministic_certifier.py
 
+**Completion Evidence Gate**:
+Claims of completion without the following evidence are invalid:
+- Final `git status`
+- Final `git diff`
+- Exact list of created/modified/deleted files
+- Exact validation commands executed
+- Exact validation output
+- Artifact existence proof (logs/files/reads)
+- Analysis of remaining risks
+
 Report exact results.
 
 Never claim completion without validation.
@@ -189,3 +208,13 @@ Forbidden:
 Preferred:
 - low-randomness execution settings for implementation tasks when configurable.
 - explicit uncertainty instead of guessing.
+
+---
+
+## Mixed Change Failure Rules
+
+An implementation is marked as **FAIL** if:
+- The working tree was dirty without explicit controller approval.
+- Unrelated changes are mixed into the task certification.
+- No `git diff` evidence is provided.
+- No exact validation output is provided.

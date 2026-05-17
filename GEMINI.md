@@ -54,3 +54,12 @@ Report:
 - actual validation output
 - git status
 - remaining risks
+
+**Completion Evidence Gate**:
+Claims of completion without the following evidence are invalid:
+- Final `git status`
+- Final `git diff`
+- Exact list of created/modified/deleted files
+- Exact validation commands and outputs
+- Proof of artifact existence
+- Analysis of remaining risks

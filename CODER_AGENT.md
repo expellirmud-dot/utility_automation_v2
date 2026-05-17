@@ -31,11 +31,12 @@ Forbidden:
 
 1. READ-FIRST
 2. activate Serena
-3. inspect actual files
-4. report exact intended files
-5. implement minimal diff only
-6. run validation
-7. report results exactly
+3. **Pre-Implementation Gate**: Run `git status` and verify clean working tree. STOP if dirty unless approved.
+4. inspect actual files
+5. report exact intended files
+6. implement minimal diff only
+7. run validation
+8. **Completion Evidence Gate**: Report exact results including `git status`, `git diff`, and artifact proof.
 
 ## Stop Conditions
 
