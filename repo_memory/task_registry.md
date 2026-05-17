@@ -58,6 +58,9 @@ TASK 076
 TASK 077
 - Runtime Execution Enforcement Gate
 
+TASK 078
+- Controller Request Governance
+
 ## Next
 
-TASK 078 [TBD]
+TASK 079 [TBD]
