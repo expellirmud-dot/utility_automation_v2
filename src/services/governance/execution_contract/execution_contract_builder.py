@@ -50,8 +50,8 @@ class ExecutionContractBuilder:
         self._metadata[key] = value
         return self
 
-    def build(self, validity_duration_minutes: int = 60) -> ExecutionContract:
-        now = datetime.now()
+    def build(self, validity_duration_minutes: int = 60, now: Optional[datetime] = None, contract_id: Optional[str] = None) -> ExecutionContract:
+        now = now or datetime.now()
         
         scope = ExecutionScope(
             allowed_read_paths=self._read_paths,
@@ -62,7 +62,7 @@ class ExecutionContractBuilder:
         )
         
         return ExecutionContract(
-            contract_id=f"CONT-{uuid.uuid4().hex[:8].upper()}",
+            contract_id=contract_id or f"CONT-{uuid.uuid4().hex[:8].upper()}",
             task_id=self.task_id,
             actor_id=self.actor_id,
             scope=scope,
