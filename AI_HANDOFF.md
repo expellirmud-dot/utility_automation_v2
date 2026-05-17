@@ -63,6 +63,10 @@ TASK 064 repository workflow memory hardening
   -- strips derived fields (package_hash, report_hash) before constructor call
   -- prevents TypeError in readiness and summary providers
   - Validation passed: pytest, deterministic certifier
+- TASK 071 Governance Execution Contract Layer
+  - Deterministic contract models and validator for worker execution
+- TASK 072 Runtime Contract Guard Foundation
+  - Programmatic guard service to validate execution contracts before implementation
 
 TASK 070 add governance review index export manifest
 

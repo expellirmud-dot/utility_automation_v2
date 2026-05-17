@@ -20,10 +20,10 @@ The following tasks constitute the deterministic evidence review chain for promo
 **Slice Status**: COMPLETE
 **Verification**: All components implemented, validated via deterministic certifier, and integrated into the Operator Observatory.
 
-## Workflow Memory Hardening
+## Runtime Execution Guard Slice
 
 | Task ID | Description | Status |
 | :--- | :--- | :--- |
-| TASK 064 | Repository Workflow Memory Hardening | Completed |
+| TASK 071 | Governance Execution Contract Layer | Completed |
+| TASK 072 | Runtime Contract Guard Foundation | Completed |
 
-**Purpose**: Capture durable repository workflow memory to ensure continuity across AI agent sessions.

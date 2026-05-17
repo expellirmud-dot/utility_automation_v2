@@ -37,6 +37,12 @@ TASK 051-M
 - project state persistence
 - architecture acceleration
 
+TASK 071
+- Governance Execution Contract Layer
+
+TASK 072
+- Runtime Contract Guard Foundation
+
 ## Next
 
-TASK 071 [TBD]
+TASK 073 [TBD]
