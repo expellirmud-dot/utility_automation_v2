@@ -10,9 +10,10 @@ from src.services.governance.runtime_contract_guard.runtime_contract_guard_excep
     ContractNotFoundError,
     ContractInvalidError,
     IdentityMismatchError,
-    ScopeViolationError,
+    ScopeViolationError as GuardScopeViolationError,
     GuardBlockedError
 )
+from src.services.governance.execution_contract.execution_contract_exceptions import ContractError
 
 class RuntimeContractGuard:
     """
@@ -63,7 +64,7 @@ class RuntimeContractGuard:
                 reason="Execution contract validated successfully."
             )
 
-        except GuardBlockedError as e:
+        except (GuardBlockedError, ContractError) as e:
             return GuardResult(
                 is_allowed=False,
                 task_id=task_id,
@@ -105,7 +106,7 @@ class RuntimeContractGuard:
                 reason=f"Action {action_type} on {path} allowed by contract."
             )
 
-        except GuardBlockedError as e:
+        except (GuardBlockedError, ContractError) as e:
             return GuardResult(
                 is_allowed=False,
                 task_id=task_id,

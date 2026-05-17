@@ -19,6 +19,7 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   v
 +------------------------------------+
 | 3. worker execution                |  (Implementation Discipline)
+|    -> enforce_runtime_action       |  (Active Action Gate)
 +------------------------------------+
                   |
                   v
@@ -48,11 +49,11 @@ The Controller issues a deterministic execution contract specifying allowed read
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/issue_execution_contract.py \
-    --task-id TASK-076 \
+    --task-id TASK-XXX \
     --actor-id WORKER-01 \
     --allow-read src/ tests/ ai_runtime/ \
     --allow-write src/tools/runtime/ ai_runtime/ \
-    --expected-output src/tools/runtime/validate_runtime_artifact_bundle.py \
+    --expected-output src/tools/runtime/enforce_runtime_action.py \
     --duration-mins 60
 ```
 - **Output**: Canonical JSON representing the signed contract stored at `ai_runtime/contracts/{TASK-ID}.json`.
@@ -63,7 +64,7 @@ Before any code modification or file creation begins, the worker MUST verify tha
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
-    --task-id TASK-076 \
+    --task-id TASK-XXX \
     --actor-id WORKER-01
 ```
 - **Output**: Deterministic JSON readiness result (`{"is_allowed": true, ...}`).
@@ -74,6 +75,19 @@ $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
 - Follow the `READ-FIRST` workflow.
 - Adhere strictly to the contract scope. Any unauthorized writes in the execution trace will be blocked during completion validation.
 - Use Serena for repository operations.
+
+### Step 3.0: Active Runtime Action Enforcement (`enforce_runtime_action`)
+During implementation, execution harnesses and wrappers MUST query the contract before performing any physical action (read, write, or command execution) on the repository.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/enforce_runtime_action.py \
+    --task-id TASK-XXX \
+    --actor-id WORKER-01 \
+    --action-type write \
+    --path src/main.py
+```
+- **Output**: Deterministic JSON action validation result (`{"is_allowed": true, ...}`).
+- **Behavior**: Exits with code 1 if the action violates allowed paths, forbidden patterns, or command rules specified in the active contract.
 
 ### Step 3.1: Generate Runtime Evidence Artifacts
 Upon completing task execution, the worker documents runtime activity using established reporting conventions:
@@ -87,7 +101,7 @@ The worker validates that all canonical runtime artifacts exist, follow correct 
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/validate_runtime_artifact_bundle.py \
-    --task-id TASK-076 \
+    --task-id TASK-XXX \
     --reports-dir ai_runtime/reports \
     --generate-manifest
 ```
@@ -101,11 +115,11 @@ The worker compiles raw runtime artifacts into a canonical, deterministically ha
 $env:PYTHONPATH="."; python src/tools/runtime/generate_completion_evidence.py \
     --contract-id CONT-1234 \
     --worker-id WORKER-01 \
-    --tool-trace-file ai_runtime/reports/TASK-076-tool-trace.json \
-    --execution-transcript ai_runtime/reports/TASK-076-execution-transcript.md \
-    --worker-report ai_runtime/reports/TASK-076-worker-report.md \
-    --actual-output src/tools/runtime/validate_runtime_artifact_bundle.py \
-    --output-file ai_runtime/reports/TASK-076-evidence.json
+    --tool-trace-file ai_runtime/reports/TASK-XXX-tool-trace.json \
+    --execution-transcript ai_runtime/reports/TASK-XXX-execution-transcript.md \
+    --worker-report ai_runtime/reports/TASK-XXX-worker-report.md \
+    --actual-output src/tools/runtime/enforce_runtime_action.py \
+    --output-file ai_runtime/reports/TASK-XXX-evidence.json
 ```
 - **Output**: Canonical JSON `CompletionEvidence` with computed `evidence_hash`.
 - **Behavior**: Verifies physical existence of all actual outputs on disk. Fail-closed if outputs are missing or trace files are malformed.
@@ -115,8 +129,8 @@ Before declaring a task complete, the worker MUST validate the generated evidenc
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/validate_completion_evidence.py \
-    --task-id TASK-076 \
-    --evidence-file ai_runtime/reports/TASK-076-evidence.json
+    --task-id TASK-XXX \
+    --evidence-file ai_runtime/reports/TASK-XXX-evidence.json
 ```
 - **Output**: Canonical JSON validation report (`{"is_valid": true, ...}`).
 - **Behavior**: Exits with code 1 if any expected output is missing or if any unauthorized write occurred in the execution trace.

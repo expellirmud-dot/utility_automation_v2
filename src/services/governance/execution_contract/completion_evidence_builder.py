@@ -76,8 +76,12 @@ class CompletionEvidenceBuilder:
         else:
             raise EvidenceValidationError(f"Invalid tool trace JSON structure: expected list or object, got {type(data)}")
 
-        write_tools = {"create_text_file", "serena_create_text_file", "replace_content", "replace_lines", "delete_lines", "insert_at_line", "write_memory"}
-        read_tools = {"read_file", "serena_read_file", "list_dir", "serena_list_dir", "find_file", "search_for_pattern", "read_memory", "get_symbols_overview", "find_symbol", "find_referencing_symbols", "find_implementations", "find_declaration", "get_diagnostics_for_file"}
+        write_tools = {
+            "create_text_file", "serena_create_text_file", "write_to_file",
+            "replace_content", "replace_file_content", "multi_replace_file_content",
+            "replace_lines", "delete_lines", "insert_at_line", "write_memory"
+        }
+        read_tools = {"read_file", "serena_read_file", "view_file", "list_dir", "serena_list_dir", "find_file", "search_for_pattern", "read_memory", "get_symbols_overview", "find_symbol", "find_referencing_symbols", "find_implementations", "find_declaration", "get_diagnostics_for_file"}
 
         for item in items:
             if not isinstance(item, dict):
