@@ -41,6 +41,9 @@ class GovernanceEvidencePackage:
     archive_hash: str
     human_record_hash: str
     evidence_link_hash: str
+    certification_hash: str
+    promotion_hash: str
+    gatekeeper_report_hash: str
     package_status: PackageStatus
     reason_codes: Tuple[str, ...]
 
@@ -54,6 +57,12 @@ class GovernanceEvidencePackage:
             raise ValueError("human_record_hash is required")
         if not self.evidence_link_hash:
             raise ValueError("evidence_link_hash is required")
+        if not self.certification_hash:
+            raise ValueError("certification_hash is required")
+        if not self.promotion_hash:
+            raise ValueError("promotion_hash is required")
+        if not self.gatekeeper_report_hash:
+            raise ValueError("gatekeeper_report_hash is required")
         
         valid_statuses = {"PACKAGE_VERIFIED", "PACKAGE_INVALID"}
         if self.package_status not in valid_statuses:
@@ -67,11 +76,14 @@ class GovernanceEvidencePackage:
         """Payload for deterministic package hash (excludes package_hash itself)."""
         return {
             "archive_hash": self.archive_hash,
+            "certification_hash": self.certification_hash,
             "evidence_link_hash": self.evidence_link_hash,
+            "gatekeeper_report_hash": self.gatekeeper_report_hash,
             "human_record_hash": self.human_record_hash,
             "package_id": self.package_id,
             "package_status": self.package_status,
             "package_version": self.package_version,
+            "promotion_hash": self.promotion_hash,
             "reason_codes": self.reason_codes,
         }
 

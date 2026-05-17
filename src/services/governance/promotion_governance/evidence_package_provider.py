@@ -31,6 +31,9 @@ class EvidencePackageProvider:
         archive_hash="a" * 64,
         human_record_hash="b" * 64,
         evidence_link_hash="c" * 64,
+        certification_hash="d" * 64,
+        promotion_hash="e" * 64,
+        gatekeeper_report_hash="f" * 64,
         package_status="PACKAGE_VERIFIED",
         reason_codes=("PACKAGE_VERIFIED",),
     )

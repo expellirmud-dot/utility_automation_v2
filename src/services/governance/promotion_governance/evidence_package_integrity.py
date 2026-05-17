@@ -142,11 +142,14 @@ class EvidencePackageIntegrityGate:
             # Recompute the expected hash from identity payload
             identity_payload = {
                 "archive_hash": payload.get("archive_hash"),
+                "certification_hash": payload.get("certification_hash"),
                 "evidence_link_hash": payload.get("evidence_link_hash"),
+                "gatekeeper_report_hash": payload.get("gatekeeper_report_hash"),
                 "human_record_hash": payload.get("human_record_hash"),
                 "package_id": payload.get("package_id"),
                 "package_status": payload.get("package_status"),
                 "package_version": payload.get("package_version"),
+                "promotion_hash": payload.get("promotion_hash"),
                 "reason_codes": payload.get("reason_codes"),
             }
             

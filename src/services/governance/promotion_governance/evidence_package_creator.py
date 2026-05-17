@@ -57,6 +57,9 @@ class GovernanceEvidencePackageCreator:
             archive_hash=archive.archive_hash,
             human_record_hash=human_record.record_hash,
             evidence_link_hash=evidence_link.link_hash,
+            certification_hash=archive.certification_artifact_hash,
+            promotion_hash=archive.promotion_bundle_hash,
+            gatekeeper_report_hash=archive.gatekeeper_report_hash,
             package_status=status,
             reason_codes=reasons,
         )

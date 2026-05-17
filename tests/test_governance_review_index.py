@@ -243,13 +243,14 @@ def test_invalid_canonical_ordering_rejected():
 
 def test_safe_extract_hash_success():
     # Arrange
-    data = {"cert_hash": "real-hash-123", "other": "val"}
+    valid_hash = "a" * 64
+    data = {"cert_hash": valid_hash, "other": "val"}
     
     # Act
     result = GovernanceReviewIndexProvider._safe_extract_hash(data, "cert_hash")
     
     # Assert
-    assert result == "real-hash-123"
+    assert result == valid_hash
 
 def test_safe_extract_hash_missing():
     # Arrange

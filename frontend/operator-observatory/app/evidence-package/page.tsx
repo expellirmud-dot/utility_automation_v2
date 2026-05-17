@@ -80,6 +80,9 @@ export default function EvidencePackagePage() {
               { label: "Archive Hash", value: pkg.archive_hash },
               { label: "Human Record Hash", value: pkg.human_record_hash },
               { label: "Evidence Link Hash", value: pkg.evidence_link_hash },
+              { label: "Certification Hash", value: pkg.certification_hash },
+              { label: "Promotion Hash", value: pkg.promotion_hash },
+              { label: "Gatekeeper Report Hash", value: pkg.gatekeeper_report_hash },
             ]}
           />
 

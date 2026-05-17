@@ -76,10 +76,13 @@ class GovernanceReviewIndexProvider:
     def _safe_extract_hash(data: Any, key: str) -> Optional[str]:
         """
         Safely extracts a hash from a projection dictionary.
-        Returns None if the data is not a dict, the key is missing, or the value is empty.
+        Returns None if the data is not a dict, the key is missing, the value is empty,
+        or the value is not a valid 64-character hex string.
         """
         if isinstance(data, dict):
             val = data.get(key)
-            if isinstance(val, str) and val.strip():
-                return val
+            if isinstance(val, str):
+                val = val.strip()
+                if val and len(val) == 64 and all(c in '0123456789abcdef' for c in val.lower()):
+                    return val
         return None

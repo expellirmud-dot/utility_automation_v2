@@ -28,6 +28,7 @@ def mock_archive():
         passed=True,
         reason_codes=("PASS_ALL",),
         evidence_chain=(),
+        promotion_bundle_hash="promo-hash",
     )
 
 @pytest.fixture
@@ -167,6 +168,9 @@ def test_summary_projection_reconstruction_with_hash():
         "archive_hash": "a" * 64,
         "human_record_hash": "b" * 64,
         "evidence_link_hash": "c" * 64,
+        "certification_hash": "d" * 64,
+        "promotion_hash": "e" * 64,
+        "gatekeeper_report_hash": "f" * 64,
         "package_status": "PACKAGE_VERIFIED",
         "reason_codes": ("OK",),
         "package_hash": "some-derived-hash",

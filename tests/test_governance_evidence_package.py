@@ -16,6 +16,7 @@ def mock_archive():
         passed=True,
         reason_codes=("PASS_ALL",),
         evidence_chain=(),
+        promotion_bundle_hash="promo-hash",
     )
 
 @pytest.fixture
