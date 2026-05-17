@@ -1,0 +1,14 @@
+Continuation session.
+
+Before making recommendations about this project, architecture, AI workflow, Gemini, Serena, governance, implementation approach, or AI tooling changes:
+
+Read:
+D:\utility_automation_v2\ai_context\AI_OPERATING_CONTEXT.md
+
+Follow linked context documents as needed.
+
+Treat ai_context as institutional memory and continuity source of truth.
+
+Preserve established workflow unless explicitly instructed otherwise.
+Distinguish facts from assumptions.
+Inspect repository reality when needed.
