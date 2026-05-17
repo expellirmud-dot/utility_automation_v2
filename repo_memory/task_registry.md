@@ -49,6 +49,9 @@ TASK 073
 TASK 074
 - AI Runtime Contract CLI Foundation
 
+TASK 075
+- Completion Evidence Provenance Generator
+
 ## Next
 
-TASK 075 [TBD]
+TASK 076 [TBD]
