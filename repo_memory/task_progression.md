@@ -26,4 +26,5 @@ The following tasks constitute the deterministic evidence review chain for promo
 | :--- | :--- | :--- |
 | TASK 071 | Governance Execution Contract Layer | Completed |
 | TASK 072 | Runtime Contract Guard Foundation | Completed |
-
+| TASK 073 | Execution Contract Validator | Completed |
+| TASK 074 | AI Runtime Contract CLI Foundation | Completed |

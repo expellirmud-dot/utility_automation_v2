@@ -43,6 +43,12 @@ TASK 071
 TASK 072
 - Runtime Contract Guard Foundation
 
+TASK 073
+- Execution Contract Validator
+
+TASK 074
+- AI Runtime Contract CLI Foundation
+
 ## Next
 
-TASK 073 [TBD]
+TASK 075 [TBD]
