@@ -28,6 +28,11 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   |
                   v
 +------------------------------------+
+| 2.5 inspect_runtime_contract       |  (Lifecycle Visibility)
++------------------------------------+
+                  |
+                  v
++------------------------------------+
 | 3. worker execution                |  (Implementation Discipline)
 |    -> enforce_runtime_action       |  (Active Action Gate)
 +------------------------------------+
@@ -108,6 +113,16 @@ $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
 - **Output**: Deterministic JSON readiness result (`{"is_allowed": true, ...}`).
 - **Behavior**: Exits with code 1 if the contract is missing, expired, or identity mismatches.
 - **State Verification**: Worker must also run `git status` to verify a clean working tree. Stop execution immediately if the working tree is dirty with unrelated changes.
+
+### Step 2.5: Runtime Contract Lifecycle Inspection (`inspect_runtime_contract`)
+At any point during or after execution, execution harnesses or auditors can query the active contract to audit its lifecycle state (e.g. `ISSUANCE_PENDING`, `ACTIVE`, `EXPIRED`, `VALIDATED_COMPLETION`).
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/inspect_runtime_contract.py \
+    --task-id TASK-XXX
+```
+- **Output**: Deterministic JSON detailing contract state, completeness reports, and completion evidence validity.
+- **Behavior**: Returns non-error exit code 0 to allow continuous observability across all lifecycle states.
 
 ### Step 3: Implementation Discipline (`worker execution`)
 - Follow the `READ-FIRST` workflow.

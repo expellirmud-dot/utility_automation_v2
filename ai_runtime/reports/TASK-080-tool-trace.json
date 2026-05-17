@@ -1,0 +1,50 @@
+{
+  "schema_version": "runtime-tool-trace-v1",
+  "task_id": "TASK-080",
+  "worker_id": "WORKER-01",
+  "generated_at": "2026-05-18T06:33:00",
+  "events": [
+    {
+      "tool": "serena_read_file",
+      "argument": {
+        "relative_path": "ai_runtime/inbox/TASK-080-controller-request.md"
+      },
+      "purpose": "Inspect controller request for TASK 080"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "src/tools/runtime/inspect_runtime_contract.py"
+      },
+      "purpose": "Create inspect_runtime_contract CLI tool"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_inspect_runtime_contract.py"
+      },
+      "purpose": "Create unit tests for runtime contract inspector CLI"
+    },
+    {
+      "tool": "replace_file_content",
+      "argument": {
+        "relative_path": "ai_runtime/governance/RUNTIME_WORKFLOW.md"
+      },
+      "purpose": "Document Step 2.5 contract inspection visibility gate"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "python -m pytest -q"
+      },
+      "purpose": "Execute repository-wide test suite"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "$env:PYTHONPATH=\".\"; python src/tests/certification/deterministic_certifier.py"
+      },
+      "purpose": "Execute deterministic mesh certification"
+    }
+  ]
+}
