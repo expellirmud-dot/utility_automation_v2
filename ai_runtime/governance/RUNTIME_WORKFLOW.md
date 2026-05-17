@@ -4,7 +4,7 @@ This document defines the mandatory operational gates for all AI workers operati
 
 ## Exact Runtime CLI Sequence
 
-The runtime contract lifecycle is enforced at CLI gate points. Every task must strictly adhere to the four-step lifecycle:
+The runtime contract lifecycle is enforced at CLI gate points. Every task must strictly adhere to the established lifecycle:
 
 ```
 +------------------------------------+
@@ -23,6 +23,18 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   |
                   v
 +------------------------------------+
+| 3.1 generate runtime evidence      |  (Artifact Manifestation)
+|     artifacts (transcript, trace,  |
+|     worker report)                 |
++------------------------------------+
+                  |
+                  v
++------------------------------------+
+| 3.5 generate_completion_evidence   |  (Evidence Provenance Manifest)
++------------------------------------+
+                  |
+                  v
++------------------------------------+
 | 4. validate_completion_evidence    |  (Post-Completion Gate)
 +------------------------------------+
 ```
@@ -32,11 +44,11 @@ The Controller issues a deterministic execution contract specifying allowed read
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/issue_execution_contract.py \
-    --task-id TASK-074 \
+    --task-id TASK-075 \
     --actor-id WORKER-01 \
     --allow-read src/ tests/ ai_runtime/ \
     --allow-write src/tools/runtime/ ai_runtime/ \
-    --expected-output src/tools/runtime/issue_execution_contract.py \
+    --expected-output src/tools/runtime/generate_completion_evidence.py \
     --duration-mins 60
 ```
 - **Output**: Canonical JSON representing the signed contract stored at `ai_runtime/contracts/{TASK-ID}.json`.
@@ -47,7 +59,7 @@ Before any code modification or file creation begins, the worker MUST verify tha
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
-    --task-id TASK-074 \
+    --task-id TASK-075 \
     --actor-id WORKER-01
 ```
 - **Output**: Deterministic JSON readiness result (`{"is_allowed": true, ...}`).
@@ -59,13 +71,35 @@ $env:PYTHONPATH="."; python src/tools/runtime/check_execution_readiness.py \
 - Adhere strictly to the contract scope. Any unauthorized writes in the execution trace will be blocked during completion validation.
 - Use Serena for repository operations.
 
+### Step 3.1: Generate Runtime Evidence Artifacts
+Upon completing task execution, the worker documents runtime activity using established reporting conventions:
+- **Execution Transcript**: Markdown log of the sequence of actions (`ai_runtime/reports/TASK-XXX-execution-transcript.md`).
+- **Tool Trace**: Canonical JSON log of tools executed (`ai_runtime/reports/TASK-XXX-tool-trace.json`).
+- **Worker Report**: Summary report (`ai_runtime/reports/TASK-XXX-worker-report.md`).
+
+### Step 3.5: Evidence Manifest Generation (`generate_completion_evidence`)
+The worker compiles raw runtime artifacts into a canonical, deterministically hashed `CompletionEvidence` manifest.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/generate_completion_evidence.py \
+    --contract-id CONT-1234 \
+    --worker-id WORKER-01 \
+    --tool-trace-file ai_runtime/reports/TASK-075-tool-trace.json \
+    --execution-transcript ai_runtime/reports/TASK-075-execution-transcript.md \
+    --worker-report ai_runtime/reports/TASK-075-worker-report.md \
+    --actual-output src/tools/runtime/generate_completion_evidence.py \
+    --output-file ai_runtime/reports/TASK-075-evidence.json
+```
+- **Output**: Canonical JSON `CompletionEvidence` with computed `evidence_hash`.
+- **Behavior**: Verifies physical existence of all actual outputs on disk. Fail-closed if outputs are missing or trace files are malformed.
+
 ### Step 4: Completion Validation Gate (`validate_completion_evidence`)
-Before declaring a task complete, the worker MUST produce a `CompletionEvidence` JSON manifest and validate it against the execution contract.
+Before declaring a task complete, the worker MUST validate the generated evidence manifest against the authoritative execution contract.
 
 ```bash
 $env:PYTHONPATH="."; python src/tools/runtime/validate_completion_evidence.py \
-    --task-id TASK-074 \
-    --evidence-file ai_runtime/reports/TASK-074-evidence.json
+    --task-id TASK-075 \
+    --evidence-file ai_runtime/reports/TASK-075-evidence.json
 ```
 - **Output**: Canonical JSON validation report (`{"is_valid": true, ...}`).
 - **Behavior**: Exits with code 1 if any expected output is missing or if any unauthorized write occurred in the execution trace.

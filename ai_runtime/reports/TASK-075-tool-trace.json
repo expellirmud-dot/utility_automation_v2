@@ -1,0 +1,65 @@
+[
+  {
+    "tool": "serena_read_file",
+    "argument": {
+      "relative_path": "ai_runtime/reports/TASK-RUNTIME-002-tool-trace.json"
+    },
+    "purpose": "Inspect existing runtime evidence conventions"
+  },
+  {
+    "tool": "serena_read_file",
+    "argument": {
+      "relative_path": "ai_runtime/governance/RUNTIME_WORKFLOW.md"
+    },
+    "purpose": "Review current runtime workflow and enforcement steps"
+  },
+  {
+    "tool": "serena_create_text_file",
+    "argument": {
+      "relative_path": "src/services/governance/execution_contract/completion_evidence_builder.py"
+    },
+    "purpose": "Implement deterministic CompletionEvidence builder service"
+  },
+  {
+    "tool": "serena_create_text_file",
+    "argument": {
+      "relative_path": "src/tools/runtime/generate_completion_evidence.py"
+    },
+    "purpose": "Create CLI wrapper for generating completion evidence manifests"
+  },
+  {
+    "tool": "serena_create_text_file",
+    "argument": {
+      "relative_path": "tests/test_completion_evidence_generator.py"
+    },
+    "purpose": "Create unit and integration tests for evidence generator"
+  },
+  {
+    "tool": "replace_file_content",
+    "argument": {
+      "relative_path": "ai_runtime/governance/RUNTIME_WORKFLOW.md"
+    },
+    "purpose": "Update workflow documentation to incorporate Step 3.1 and Step 3.5"
+  },
+  {
+    "tool": "execute_shell_command",
+    "argument": {
+      "command": "python -m pytest tests/test_completion_evidence_generator.py"
+    },
+    "purpose": "Verify newly created test suite passes successfully"
+  },
+  {
+    "tool": "execute_shell_command",
+    "argument": {
+      "command": "python -m pytest -q"
+    },
+    "purpose": "Verify repository-wide test suite passes without regressions"
+  },
+  {
+    "tool": "execute_shell_command",
+    "argument": {
+      "command": "$env:PYTHONPATH=\".\"; python src/tests/certification/deterministic_certifier.py"
+    },
+    "purpose": "Validate deterministic governance certification score of 100.0%"
+  }
+]
