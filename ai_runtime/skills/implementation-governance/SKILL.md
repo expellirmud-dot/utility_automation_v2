@@ -4,13 +4,7 @@ description: Exact scoped implementation skill for deterministic governance code
 ---
 
 RULES:
-- Implement approved scope only.
-- Minimal diff only.
-- No speculative refactor.
-- No architecture expansion.
-- No hidden dependency change.
-- No authority mutation.
-- No implementation from memory.
+Refer to `AGENTS.md` for mandatory implementation discipline and scope discipline.
 
 REQUIRED BEFORE EDITING:
 A. files inspected

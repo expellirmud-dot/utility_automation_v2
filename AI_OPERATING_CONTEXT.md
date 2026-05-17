@@ -1,31 +1,26 @@
-# AI Setup State (Global)
+# AI Operating Context & Institutional Memory
 
 Last Updated: 2026-05-17
 
 ## Purpose
-This file is the source of truth for my global AI engineering workflow.
+This file is the source of truth for global AI engineering workflow context.
 
 Any AI assistant must read this before modifying:
 - Gemini CLI config
 - Gemini agents
 - Gemini skills
-- Gemini extensions
 - Serena setup
 - AI workflow architecture
-
-Preserve continuity unless explicitly instructed otherwise.
 
 ---
 
 ## Global Gemini CLI Setup
 
 Base path:
-
-C:\Users\Expellirmud\.gemini
+<user-home>/.gemini
 
 Global agent:
-
-C:\Users\Expellirmud\.gemini\agents\code.md
+<user-home>/.gemini/agents/code.md
 
 Behavior:
 - senior software engineering assistant
@@ -41,8 +36,7 @@ Behavior:
 ## Global Skills Installed
 
 Path:
-
-C:\Users\Expellirmud\.gemini\skills
+<user-home>/.gemini/skills
 
 Installed:
 - serena-repo-bootstrap
@@ -63,8 +57,7 @@ Purpose:
 ## Extensions Installed
 
 Path:
-
-C:\Users\Expellirmud\.gemini\extensions
+<user-home>/.gemini/extensions
 
 Installed:
 - conductor

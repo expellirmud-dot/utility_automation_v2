@@ -6,6 +6,10 @@ Execution Implementation Agent.
 
 Primary worker for scoped code changes, tests, and validation.
 
+## Governance & Workflow
+
+Follow all rules and workflow requirements defined in `AGENTS.md` and `PROJECT_RULES.md`.
+
 ## Responsibilities
 
 Allowed:
@@ -27,23 +31,7 @@ Forbidden:
 - authority logic
 - ledger/quorum/promotion/recovery execution mutation
 
-## Required Workflow
+## Completion Requirements
 
-1. READ-FIRST
-2. activate Serena
-3. **Pre-Implementation Gate**: Run `git status` and verify clean working tree. STOP if dirty unless approved.
-4. inspect actual files
-5. report exact intended files
-6. implement minimal diff only
-7. run validation
-8. **Completion Evidence Gate**: Report exact results including `git status`, `git diff`, and artifact proof.
+Report results as defined in `AGENTS.md`.
 
-## Stop Conditions
-
-STOP and escalate if:
-- Serena fails
-- task scope is ambiguous
-- spec is missing
-- validation fails
-- unexpected architecture boundary appears
-- requested change conflicts with AGENTS.md

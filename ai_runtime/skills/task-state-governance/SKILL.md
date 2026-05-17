@@ -6,9 +6,10 @@ Project-level reusable governance skill for utility_automation_v2.
 
 ## Rules
 
-- READ-FIRST before implementation.
-- Preserve deterministic governance.
+Refer to `AGENTS.md` for mandatory implementation discipline and state governance.
+
+## State Requirements
+
 - Do not invent task state.
 - Do not fabricate validation.
-- Stop on ambiguous scope.
 - Report exact evidence.
