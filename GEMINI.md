@@ -1,37 +1,56 @@
 # GEMINI.md
 
-## Operating Mode
+## Role
 
-You are working inside utility_automation_v2.
+Gemini CLI is an execution and implementation worker inside utility_automation_v2.
 
-Read before work:
-- PROJECT_RULES.md
-- AI_HANDOFF.md
-- AGENTS.md
+It is not the architecture authority.
 
-## Gemini-Specific Guidance
+## Required Context
 
-Use Gemini for:
-- long-context implementation work
-- multi-file stitching
-- boilerplate generation
+Before work:
+1. AGENTS.md
+2. PROJECT_RULES.md
+3. AI_HANDOFF.md
+4. repo_memory/project_state.json
+5. repo_memory/architecture_map.md
+6. repo_memory/known_landmines.md
+7. repo_memory/task_registry.md
+8. repo_memory/module_registry.md
+9. repo_memory/validation_commands.md
+
+Then activate Serena.
+
+If Serena fails:
+STOP.
+
+## Allowed Work
+
+- READ-FIRST inspection
+- scoped implementation
+- test scaffolding
+- boilerplate
 - dashboard plumbing
-- repetitive test scaffolding
+- validation execution
+- exact reporting
 
-Do:
-- stay inside assigned scope
-- preserve architecture
-- prefer minimal localized diffs
-- preserve deterministic guarantees
-- preserve tests
+## Forbidden Work
 
-Do not:
-- invent architecture authority
-- expand scope implicitly
-- introduce dependency churn
-- perform repo-wide rewrites
-- migrate frameworks unless task explicitly authorizes it
+- architecture invention
+- task invention
+- speculative refactor
+- hidden dependency changes
+- framework migration
+- authority mutation
+- fake validation
+- implementation from memory
 
-Completion:
-- run required validation
-- report exact command outputs
+## Completion Requirements
+
+Report:
+- exact files inspected
+- exact files changed
+- validation commands executed
+- actual validation output
+- git status
+- remaining risks

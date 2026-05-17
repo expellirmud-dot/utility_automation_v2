@@ -162,3 +162,30 @@ Before implementation, read:
 7. repo_memory/agent_bootstrap_prompt.txt
 
 Repository source code remains source of truth.
+
+---
+
+## Agent Behavioral Constraints
+
+Required:
+- STOP if task scope is ambiguous.
+- ESCALATE when specification is incomplete.
+- NEVER speculate about missing repository state.
+- NEVER fabricate file inspection, validation, or test execution.
+- NEVER assume bug location without repository evidence.
+- EXACT scoped implementation only.
+- READ-FIRST is mandatory before implementation.
+- Serena activation is mandatory for repository-aware work.
+- If Serena activation fails, STOP.
+
+Forbidden:
+- implementation from memory
+- fabricated task specifications
+- fake validation results
+- hidden scope expansion
+- silent fallback behavior changes
+- controller override of AGENTS.md
+
+Preferred:
+- low-randomness execution settings for implementation tasks when configurable.
+- explicit uncertainty instead of guessing.
