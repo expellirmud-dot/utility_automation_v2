@@ -7,6 +7,8 @@ This document defines the mandatory operational gates for all AI workers operati
 The runtime contract lifecycle is enforced at CLI gate points. Every task must strictly adhere to the established lifecycle:
 
 ```
+======================================================================
+[Step 0 / Controller Automation Harness: start_runtime_task]
 +------------------------------------+
 | 0.1 create_controller_request      |  (Request Template Generator)
 +------------------------------------+
@@ -25,6 +27,7 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 +------------------------------------+
 | 2. check_execution_readiness       |  (Pre-Implementation Gate)
 +------------------------------------+
+======================================================================
                   |
                   v
 +------------------------------------+
@@ -58,6 +61,21 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 | 4. validate completion evidence    |  (Post-Completion Gate)
 +------------------------------------+
 ```
+
+### Step 0: Controller Automation Harness (`start_runtime_task`)
+The Controller automation harness provides a single CLI entrypoint that atomically orchestrates request generation, quality validation, contract issuance, and readiness verification before work begins.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/start_runtime_task.py \
+    --task-id TASK-XXX \
+    --actor-id WORKER-01 \
+    --request-file ai_runtime/inbox/TASK-XXX-controller-request.md \
+    --allow-read src/ tests/ ai_runtime/ \
+    --allow-write src/ ai_runtime/ tests/ \
+    --expected-output src/tools/runtime/example.py
+```
+- **Output**: Deterministic JSON detailing successful execution contract issuance and verified readiness (`{"status": "SUCCESS", "contract_id": "CONT-XXX", ...}`).
+- **Behavior**: Fail-closed if any individual stage (request validation, contract issuance, readiness check) fails.
 
 ### Step 0.1: Controller Request Generation (`create_controller_request`)
 The Controller generates a fully instantiated controller request markdown file prior to validation and contract issuance. This tool prevents manual copy-paste errors and unresolved template placeholders.
