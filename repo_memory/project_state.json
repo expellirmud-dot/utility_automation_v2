@@ -1,7 +1,7 @@
 {
   "project": "utility_automation_v2",
-  "current_completed_task": "TASK 075",
-  "next_task": "TASK 076",
+  "current_completed_task": "TASK 076",
+  "next_task": "TASK 077",
   "core_invariants": [
     "Ledger is sole source of truth",
     "SQLite is projection/cache only",
@@ -21,7 +21,8 @@
     "Runtime Contract Guard Foundation",
     "Execution Contract Validator",
     "AI Runtime Contract CLI Foundation",
-    "Completion Evidence Provenance Generator"
+    "Completion Evidence Provenance Generator",
+    "Runtime Evidence Standardization"
   ],
   "known_risks": [
     "Deferred Next.js/PostCSS vulnerabilities"
