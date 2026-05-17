@@ -8,6 +8,11 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 
 ```
 +------------------------------------+
+| 0.5 validate_controller_request    |  (Request Quality Gate)
++------------------------------------+
+                  |
+                  v
++------------------------------------+
 | 1. issue_execution_contract        |  (Controller Plane)
 +------------------------------------+
                   |
@@ -43,6 +48,16 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 | 4. validate completion evidence    |  (Post-Completion Gate)
 +------------------------------------+
 ```
+
+### Step 0.5: Controller Request Validation (`validate_controller_request`)
+Before an execution contract can be issued, the Controller or execution harness MUST validate the controller request markdown artifact for structural completeness and absence of uninstantiated template placeholders.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/validate_controller_request.py \
+    --request-file ai_runtime/inbox/TASK-XXX-controller-request.md
+```
+- **Output**: Deterministic JSON validation report (`{"is_valid": true, ...}`).
+- **Behavior**: Exits with code 1 if required sections are missing or if uninstantiated placeholders (`[REPLACE]`, `REPLACE_`, empty brackets) are detected.
 
 ### Step 1: Contract Issuance (`issue_execution_contract`)
 The Controller issues a deterministic execution contract specifying allowed read/write boundaries and expected outputs before assigning work to a worker.
