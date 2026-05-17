@@ -8,6 +8,11 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 
 ```
 +------------------------------------+
+| 0.1 create_controller_request      |  (Request Template Generator)
++------------------------------------+
+                  |
+                  v
++------------------------------------+
 | 0.5 validate_controller_request    |  (Request Quality Gate)
 +------------------------------------+
                   |
@@ -48,6 +53,24 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 | 4. validate completion evidence    |  (Post-Completion Gate)
 +------------------------------------+
 ```
+
+### Step 0.1: Controller Request Generation (`create_controller_request`)
+The Controller generates a fully instantiated controller request markdown file prior to validation and contract issuance. This tool prevents manual copy-paste errors and unresolved template placeholders.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/create_controller_request.py \
+    --task-id TASK-XXX \
+    --title "Sample Task Title" \
+    --objective "Sample objective" \
+    --rationale "Sample rationale" \
+    --scope "Scope item 1" "Scope item 2" \
+    --candidate-modules "src/main.py" \
+    --tests "tests/test_main.py" \
+    --validation "Validation item 1" \
+    --acceptance "Acceptance item 1"
+```
+- **Output**: Canonical JSON success report and generated markdown at `ai_runtime/inbox/TASK-XXX-controller-request.md`.
+- **Behavior**: Verifies generated output against internal quality gates. Fail-closed if required arguments are missing or if any placeholder is introduced.
 
 ### Step 0.5: Controller Request Validation (`validate_controller_request`)
 Before an execution contract can be issued, the Controller or execution harness MUST validate the controller request markdown artifact for structural completeness and absence of uninstantiated template placeholders.
