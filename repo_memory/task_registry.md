@@ -61,6 +61,9 @@ TASK 077
 TASK 078
 - Controller Request Governance
 
+TASK 079
+- Controller Request Template Generator
+
 ## Next
 
-TASK 079 [TBD]
+TASK 080 [TBD]
