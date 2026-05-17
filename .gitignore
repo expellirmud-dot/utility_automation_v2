@@ -42,3 +42,5 @@ tools/scraper.py
 tools/send-review-to-chatgpt.ahk
 tools/stream_tailer.py
 tools/watch_opencode_prompts.py
+
+.gemini/
