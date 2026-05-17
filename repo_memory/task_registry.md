@@ -64,6 +64,9 @@ TASK 078
 TASK 079
 - Controller Request Template Generator
 
+TASK 080
+- Runtime Contract Lifecycle Inspector
+
 ## Next
 
-TASK 080 [TBD]
+TASK 081 [TBD]
