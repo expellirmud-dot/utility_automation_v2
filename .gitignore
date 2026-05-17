@@ -19,3 +19,26 @@ test_ledger_*/
 test_ledger_data/
 tests/temp_ledger.log*
 
+# local AI tooling dump
+tools/app.asar
+tools/opencode_source/
+tools/opencode_*.txt
+tools/opencode_*.py
+
+# local command drafts
+*.bat
+# local governance backups
+docs/archive/ai-governance-backup-*/
+
+# local dashboard bridge experiments
+tools/extract_opencode_prompts.py
+tools/import json.py
+tools/json.loads.py
+tools/log_catcher.py
+tools/manual_login.py
+tools/read_text.py
+tools/review-diff.ps1
+tools/scraper.py
+tools/send-review-to-chatgpt.ahk
+tools/stream_tailer.py
+tools/watch_opencode_prompts.py
