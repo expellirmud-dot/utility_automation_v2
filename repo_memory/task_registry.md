@@ -70,6 +70,9 @@ TASK 080
 TASK 081
 - Controller Runtime Automation Harness
 
+TASK 082
+- Documentation Governance Consolidation
+
 ## Next
 
-TASK 082 [TBD]
+TASK 083 [TBD]

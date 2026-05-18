@@ -1,7 +1,7 @@
 {
   "project": "utility_automation_v2",
-  "current_completed_task": "TASK 081",
-  "next_task": "TASK 082",
+  "current_completed_task": "TASK 082",
+  "next_task": "TASK 083",
   "core_invariants": [
     "Ledger is sole source of truth",
     "SQLite is projection/cache only",
@@ -27,7 +27,8 @@
     "Controller Request Governance",
     "Controller Request Template Generator",
     "Runtime Contract Lifecycle Inspector",
-    "Controller Runtime Automation Harness"
+    "Controller Runtime Automation Harness",
+    "Documentation Governance Consolidation"
   ],
   "known_risks": [
     "Deferred Next.js/PostCSS vulnerabilities"
