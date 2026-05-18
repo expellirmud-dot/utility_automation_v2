@@ -5,6 +5,7 @@ import pytest
 import tempfile
 import shutil
 import subprocess
+from datetime import datetime, timedelta
 
 
 PYTHON_EXE = sys.executable
@@ -20,12 +21,13 @@ def temp_status_dirs():
 
     task_id1 = "TASK-001"
     contract_file1 = os.path.join(contracts_dir, f"{task_id1}.json")
+    future_expiry = datetime.now() + timedelta(days=1)
     c1 = {
         "contract_id": "CONT-001",
         "task_id": task_id1,
         "actor_id": "WORKER-01",
-        "created_at": "2026-05-18T00:00:00",
-        "expires_at": "2026-05-19T00:00:00",
+        "created_at": datetime.now().isoformat(),
+        "expires_at": future_expiry.isoformat(),
         "scope": {"allowed_read_paths": ["."], "allowed_write_paths": ["."], "allowed_commands": [], "forbidden_patterns": []},
         "expected_outputs": [],
         "metadata": {}
@@ -35,12 +37,14 @@ def temp_status_dirs():
 
     task_id2 = "TASK-002"
     contract_file2 = os.path.join(contracts_dir, f"{task_id2}.json")
+    past_created = datetime.now() - timedelta(days=2)
+    past_expiry = datetime.now() - timedelta(days=1)
     c2 = {
         "contract_id": "CONT-002",
         "task_id": task_id2,
         "actor_id": "WORKER-02",
-        "created_at": "2020-01-01T00:00:00",
-        "expires_at": "2020-01-02T00:00:00",
+        "created_at": past_created.isoformat(),
+        "expires_at": past_expiry.isoformat(),
         "scope": {"allowed_read_paths": ["."], "allowed_write_paths": ["."], "allowed_commands": [], "forbidden_patterns": []},
         "expected_outputs": [],
         "metadata": {}
