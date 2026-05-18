@@ -82,6 +82,7 @@ TASK 064 repository workflow memory hardening
 - TASK 085 Unified Runtime Control Console
 - TASK 086 Interactive Runtime Operator Console UX
 - TASK 087 Runtime Web Operator Console Foundation
+- TASK 088 Runtime Operator Control Actions
 
 
 no Dynamic server usage warning
@@ -96,7 +97,7 @@ Known deferred risk:
 - frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16 upgrade
 
 Recommended next task:
-- TASK 070 [TBD]
+- TASK 089 [TBD]
 
 ## Non-Negotiable Invariants
 

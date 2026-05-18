@@ -88,6 +88,9 @@ TASK 086
 TASK 087
 - Runtime Web Operator Console Foundation
 
+TASK 088
+- Runtime Operator Control Actions
+
 ## Next
 
-TASK 088 [TBD]
+TASK 089 [TBD]
