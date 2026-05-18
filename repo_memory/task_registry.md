@@ -85,6 +85,9 @@ TASK 085
 TASK 086
 - Interactive Runtime Operator Console UX
 
+TASK 087
+- Runtime Web Operator Console Foundation
+
 ## Next
 
-TASK 087 [TBD]
+TASK 088 [TBD]

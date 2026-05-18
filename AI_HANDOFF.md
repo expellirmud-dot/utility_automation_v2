@@ -81,6 +81,7 @@ TASK 064 repository workflow memory hardening
 - TASK 084 Runtime Post-Task Automation Harness
 - TASK 085 Unified Runtime Control Console
 - TASK 086 Interactive Runtime Operator Console UX
+- TASK 087 Runtime Web Operator Console Foundation
 
 
 no Dynamic server usage warning
