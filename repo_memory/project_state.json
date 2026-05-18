@@ -1,7 +1,7 @@
 {
   "project": "utility_automation_v2",
-  "current_completed_task": "TASK 090",
-  "next_task": "TASK 091",
+  "current_completed_task": "TASK 091",
+  "next_task": "TASK 092",
   "core_invariants": [
     "Ledger is sole source of truth",
     "SQLite is projection/cache only",
@@ -36,7 +36,8 @@
     "Runtime Web Operator Console Foundation",
     "Runtime Operator Control Actions",
     "Runtime Operator Control Forms UX",
-    "Runtime Progress and Evidence Viewer"
+    "Runtime Progress and Evidence Viewer",
+    "Runtime Task Templates / Quick Launch UX"
   ],
   "known_risks": [
     "Deferred Next.js/PostCSS vulnerabilities"
