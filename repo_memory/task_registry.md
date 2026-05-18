@@ -73,6 +73,9 @@ TASK 081
 TASK 082
 - Documentation Governance Consolidation
 
+TASK 083
+- AI Context Canonical Source Audit
+
 ## Next
 
-TASK 083 [TBD]
+TASK 084 [TBD]
