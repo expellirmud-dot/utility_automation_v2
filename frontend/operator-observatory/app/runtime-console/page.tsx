@@ -227,6 +227,74 @@ const emptyActionFormState: ActionFormState = {
   actualOutput: "",
 };
 
+type TaskTemplate = {
+  label: string;
+  form: Partial<ActionFormState>;
+};
+
+const taskTemplates: TaskTemplate[] = [
+  {
+    label: "Implementation Task",
+    form: {
+      title: "Implementation Task",
+      objective: "Implement the assigned scoped change.",
+      rationale: "Complete assigned implementation work while preserving governance constraints.",
+      scope: "Read assigned task scope\nInspect relevant files\nImplement minimal targeted change",
+      candidateModules: "frontend/operator-observatory/app/runtime-console/page.tsx",
+      tests: "tests/test_runtime_console.py\ntests/test_runtime_console_api.py\ntests/test_runtime_operator_actions.py",
+      validation: "python -m pytest -q\ncd frontend/operator-observatory && npm run typecheck",
+      acceptance: "Existing behavior preserved\nValidation passes\nNo unrelated changes",
+    },
+  },
+  {
+    label: "Review Task",
+    form: {
+      title: "Review Task",
+      objective: "Review the assigned change for defects and governance risk.",
+      rationale: "Provide read-first review findings before approval or follow-up work.",
+      scope: "Inspect diff\nCheck governance boundaries\nReport findings with file references",
+      tests: "python -m pytest -q",
+      validation: "git diff --check\npython -m pytest -q",
+      acceptance: "Findings are evidence-backed\nNo implementation changes unless explicitly requested",
+    },
+  },
+  {
+    label: "Certification Task",
+    form: {
+      title: "Certification Task",
+      objective: "Run required deterministic validation and collect completion evidence.",
+      rationale: "Confirm repository invariants and certification integrity after scoped work.",
+      scope: "Run targeted validation\nRun full validation\nRun deterministic certifier",
+      tests: "python -m pytest -q",
+      validation: "python -m pytest -q\n$env:PYTHONPATH=\".\"; python src/tests/certification/deterministic_certifier.py",
+      acceptance: "Validation output recorded\nCertification artifact exists\nRemaining risks documented",
+    },
+  },
+  {
+    label: "Continuity Update",
+    form: {
+      title: "Continuity Update",
+      objective: "Update repository continuity state after completed task validation.",
+      rationale: "Keep handoff and project memory aligned with the latest completed work.",
+      scope: "Update current completed task\nUpdate next task\nPreserve standing invariants",
+      candidateModules: "AI_HANDOFF.md\nrepo_memory/project_state.json",
+      validation: "git diff -- AI_HANDOFF.md repo_memory/project_state.json",
+      acceptance: "Current task and next task are accurate\nNo unrelated handoff edits",
+    },
+  },
+  {
+    label: "Documentation Update",
+    form: {
+      title: "Documentation Update",
+      objective: "Update scoped documentation for the assigned repository change.",
+      rationale: "Keep operator-facing or handoff documentation consistent with implementation.",
+      scope: "Inspect current docs\nApply minimal documentation update\nVerify wording against source",
+      validation: "git diff --check",
+      acceptance: "Documentation matches implementation\nNo architecture drift introduced",
+    },
+  },
+];
+
 function parseListInput(value: string): string[] {
   return value
     .split(/[\n,]/)
@@ -354,12 +422,14 @@ function ActionModal({
   action,
   onClose,
   onSubmit,
+  initialForm,
 }: {
   action: RuntimeTaskAction;
   onClose: () => void;
   onSubmit: (action: RuntimeTaskAction, payload: RuntimeActionPayload) => Promise<void>;
+  initialForm?: ActionFormState;
 }) {
-  const [form, setForm] = useState<ActionFormState>(emptyActionFormState);
+  const [form, setForm] = useState<ActionFormState>(initialForm ?? emptyActionFormState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -467,6 +537,7 @@ export default function RuntimeConsolePage() {
   const [inspectorLastUpdated, setInspectorLastUpdated] = useState<Date | null>(null);
   const [inspectorSyncing, setInspectorSyncing] = useState(false);
   const [actionDialog, setActionDialog] = useState<RuntimeTaskAction | null>(null);
+  const [createTemplateForm, setCreateTemplateForm] = useState<ActionFormState | null>(null);
 
   const syncTasks = useCallback(async (background = false) => {
     if (background) {
@@ -537,7 +608,13 @@ export default function RuntimeConsolePage() {
     }
 
     setActionDialog(null);
+    setCreateTemplateForm(null);
     await syncTasks(false);
+  };
+
+  const openCreateTask = (form?: Partial<ActionFormState>) => {
+    setCreateTemplateForm(form ? { ...emptyActionFormState, ...form } : null);
+    setActionDialog("create");
   };
 
   if (data.status === "loading") {
@@ -585,7 +662,7 @@ export default function RuntimeConsolePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setActionDialog("create")} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <button onClick={() => openCreateTask()} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
               Create Task
             </button>
             <button onClick={() => setActionDialog("start")} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
@@ -605,6 +682,24 @@ export default function RuntimeConsolePage() {
             </button>
           </div>
         </header>
+
+        <div className="mb-6 rounded-xl border border-[var(--line)] bg-gray-50 p-4">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Task Templates</span>
+            <span className="text-xs font-mono text-[var(--muted)]">Prefill only. Review and submit manually.</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {taskTemplates.map((template) => (
+              <button
+                key={template.label}
+                onClick={() => openCreateTask(template.form)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-100"
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mb-8 flex flex-wrap gap-2 items-center pb-4 border-b border-[var(--line)]">
           <span className="text-xs font-bold text-[var(--muted)] tracking-wider uppercase mr-2 font-mono">Filter State:</span>
@@ -735,6 +830,7 @@ export default function RuntimeConsolePage() {
             action={actionDialog}
             onClose={() => setActionDialog(null)}
             onSubmit={handleActionSubmit}
+            initialForm={actionDialog === "create" ? createTemplateForm ?? undefined : undefined}
           />
         )}
       </>
