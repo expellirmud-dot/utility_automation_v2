@@ -1,0 +1,64 @@
+{
+  "schema_version": "runtime-tool-trace-v1",
+  "task_id": "TASK-085",
+  "worker_id": "WORKER-01",
+  "generated_at": "2026-05-18T08:51:42",
+  "events": [
+    {
+      "tool": "serena_read_file",
+      "argument": {
+        "relative_path": "ai_runtime/inbox/TASK-085-controller-request.md"
+      },
+      "purpose": "Inspect controller request for TASK 085"
+    },
+    {
+      "tool": "serena_read_file",
+      "argument": {
+        "relative_path": "src/tools/runtime/inspect_runtime_contract.py"
+      },
+      "purpose": "Inspect contract lifecycle inspection functions for integration into status CLI"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "src/tools/runtime/runtime_task_status.py"
+      },
+      "purpose": "Create runtime task status inspection utility"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "src/tools/runtime/runtime_console.py"
+      },
+      "purpose": "Create unified runtime control console for operator orchestration"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_runtime_task_status.py"
+      },
+      "purpose": "Create unit test suite for runtime task status"
+    },
+    {
+      "tool": "serena_create_text_file",
+      "argument": {
+        "relative_path": "tests/test_runtime_console.py"
+      },
+      "purpose": "Create unit test suite for unified runtime console"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "python -m pytest -q"
+      },
+      "purpose": "Execute repository-wide test suite"
+    },
+    {
+      "tool": "execute_shell_command",
+      "argument": {
+        "command": "$env:PYTHONPATH=\".\"; python src/tests/certification/deterministic_certifier.py"
+      },
+      "purpose": "Execute deterministic mesh certification"
+    }
+  ]
+}

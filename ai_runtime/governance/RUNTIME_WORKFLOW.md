@@ -8,7 +8,7 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 
 ```
 ======================================================================
-[Step 0 / Controller Automation Harness: start_runtime_task]
+[Step 0 / Unified Control Console: runtime_console / start_runtime_task]
 +------------------------------------+
 | 0.1 create_controller_request      |  (Request Template Generator)
 +------------------------------------+
@@ -25,7 +25,7 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   |
                   v
 +------------------------------------+
-| 2. check_execution_readiness       |  (Pre-Implementation Gate)
+| 2. check_execution_readiness       |  (Pre-Implementation Gate & Prompt Copy)
 +------------------------------------+
 ======================================================================
                   |
@@ -67,20 +67,25 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 ======================================================================
 ```
 
-### Step 0: Controller Automation Harness (`start_runtime_task`)
-The Controller automation harness provides a single CLI entrypoint that atomically orchestrates request generation, quality validation, contract issuance, and readiness verification before work begins.
+### Step 0: Unified Control Console & Startup Harness (`runtime_console` / `start_runtime_task`)
+The Controller operates through a unified local control console (`runtime_console.py`) or direct automation harness (`start_runtime_task.py`) that atomically orchestrates request generation, quality validation, contract issuance, readiness verification, and automatic clipboard prompt handoff.
 
 ```bash
-$env:PYTHONPATH="."; python src/tools/runtime/start_runtime_task.py \
+# Start a task via unified console (automatically generates and copies worker handoff prompt to clipboard)
+$env:PYTHONPATH="."; python src/tools/runtime/runtime_console.py start \
     --task-id TASK-XXX \
     --actor-id WORKER-01 \
-    --request-file ai_runtime/inbox/TASK-XXX-controller-request.md \
     --allow-read src/ tests/ ai_runtime/ \
     --allow-write src/ ai_runtime/ tests/ \
     --expected-output src/tools/runtime/example.py
 ```
-- **Output**: Deterministic JSON detailing successful execution contract issuance and verified readiness (`{"status": "SUCCESS", "contract_id": "CONT-XXX", ...}`).
-- **Behavior**: Fail-closed if any individual stage (request validation, contract issuance, readiness check) fails.
+- **Output**: Deterministic execution banner and clipboard confirmation (`COPIED TO CLIPBOARD`).
+- **Behavior**: Fail-closed if any individual stage (request validation, contract issuance, readiness check) fails. Instantly transfers the exact worker prompt into the controller's clipboard to eliminate manual handoff friction while preserving strict separation of authority.
+
+```bash
+# Inspect active mesh runtime task status
+$env:PYTHONPATH="."; python src/tools/runtime/runtime_console.py status --format table
+```
 
 ### Step 0.1: Controller Request Generation (`create_controller_request`)
 The Controller generates a fully instantiated controller request markdown file prior to validation and contract issuance. This tool prevents manual copy-paste errors and unresolved template placeholders.
