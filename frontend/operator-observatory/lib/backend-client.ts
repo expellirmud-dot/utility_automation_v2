@@ -12,6 +12,8 @@ import {
   governanceReviewIndexResponseSchema,
   surfacesResponseSchema,
   humanReviewIntentResponseSchema,
+  runtimeTasksResponseSchema,
+  runtimeTaskDetailResponseSchema,
 } from "./schemas";
 
 
@@ -69,6 +71,10 @@ const endpointSchemas = {
   domainPanels: {
     path: "/api/ops/panels",
     schema: domainPanelsResponseSchema,
+  },
+  runtimeTasks: {
+    path: "/api/ops/runtime-tasks",
+    schema: runtimeTasksResponseSchema,
   },
 } as const;
 
@@ -148,6 +154,28 @@ export async function fetchHumanReviewIntents() {
 
 export async function fetchDomainPanels() {
   return fetchValidated("domainPanels");
+}
+
+export async function fetchRuntimeTasks() {
+  return fetchValidated("runtimeTasks");
+}
+
+export async function fetchRuntimeTaskDetail(taskId: string) {
+  const path = `/api/ops/runtime-tasks/${taskId}`;
+  const response = await fetch(path, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`${path} returned ${response.status}`);
+  }
+
+  const json = await response.json();
+  return runtimeTaskDetailResponseSchema.parse(json);
 }
 
 export async function fetchObservatoryData(): Promise<ObservatoryData> {

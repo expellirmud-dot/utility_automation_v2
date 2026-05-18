@@ -15,6 +15,9 @@ import type {
   humanReviewIntentResponseSchema,
   surfaceSchema,
   surfacesResponseSchema,
+  runtimeTaskSummarySchema,
+  runtimeTasksResponseSchema,
+  runtimeTaskDetailResponseSchema,
 } from "./schemas";
 
 
@@ -33,6 +36,9 @@ export type EvidencePackageIntegrityResponse = z.infer<typeof evidencePackageInt
 export type EvidencePackageReadinessResponse = z.infer<typeof evidencePackageReadinessResponseSchema>;
 export type EvidenceReviewSummaryResponse = z.infer<typeof evidenceReviewSummaryResponseSchema>;
 export type HumanReviewIntentResponse = z.infer<typeof humanReviewIntentResponseSchema>;
+export type RuntimeTaskSummary = z.infer<typeof runtimeTaskSummarySchema>;
+export type RuntimeTasksResponse = z.infer<typeof runtimeTasksResponseSchema>;
+export type RuntimeTaskDetailResponse = z.infer<typeof runtimeTaskDetailResponseSchema>;
 
 
 export type DomainPanel = z.infer<typeof domainPanelSchema>;

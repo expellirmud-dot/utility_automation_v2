@@ -16,8 +16,7 @@ const NAV_ITEMS = [
   { label: "Evidence Review Summary", href: "/evidence-review-summary" },
   { label: "Governance Review Index", href: "/governance-review-index" },
   { label: "Human Review Intent", href: "/human-review-intent" },
-
-
+  { label: "Runtime Console", href: "/runtime-console" },
 ] as const;
 
 export function Sidebar() {

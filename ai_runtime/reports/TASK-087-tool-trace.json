@@ -1,0 +1,43 @@
+{
+  "schema_version": "runtime-tool-trace-v1",
+  "task_id": "TASK-087",
+  "worker_id": "Gemini",
+  "generated_at": "2026-05-18T10:18:00+07:00",
+  "events": [
+    {
+      "tool": "view_file",
+      "arguments": {
+        "path": "ai_runtime/inbox/TASK-087-controller-request.md"
+      },
+      "timestamp": "2026-05-18T10:05:00+07:00"
+    },
+    {
+      "tool": "write_to_file",
+      "arguments": {
+        "path": "src/ui/runtime_console_api.py"
+      },
+      "timestamp": "2026-05-18T10:07:00+07:00"
+    },
+    {
+      "tool": "replace_file_content",
+      "arguments": {
+        "path": "src/ui/read_only_surface_registry.py"
+      },
+      "timestamp": "2026-05-18T10:08:00+07:00"
+    },
+    {
+      "tool": "write_to_file",
+      "arguments": {
+        "path": "frontend/operator-observatory/app/runtime-console/page.tsx"
+      },
+      "timestamp": "2026-05-18T10:16:00+07:00"
+    },
+    {
+      "tool": "run_command",
+      "arguments": {
+        "CommandLine": "python -m src.tests.certification.deterministic_certifier"
+      },
+      "timestamp": "2026-05-18T10:17:00+07:00"
+    }
+  ]
+}

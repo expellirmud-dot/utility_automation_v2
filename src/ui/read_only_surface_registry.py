@@ -79,6 +79,18 @@ _READ_ONLY_SURFACES: Final[tuple[ReadOnlySurfaceEntry, ...]] = (
         exposed_in_ops=False,
         stable_order=50,
     ),
+    ReadOnlySurfaceEntry(
+        key="runtime_console",
+        title="Runtime Console",
+        route_prefix="/runtime-console",
+        api_prefix="/ops/api/runtime-tasks",
+        allowed_methods=("GET",),
+        status="connected",
+        authority_coupled=False,
+        read_only=True,
+        exposed_in_ops=True,
+        stable_order=60,
+    ),
 )
 
 

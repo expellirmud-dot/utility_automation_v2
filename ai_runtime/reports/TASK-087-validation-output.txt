@@ -1,0 +1,24 @@
+=========================== test session starts ===========================
+platform win32 -- Python 3.12.3, pytest-8.3.4, pluggy-1.5.0
+rootdir: d:\utility_automation_v2_light
+collected 501 items
+
+................................................................... [100%]
+
+=========================== 501 passed in 24.12s ===========================
+
+======================= CERTIFICATION PIPELINE SUMMARY =======================
+Check 10: ledger_truth_invariant (invariant) - PASSED
+Check 20: sqlite_projection_only_invariant (invariant) - PASSED
+Check 30: mesh_authority_invariant (invariant) - PASSED
+Check 40: ai_advisory_only_invariant (invariant) - PASSED
+Check 50: mesh_determinism (validation) - PASSED
+Check 60: pytest_pass (validation) - PASSED
+Check 70: replay_determinism (validation) - PASSED
+Check 80: projection_consistency (validation) - PASSED
+Check 90: api_governance_get_only_ops (validation) - PASSED
+Check 100: frontend_governance_no_mutation_ui (validation) - PASSED
+Check 110: security_dependency_governance (validation) - PASSED
+
+Overall Certification: PASSED
+Exit code: 0

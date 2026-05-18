@@ -24,6 +24,7 @@ def test_registry_ordering_stable():
         "recovery_dashboard",
         "simulation_dashboard",
         "telemetry_dashboard",
+        "runtime_console",
     ]
 
 
@@ -59,7 +60,7 @@ def test_ops_api_surfaces_get_returns_deterministic_payload_and_non_get_405():
     response = client.get("/ops/api/surfaces")
     assert response.status_code == 200
     payload = response.json()
-    assert [item["key"] for item in payload["surfaces"]] == ["ops_console", "incident_review"]
+    assert [item["key"] for item in payload["surfaces"]] == ["ops_console", "incident_review", "runtime_console"]
 
     first = payload["surfaces"][0]
     assert list(first.keys()) == [

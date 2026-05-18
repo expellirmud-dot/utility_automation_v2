@@ -211,3 +211,29 @@ export const releaseGovernanceResponseSchema = z.object({
   gatekeeper: gatekeeperSummarySchema,
   authorization: authorizationSummarySchema,
 });
+
+export const runtimeTaskSummarySchema = z.object({
+  task_id: z.string(),
+  contract_id: z.string().nullable(),
+  state: z.string(),
+  contract: z.record(jsonValueSchema).nullable(),
+  evidence_found: z.boolean(),
+  evidence: z.record(jsonValueSchema).nullable().optional(),
+  reports: z.object({
+    evidence_json: z.boolean(),
+    execution_transcript: z.boolean(),
+    tool_trace: z.boolean(),
+    worker_report: z.boolean(),
+  }),
+  summary: z.string(),
+});
+
+export const runtimeTasksResponseSchema = z.object({
+  timestamp: z.string(),
+  count: z.number(),
+  tasks: z.array(runtimeTaskSummarySchema),
+});
+
+export const runtimeTaskDetailResponseSchema = z.object({
+  task: runtimeTaskSummarySchema,
+});
