@@ -42,3 +42,7 @@ The following tasks constitute the deterministic evidence review chain for promo
 | TASK 086 | Interactive Runtime Operator Console UX | Completed |
 | TASK 087 | Runtime Web Operator Console Foundation | Completed |
 | TASK 088 | Runtime Operator Control Actions | Completed |
+| TASK 089 | Runtime Operator Control Forms UX | Completed |
+| TASK 090 | Runtime Progress and Evidence Viewer | Completed |
+| TASK 091 | Runtime Task Templates / Quick Launch UX | Completed |
+| TASK 092 | Runtime timeline and task history UX | Completed |

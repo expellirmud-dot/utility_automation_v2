@@ -85,8 +85,15 @@ TASK 064 repository workflow memory hardening
 - TASK 088 Runtime Operator Control Actions
 - TASK 089 Runtime Operator Control Forms UX
 - TASK 090 Runtime Progress and Evidence Viewer
-- TASK 091 Runtime Task Templates / Quick Launch UX
-
+- TASK 091: Runtime Task Templates / Quick Launch UX
+- TASK 092: Runtime timeline and task history UX
+  - Runtime timeline and task history implemented
+  - Frontend-only: `frontend/operator-observatory/app/runtime-console/page.tsx`
+  - Validation passed:
+    - pytest
+    - deterministic certifier 100.0
+    - next build
+    - typecheck
 
 no Dynamic server usage warning
 npm build passed
@@ -97,10 +104,12 @@ Certification artifact: output/certification/certification_artifact.json
 CI workflow: .github/workflows/deterministic-certification.yml
 
 Known deferred risk:
-- frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16 upgrade
+- frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16
+ upgrade
 
 Recommended next task:
-- TASK 092 [TBD]
+- TASK 093 [TBD]
+
 
 ## Non-Negotiable Invariants
 

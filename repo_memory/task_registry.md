@@ -91,6 +91,9 @@ TASK 087
 TASK 088
 - Runtime Operator Control Actions
 
+TASK 092
+- Runtime timeline and task history UX
+
 ## Next
 
-TASK 089 [TBD]
+TASK 093 [TBD]
