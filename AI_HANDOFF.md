@@ -87,8 +87,10 @@ TASK 064 repository workflow memory hardening
 - TASK 090 Runtime Progress and Evidence Viewer
 - TASK 091: Runtime Task Templates / Quick Launch UX
 - TASK 092: Runtime timeline and task history UX
-  - Runtime timeline and task history implemented
-  - Frontend-only: `frontend/operator-observatory/app/runtime-console/page.tsx`
+- TASK 093: Runtime Artifact Browser UX
+  - Artifact Browser implemented in Operator Observatory
+  - Backend: `GET /api/ops/runtime-tasks/{task_id}?include_contents=true`
+  - Frontend: `ArtifactBrowser` component in `page.tsx`
   - Validation passed:
     - pytest
     - deterministic certifier 100.0
@@ -108,7 +110,7 @@ Known deferred risk:
  upgrade
 
 Recommended next task:
-- TASK 093 [TBD]
+- TASK 094 [TBD]
 
 
 ## Non-Negotiable Invariants
