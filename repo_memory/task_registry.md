@@ -82,6 +82,9 @@ TASK 084
 TASK 085
 - Unified Runtime Control Console
 
+TASK 086
+- Interactive Runtime Operator Console UX
+
 ## Next
 
-TASK 086 [TBD]
+TASK 087 [TBD]

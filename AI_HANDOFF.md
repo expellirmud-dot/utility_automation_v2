@@ -67,10 +67,20 @@ TASK 064 repository workflow memory hardening
   - Deterministic contract models and validator for worker execution
 - TASK 072 Runtime Contract Guard Foundation
   - Programmatic guard service to validate execution contracts before implementation
-
-TASK 070 add governance review index export manifest
-
-/evidence-review-summary = ○ Static
+- TASK 073 Execution Contract Validator
+- TASK 074 AI Runtime Contract CLI Foundation
+- TASK 075 Completion Evidence Provenance Generator
+- TASK 076 Runtime Evidence Standardization
+- TASK 077 Runtime Execution Enforcement Gate
+- TASK 078 Controller Request Governance
+- TASK 079 Controller Request Template Generator
+- TASK 080 Runtime Contract Lifecycle Inspector
+- TASK 081 Controller Runtime Automation Harness
+- TASK 082 Documentation Governance Consolidation
+- TASK 083 AI Context Canonical Source Audit
+- TASK 084 Runtime Post-Task Automation Harness
+- TASK 085 Unified Runtime Control Console
+- TASK 086 Interactive Runtime Operator Console UX
 
 
 no Dynamic server usage warning
