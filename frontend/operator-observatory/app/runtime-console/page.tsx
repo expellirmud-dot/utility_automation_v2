@@ -127,18 +127,43 @@ function TimelineRail({ task, compact = false }: { task: RuntimeTaskSummary; com
   );
 }
 
+type ArtifactTabKey =
+  | "contract"
+  | "evidence"
+  | "transcript"
+  | "trace"
+  | "report"
+  | "validation"
+  | "manifest"
+  | "certification";
+
+type ArtifactTab = {
+  key: ArtifactTabKey;
+  label: string;
+  enabled: boolean;
+  content: string | null;
+};
+
+function stringifyArtifact(value: unknown): string | null {
+  if (!value) return null;
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
 function ArtifactBrowser({ task }: { task: RuntimeTaskSummary }) {
-  const [activeTab, setActiveTab] = useState<"transcript" | "trace" | "report">("transcript");
-  
-  const tabs: { key: "transcript" | "trace" | "report"; label: string; enabled: boolean }[] = [
-    { key: "transcript", label: "Transcript", enabled: !!task.reports.execution_transcript },
-    { key: "trace", label: "Trace", enabled: !!task.reports.tool_trace },
-    { key: "report", label: "Report", enabled: !!task.reports.worker_report },
+  const [activeTab, setActiveTab] = useState<ArtifactTabKey>("contract");
+
+  const tabs: ArtifactTab[] = [
+    { key: "contract", label: "Contract JSON", enabled: !!task.contract, content: stringifyArtifact(task.contract) },
+    { key: "evidence", label: "Evidence Payload", enabled: !!task.evidence || !!task.artifact_contents?.evidence_json, content: task.artifact_contents?.evidence_json ?? stringifyArtifact(task.evidence) },
+    { key: "transcript", label: "Transcript", enabled: !!task.reports.execution_transcript, content: task.artifact_contents?.execution_transcript ?? null },
+    { key: "trace", label: "Tool Trace", enabled: !!task.reports.tool_trace, content: task.artifact_contents?.tool_trace ?? null },
+    { key: "report", label: "Worker Report", enabled: !!task.reports.worker_report, content: task.artifact_contents?.worker_report ?? null },
+    { key: "validation", label: "Validation Output", enabled: !!task.reports.validation_output, content: task.artifact_contents?.validation_output ?? null },
+    { key: "manifest", label: "Runtime Manifest", enabled: !!task.reports.runtime_manifest, content: task.artifact_contents?.runtime_manifest ?? null },
+    { key: "certification", label: "Certification Artifact", enabled: !!task.reports.certification_artifact, content: task.artifact_contents?.certification_artifact ?? null },
   ];
 
-  const content = activeTab === "transcript" ? task.artifact_contents?.execution_transcript :
-                  activeTab === "trace" ? task.artifact_contents?.tool_trace :
-                  activeTab === "report" ? task.artifact_contents?.worker_report : null;
+  const activeArtifact = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
 
   return (
     <div className="rounded-xl border border-[var(--line)] bg-white p-4 font-sans">
@@ -159,8 +184,8 @@ function ArtifactBrowser({ task }: { task: RuntimeTaskSummary }) {
         ))}
       </div>
       <div className="h-64 overflow-auto rounded-lg border border-[var(--line)] bg-gray-50 p-4 font-mono text-[11px] text-[var(--ink)]">
-        {content ? <pre className="whitespace-pre-wrap">{content}</pre> : 
-                   <p className="text-[var(--muted)]">No {activeTab} available.</p>}
+        {activeArtifact.content ? <pre className="whitespace-pre-wrap">{activeArtifact.content}</pre> :
+                   <p className="text-[var(--muted)]">No {activeArtifact.label.toLowerCase()} available.</p>}
       </div>
     </div>
   );

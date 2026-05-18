@@ -24,20 +24,30 @@ def inspect_contract_lifecycle(
     transcript_path = os.path.join(reports_dir, f"{task_id}-execution-transcript.md")
     trace_path = os.path.join(reports_dir, f"{task_id}-tool-trace.json")
     report_path = os.path.join(reports_dir, f"{task_id}-worker-report.md")
+    validation_output_path = os.path.join(reports_dir, f"{task_id}-validation-output.txt")
+    runtime_manifest_path = os.path.join(reports_dir, f"{task_id}-runtime-manifest.json")
+    certification_artifact_path = os.path.join("output", "certification", "certification_artifact.json")
 
     reports_status = {
         "evidence_json": os.path.exists(evidence_path),
         "execution_transcript": os.path.exists(transcript_path),
         "tool_trace": os.path.exists(trace_path),
-        "worker_report": os.path.exists(report_path)
+        "worker_report": os.path.exists(report_path),
+        "validation_output": os.path.exists(validation_output_path),
+        "runtime_manifest": os.path.exists(runtime_manifest_path),
+        "certification_artifact": os.path.exists(certification_artifact_path)
     }
 
     artifact_contents = {}
     if include_contents:
         for key, path in [
+            ("evidence_json", evidence_path),
             ("execution_transcript", transcript_path),
             ("tool_trace", trace_path),
-            ("worker_report", report_path)
+            ("worker_report", report_path),
+            ("validation_output", validation_output_path),
+            ("runtime_manifest", runtime_manifest_path),
+            ("certification_artifact", certification_artifact_path)
         ]:
             if os.path.exists(path):
                 try:

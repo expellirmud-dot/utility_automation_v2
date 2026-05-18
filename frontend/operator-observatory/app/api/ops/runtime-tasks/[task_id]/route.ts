@@ -5,7 +5,13 @@ export async function GET(
   { params }: { params: { task_id: string } }
 ) {
   const backendUrl = process.env.OPS_API_BASE_URL || "http://127.0.0.1:8000";
-  const response = await fetch(`${backendUrl}/ops/api/runtime-tasks/${params.task_id}`, {
+  const includeContents = request.nextUrl.searchParams.get("include_contents") === "true";
+  const detailUrl = new URL(`${backendUrl}/ops/api/runtime-tasks/${params.task_id}`);
+  if (includeContents) {
+    detailUrl.searchParams.set("include_contents", "true");
+  }
+
+  const response = await fetch(detailUrl, {
     headers: {
       Accept: "application/json",
     },

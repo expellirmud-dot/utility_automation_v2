@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from datetime import datetime, timedelta
 from src.services.governance.execution_contract.execution_contract_serializer import ExecutionContractSerializer
+from src.tools.runtime.inspect_runtime_contract import inspect_contract_lifecycle
 
 
 PYTHON_EXE = sys.executable
@@ -162,3 +163,44 @@ def test_inspect_completed_contract(temp_runtime_dirs):
     assert data["state"] == "VALIDATED_COMPLETION"
     assert data["contract_id"] == "CONT-TEST-003"
     assert data["evidence_found"] is True
+
+
+def test_inspect_includes_artifact_browser_contents(temp_runtime_dirs, tmp_path, monkeypatch):
+    contracts_dir, reports_dir = temp_runtime_dirs
+    monkeypatch.chdir(tmp_path)
+    os.makedirs(os.path.join("output", "certification"), exist_ok=True)
+
+    with open(os.path.join(reports_dir, "TASK-103-execution-transcript.md"), "w", encoding="utf-8") as f:
+        f.write("transcript body")
+    with open(os.path.join(reports_dir, "TASK-103-tool-trace.json"), "w", encoding="utf-8") as f:
+        f.write('{"tool": "trace"}')
+    with open(os.path.join(reports_dir, "TASK-103-worker-report.md"), "w", encoding="utf-8") as f:
+        f.write("worker report body")
+    with open(os.path.join(reports_dir, "TASK-103-validation-output.txt"), "w", encoding="utf-8") as f:
+        f.write("validation passed")
+    with open(os.path.join(reports_dir, "TASK-103-runtime-manifest.json"), "w", encoding="utf-8") as f:
+        f.write('{"manifest": true}')
+    with open(os.path.join("output", "certification", "certification_artifact.json"), "w", encoding="utf-8") as f:
+        f.write('{"overall_score": 100.0}')
+
+    data = inspect_contract_lifecycle(
+        "TASK-103",
+        contracts_dir=contracts_dir,
+        reports_dir=reports_dir,
+        include_contents=True,
+    )
+
+    assert data["reports"]["evidence_json"] is True
+    assert data["reports"]["execution_transcript"] is True
+    assert data["reports"]["tool_trace"] is True
+    assert data["reports"]["worker_report"] is True
+    assert data["reports"]["validation_output"] is True
+    assert data["reports"]["runtime_manifest"] is True
+    assert data["reports"]["certification_artifact"] is True
+    assert "SUCCESS" in data["artifact_contents"]["evidence_json"]
+    assert data["artifact_contents"]["execution_transcript"] == "transcript body"
+    assert data["artifact_contents"]["tool_trace"] == '{"tool": "trace"}'
+    assert data["artifact_contents"]["worker_report"] == "worker report body"
+    assert data["artifact_contents"]["validation_output"] == "validation passed"
+    assert data["artifact_contents"]["runtime_manifest"] == '{"manifest": true}'
+    assert data["artifact_contents"]["certification_artifact"] == '{"overall_score": 100.0}'

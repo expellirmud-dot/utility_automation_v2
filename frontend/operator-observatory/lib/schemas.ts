@@ -224,11 +224,18 @@ export const runtimeTaskSummarySchema = z.object({
     execution_transcript: z.boolean(),
     tool_trace: z.boolean(),
     worker_report: z.boolean(),
+    validation_output: z.boolean().optional(),
+    runtime_manifest: z.boolean().optional(),
+    certification_artifact: z.boolean().optional(),
   }),
   artifact_contents: z.object({
+    evidence_json: z.string().nullable().optional(),
     execution_transcript: z.string().nullable().optional(),
     tool_trace: z.string().nullable().optional(),
     worker_report: z.string().nullable().optional(),
+    validation_output: z.string().nullable().optional(),
+    runtime_manifest: z.string().nullable().optional(),
+    certification_artifact: z.string().nullable().optional(),
   }).nullable().optional(),
   summary: z.string(),
 });
