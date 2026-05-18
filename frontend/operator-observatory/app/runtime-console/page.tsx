@@ -13,6 +13,7 @@ import type {
 } from "../../lib/types";
 
 const POLL_INTERVAL_MS = 10000;
+const RECENT_TASK_LIMIT = 6;
 
 type RuntimeLoadState =
   | { status: "loading" }
@@ -38,6 +39,92 @@ function getValidationLabel(task: RuntimeTaskSummary): string {
   if (task.state === "CORRUPT_EVIDENCE" || task.state === "CORRUPT_CONTRACT") return "Corrupt artifact";
   if (task.evidence_found) return "Evidence present";
   return "Awaiting evidence";
+}
+
+type TimelineStepState = "complete" | "active" | "blocked" | "pending";
+
+type TimelineStep = {
+  key: string;
+  label: string;
+  state: TimelineStepState;
+};
+
+function getEvidenceStatus(task: RuntimeTaskSummary): string | null {
+  const status = task.evidence?.status;
+  return typeof status === "string" ? status.toUpperCase() : null;
+}
+
+function getTimelineSteps(task: RuntimeTaskSummary): TimelineStep[] {
+  const state = task.state.toUpperCase();
+  const evidenceStatus = getEvidenceStatus(task);
+  const isValidated = state === "VALIDATED_COMPLETION";
+  const isCorruptEvidence = state === "CORRUPT_EVIDENCE";
+  const isEvidenceValidationFailed = state === "EVIDENCE_VALIDATION_FAILED";
+  const isFailed = state === "EXPIRED" || state === "CORRUPT_CONTRACT" || evidenceStatus === "FAILED";
+  const hasContract = Boolean(task.contract);
+  const hasEvidence = task.evidence_found;
+
+  return [
+    {
+      key: "created",
+      label: "Created",
+      state: hasContract || state !== "ISSUANCE_PENDING" ? "complete" : "active",
+    },
+    {
+      key: "started",
+      label: "Started",
+      state: hasContract ? (state === "ACTIVE" && !hasEvidence ? "active" : "complete") : "pending",
+    },
+    {
+      key: "validating",
+      label: "Validating",
+      state: hasEvidence && !isValidated && !isCorruptEvidence && !isEvidenceValidationFailed && !isFailed ? "active" : hasEvidence || isValidated || isCorruptEvidence || isEvidenceValidationFailed ? "complete" : "pending",
+    },
+    {
+      key: "validated_completion",
+      label: "Validated completion",
+      state: isValidated ? "complete" : "pending",
+    },
+    {
+      key: "failed",
+      label: "Failed",
+      state: isFailed ? "blocked" : "pending",
+    },
+    {
+      key: "corrupt_evidence",
+      label: "Corrupt evidence",
+      state: isCorruptEvidence ? "blocked" : "pending",
+    },
+    {
+      key: "evidence_validation_failed",
+      label: "Evidence validation failed",
+      state: isEvidenceValidationFailed ? "blocked" : "pending",
+    },
+  ];
+}
+
+function TimelineRail({ task, compact = false }: { task: RuntimeTaskSummary; compact?: boolean }) {
+  const steps = getTimelineSteps(task);
+
+  return (
+    <div className={compact ? "space-y-2" : "space-y-3"}>
+      {steps.map((step) => (
+        <div key={step.key} className="flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+            step.state === "complete" ? "bg-teal-500" :
+            step.state === "active" ? "bg-blue-500" :
+            step.state === "blocked" ? "bg-red-500" :
+            "bg-gray-300"
+          }`} />
+          <span className={`${compact ? "text-[11px]" : "text-xs"} font-mono ${
+            step.state === "pending" ? "text-[var(--muted)]" : "font-bold text-[var(--ink)]"
+          }`}>
+            {step.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Modal({
@@ -167,6 +254,10 @@ function Modal({
               ))}
             </div>
           )}
+          <div className="mt-4 rounded-xl border border-[var(--line)] bg-white p-4 font-sans">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Runtime Timeline</p>
+            <TimelineRail task={task} />
+          </div>
         </div>
 
         <div className="p-4 border-t border-[var(--line)] bg-gray-50 flex justify-end">
@@ -533,6 +624,7 @@ export default function RuntimeConsolePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
+  const [taskSearch, setTaskSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState<RuntimeTaskSummary | null>(null);
   const [inspectorLastUpdated, setInspectorLastUpdated] = useState<Date | null>(null);
   const [inspectorSyncing, setInspectorSyncing] = useState(false);
@@ -627,7 +719,13 @@ export default function RuntimeConsolePage() {
 
   if (data.status === "ready" && data.data) {
     const tasks = data.data.tasks;
-    const filteredTasks = filter === "ALL" ? tasks : tasks.filter(t => t.state.toUpperCase() === filter.toUpperCase());
+    const normalizedSearch = taskSearch.trim().toUpperCase();
+    const filteredTasks = tasks.filter((task) => {
+      const matchesState = filter === "ALL" || task.state.toUpperCase() === filter.toUpperCase();
+      const matchesSearch = !normalizedSearch || task.task_id.toUpperCase().includes(normalizedSearch);
+      return matchesState && matchesSearch;
+    });
+    const recentTasks = tasks.slice(-RECENT_TASK_LIMIT).reverse();
 
     const statesCount = tasks.reduce((acc, t) => {
       acc[t.state] = (acc[t.state] || 0) + 1;
@@ -683,6 +781,61 @@ export default function RuntimeConsolePage() {
           </div>
         </header>
 
+        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
+          <section className="rounded-xl border border-[var(--line)] bg-white p-4 shadow-sm">
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[var(--ink)]">Task History</h3>
+                <p className="text-xs text-[var(--muted)]">Most recent tasks from the runtime task matrix.</p>
+              </div>
+              <input
+                value={taskSearch}
+                onChange={(event) => setTaskSearch(event.target.value)}
+                placeholder="Search task id"
+                className="w-full rounded-lg border border-[var(--line)] bg-gray-50 px-3 py-2 font-mono text-xs text-[var(--ink)] shadow-sm focus:border-[var(--accent)] focus:outline-none sm:w-56"
+              />
+            </div>
+            <div className="divide-y divide-gray-100">
+              {recentTasks.map((task) => (
+                <button
+                  key={task.task_id}
+                  type="button"
+                  onClick={() => setSelectedTask(task)}
+                  className="flex w-full items-center justify-between gap-4 py-3 text-left"
+                >
+                  <span>
+                    <span className="block font-mono text-sm font-bold text-[var(--ink)]">{task.task_id}</span>
+                    <span className="block truncate text-xs text-[var(--muted)]">{task.summary}</span>
+                  </span>
+                  <span className="shrink-0 rounded-lg border border-[var(--line)] bg-gray-50 px-2 py-1 font-mono text-[10px] font-bold text-[var(--muted)]">
+                    {task.state}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-[var(--line)] bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[var(--ink)]">Timeline Focus</h3>
+              <span className="font-mono text-[10px] font-bold text-[var(--muted)]">
+                {filteredTasks.length} shown
+              </span>
+            </div>
+            {filteredTasks[0] ? (
+              <div>
+                <div className="mb-3">
+                  <p className="font-mono text-sm font-bold text-[var(--ink)]">{filteredTasks[0].task_id}</p>
+                  <p className="text-xs text-[var(--muted)]">{filteredTasks[0].state}</p>
+                </div>
+                <TimelineRail task={filteredTasks[0]} compact />
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">No task matches the current search and lifecycle filter.</p>
+            )}
+          </section>
+        </div>
+
         <div className="mb-6 rounded-xl border border-[var(--line)] bg-gray-50 p-4">
           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Task Templates</span>
@@ -731,7 +884,7 @@ export default function RuntimeConsolePage() {
         </div>
 
         {filteredTasks.length === 0 ? (
-          <StatePanel title="Empty Matrix" detail="No runtime tasks match the selected state filter." />
+          <StatePanel title="Empty Matrix" detail="No runtime tasks match the selected task id search and lifecycle filter." />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map((t) => {
@@ -776,6 +929,13 @@ export default function RuntimeConsolePage() {
                     <div className="mt-2 text-xs font-mono font-bold text-[var(--ink)]">
                       {getValidationLabel(t)}
                     </div>
+                  </div>
+
+                  <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                      Timeline
+                    </div>
+                    <TimelineRail task={t} compact />
                   </div>
 
                   <div className="space-y-3 mb-6 pt-4 border-t border-gray-100 font-mono text-xs">
