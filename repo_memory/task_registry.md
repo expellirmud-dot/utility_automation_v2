@@ -76,6 +76,9 @@ TASK 082
 TASK 083
 - AI Context Canonical Source Audit
 
+TASK 084
+- Runtime Post-Task Automation Harness
+
 ## Next
 
-TASK 084 [TBD]
+TASK 085 [TBD]
