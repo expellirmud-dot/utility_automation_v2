@@ -1,33 +1,53 @@
 ---
 name: read-first-governance
-description: Mandatory READ-FIRST workflow for utility_automation_v2 before implementation.
+description: Mandatory READ-FIRST workflow for utility_automation_v2_light before repository-aware implementation.
 ---
 
-Rules:
-1. Read:
-- repo_memory/project_state.json
-- repo_memory/architecture_map.md
-- repo_memory/known_landmines.md
-- repo_memory/task_registry.md
-- repo_memory/module_registry.md
-- repo_memory/validation_commands.md
-- PROJECT_RULES.md
-- AI_HANDOFF.md
-- AGENTS.md
+# Read First Governance
 
-2. Activate Serena:
-D:\utility_automation_v2
+## Required Read Order
 
-3. If Serena activation fails:
-STOP
+Before implementation, read:
 
-4. Do not implement from memory.
+1. repo_memory/project_state.json
+2. repo_memory/architecture_map.md
+3. repo_memory/known_landmines.md
+4. repo_memory/task_registry.md
+5. repo_memory/module_registry.md
+6. repo_memory/validation_commands.md
+7. PROJECT_RULES.md
+8. AI_HANDOFF.md
+9. AGENTS.md
+10. CONTROLLER.md
+11. Current controller request in ai_runtime/inbox/
 
-5. Return:
+## Repository Path
+
+Use this repository path:
+
+D:\utility_automation_v2_light
+
+Ignore legacy references to D:\utility_automation_v2 unless reading archived documentation.
+
+## Serena Requirement
+
+Use Serena for repository-aware work.
+
+If Serena activation/indexing fails:
+STOP.
+
+Do not implement from memory.
+
+## Required Output Before Editing
+
+Return:
+
 - files read
+- current git status
 - spec found?
 - exact spec location
 - proposed scope
+- exact files expected to change
 - validation commands
 - governance risks
 - explicit no code edited statement
