@@ -4,7 +4,7 @@ import json
 import argparse
 import subprocess
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.services.governance.execution_contract.execution_contract_serializer import ExecutionContractSerializer
 from src.tools.runtime.runtime_task_status import get_all_runtime_tasks, format_status_table
 
@@ -35,7 +35,7 @@ def copy_to_clipboard(text: str) -> bool:
     return False
 
 
-def cmd_create(args: argparse.Namespace, serializer: ExecutionContractSerializer) -> None:
+def cmd_create(args: argparse.Namespace, serializer: ExecutionContractSerializer, interactive: bool = False) -> bool:
     req_file = args.output_file or os.path.join(args.inbox_dir, f"{args.task_id}-controller-request.md")
     cmd = [
         PYTHON_EXE, "src/tools/runtime/create_controller_request.py",
@@ -56,12 +56,17 @@ def cmd_create(args: argparse.Namespace, serializer: ExecutionContractSerializer
     res = run_command(cmd)
     if res.returncode != 0:
         print(res.stderr or res.stdout)
-        sys.exit(1)
+        if not interactive:
+            sys.exit(1)
+        return False
+
     print(res.stdout)
-    sys.exit(0)
+    if not interactive:
+        sys.exit(0)
+    return True
 
 
-def cmd_start(args: argparse.Namespace, serializer: ExecutionContractSerializer) -> None:
+def cmd_start(args: argparse.Namespace, serializer: ExecutionContractSerializer, interactive: bool = False) -> bool:
     req_file = args.request_file or os.path.join(args.inbox_dir, f"{args.task_id}-controller-request.md")
     cmd = [
         PYTHON_EXE, "src/tools/runtime/start_runtime_task.py",
@@ -86,10 +91,18 @@ def cmd_start(args: argparse.Namespace, serializer: ExecutionContractSerializer)
     res = run_command(cmd)
     if res.returncode != 0:
         print(res.stderr or res.stdout)
-        sys.exit(1)
+        if not interactive:
+            sys.exit(1)
+        return False
 
-    out_data = json.loads(res.stdout)
-    contract_id = out_data.get("contract_id", "UNKNOWN")
+    try:
+        out_data = json.loads(res.stdout)
+        contract_id = out_data.get("contract_id", "UNKNOWN")
+    except Exception:
+        print(f"Failed to parse startup output:\n{res.stdout}")
+        if not interactive:
+            sys.exit(1)
+        return False
 
     # Generate Worker Handoff Prompt
     cwd = os.path.abspath(".")
@@ -127,10 +140,13 @@ def cmd_start(args: argparse.Namespace, serializer: ExecutionContractSerializer)
         print(prompt)
     else:
         print(serializer.serialize(out_data))
-    sys.exit(0)
+
+    if not interactive:
+        sys.exit(0)
+    return True
 
 
-def cmd_finish(args: argparse.Namespace, serializer: ExecutionContractSerializer) -> None:
+def cmd_finish(args: argparse.Namespace, serializer: ExecutionContractSerializer, interactive: bool = False) -> bool:
     cmd = [
         PYTHON_EXE, "src/tools/runtime/finish_runtime_task.py",
         "--task-id", args.task_id,
@@ -143,9 +159,18 @@ def cmd_finish(args: argparse.Namespace, serializer: ExecutionContractSerializer
     res = run_command(cmd)
     if res.returncode != 0:
         print(res.stderr or res.stdout)
-        sys.exit(1)
+        if not interactive:
+            sys.exit(1)
+        return False
 
-    out_data = json.loads(res.stdout)
+    try:
+        out_data = json.loads(res.stdout)
+    except Exception:
+        print(f"Failed to parse finish output:\n{res.stdout}")
+        if not interactive:
+            sys.exit(1)
+        return False
+
     if args.format == "text":
         pkg = out_data.get("controller_commit_package", {})
         print(f"======================================================================")
@@ -157,10 +182,13 @@ def cmd_finish(args: argparse.Namespace, serializer: ExecutionContractSerializer
         print(f"Instructions:\n{pkg.get('instructions')}\n")
     else:
         print(serializer.serialize(out_data))
-    sys.exit(0)
+
+    if not interactive:
+        sys.exit(0)
+    return True
 
 
-def cmd_status(args: argparse.Namespace, serializer: ExecutionContractSerializer) -> None:
+def cmd_status(args: argparse.Namespace, serializer: ExecutionContractSerializer, interactive: bool = False) -> bool:
     tasks = get_all_runtime_tasks(contracts_dir=args.contracts_dir, reports_dir=args.reports_dir, state_filter=args.state)
     if args.format == "table":
         print(format_status_table(tasks))
@@ -172,10 +200,13 @@ def cmd_status(args: argparse.Namespace, serializer: ExecutionContractSerializer
             "tasks": tasks
         }
         print(serializer.serialize(out))
-    sys.exit(0)
+
+    if not interactive:
+        sys.exit(0)
+    return True
 
 
-def cmd_inspect(args: argparse.Namespace, serializer: ExecutionContractSerializer) -> None:
+def cmd_inspect(args: argparse.Namespace, serializer: ExecutionContractSerializer, interactive: bool = False) -> bool:
     cmd = [
         PYTHON_EXE, "src/tools/runtime/inspect_runtime_contract.py",
         "--task-id", args.task_id,
@@ -185,12 +216,119 @@ def cmd_inspect(args: argparse.Namespace, serializer: ExecutionContractSerialize
     res = run_command(cmd)
     if res.returncode != 0:
         print(res.stderr or res.stdout)
-        sys.exit(1)
+        if not interactive:
+            sys.exit(1)
+        return False
+
     print(res.stdout)
-    sys.exit(0)
+    if not interactive:
+        sys.exit(0)
+    return True
+
+
+def input_list(prompt: str) -> List[str]:
+    raw = input(prompt).strip()
+    if not raw:
+        return []
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+def interactive_console_loop(serializer: ExecutionContractSerializer) -> None:
+    banner = """
+======================================================================
+             DETERMINISTIC RUNTIME CONTROL CONSOLE (UX)
+======================================================================
+1. Start Runtime Task (Assign Worker & Copy Prompt)
+2. Finish Runtime Task (Verify Post-Task Validation)
+3. Inspect Active Task Status Overview
+4. Inspect Specific Execution Contract
+0. Exit Console
+======================================================================"""
+
+    while True:
+        print(banner)
+        choice = input("Select an option [0-4]: ").strip()
+        if choice == "0":
+            print("\nExiting Runtime Control Console. Goodbye!\n")
+            break
+        elif choice == "1":
+            print("\n--- Start Runtime Task ---")
+            task_id = input("Task ID (e.g. TASK-100): ").strip()
+            if not task_id:
+                print("Task ID cannot be empty.")
+                continue
+            actor_id = input("Worker Actor ID [WORKER-01]: ").strip() or "WORKER-01"
+            allow_read = input_list("Allowed Read Paths (comma-separated) [src/,tests/,ai_runtime/]: ") or ["src/", "tests/", "ai_runtime/"]
+            allow_write = input_list("Allowed Write Paths (comma-separated) [src/,tests/,ai_runtime/]: ") or ["src/", "tests/", "ai_runtime/"]
+            expected_output = input_list("Expected Output Files (comma-separated): ")
+            duration_mins = input("Duration in minutes [60]: ").strip()
+            duration_mins = int(duration_mins) if duration_mins.isdigit() else 60
+
+            ns = argparse.Namespace(
+                task_id=task_id, actor_id=actor_id, request_file=None,
+                allow_read=allow_read, allow_write=allow_write, expected_output=expected_output,
+                allow_command=None, forbid_pattern=None, duration_mins=duration_mins,
+                inbox_dir="ai_runtime/inbox", contracts_dir="ai_runtime/contracts", format="text"
+            )
+            print()
+            cmd_start(ns, serializer, interactive=True)
+
+        elif choice == "2":
+            print("\n--- Finish Runtime Task ---")
+            task_id = input("Task ID (e.g. TASK-100): ").strip()
+            if not task_id:
+                print("Task ID cannot be empty.")
+                continue
+            worker_id = input("Worker Actor ID [WORKER-01]: ").strip() or "WORKER-01"
+            actual_output = input_list("Actual Output Files (comma-separated): ")
+            if not actual_output:
+                print("At least one actual output file must be specified.")
+                continue
+
+            ns = argparse.Namespace(
+                task_id=task_id, worker_id=worker_id, actual_output=actual_output,
+                reports_dir="ai_runtime/reports", contracts_dir="ai_runtime/contracts", root_dir=".", format="text"
+            )
+            print()
+            cmd_finish(ns, serializer, interactive=True)
+
+        elif choice == "3":
+            print("\n--- Inspect Active Task Status Overview ---")
+            state_filter = input("State Filter [press Enter for all, or ACTIVE, EXPIRED, VALIDATED_COMPLETION]: ").strip() or None
+            ns = argparse.Namespace(
+                contracts_dir="ai_runtime/contracts", reports_dir="ai_runtime/reports",
+                state=state_filter, format="table"
+            )
+            print()
+            cmd_status(ns, serializer, interactive=True)
+
+        elif choice == "4":
+            print("\n--- Inspect Specific Execution Contract ---")
+            task_id = input("Task ID (e.g. TASK-100): ").strip()
+            if not task_id:
+                print("Task ID cannot be empty.")
+                continue
+            ns = argparse.Namespace(
+                task_id=task_id, contracts_dir="ai_runtime/contracts", reports_dir="ai_runtime/reports"
+            )
+            print()
+            cmd_inspect(ns, serializer, interactive=True)
+
+        else:
+            print("Invalid option. Please enter a number between 0 and 4.")
 
 
 def main():
+    serializer = ExecutionContractSerializer()
+
+    # If no subcommands/arguments provided, enter interactive loop UX
+    if len(sys.argv) == 1:
+        try:
+            interactive_console_loop(serializer)
+        except (KeyboardInterrupt, EOFError):
+            print("\n\nExiting Runtime Control Console. Goodbye!\n")
+        sys.exit(0)
+
     parser = argparse.ArgumentParser(description="Deterministic Runtime Control Console CLI.")
     subparsers = parser.add_subparsers(dest="command", required=True, help="Console subcommand.")
 
@@ -248,7 +386,6 @@ def main():
     parser_inspect.add_argument("--reports-dir", default="ai_runtime/reports", help="Reports directory.")
 
     args = parser.parse_args()
-    serializer = ExecutionContractSerializer()
 
     if args.command == "create":
         cmd_create(args, serializer)

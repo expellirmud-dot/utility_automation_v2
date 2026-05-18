@@ -58,3 +58,15 @@ def test_console_create_and_status(temp_console_dirs):
     ]
     res = subprocess.run(cmd_status, env=env, capture_output=True, text=True)
     assert res.returncode == 0
+
+
+def test_console_interactive_exit():
+    script = "src/tools/runtime/runtime_console.py"
+    cmd = [PYTHON_EXE, script]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = "."
+    proc = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    out, err = proc.communicate(input="0\n")
+    assert proc.returncode == 0
+    assert "DETERMINISTIC RUNTIME CONTROL CONSOLE" in out
+    assert "Exiting Runtime Control Console" in out

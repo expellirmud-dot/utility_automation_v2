@@ -1,0 +1,12 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.3, pluggy-1.6.0
+rootdir: D:\utility_automation_v2_light
+configfile: pytest.ini
+collected 499 items
+499 passed in 23.66s
+
+Starting Deterministic Mesh Certification...
+Node worker-1 freezing for reconciliation...
+Node worker-1 reconciliation complete.
+{'determinism': 'PASS', 'idempotent_replay': 'PASS', 'fork_safety': 'PASS', 'quorum_integrity': 'PASS', 'convergence': 'PASS', 'anti_entropy_sync': 'PASS', 'byzantine_resilience': 'PASS', 'overall_score': 100.0}
+Exit code: 0

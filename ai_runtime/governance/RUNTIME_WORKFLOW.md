@@ -67,11 +67,18 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 ======================================================================
 ```
 
-### Step 0: Unified Control Console & Startup Harness (`runtime_console` / `start_runtime_task`)
-The Controller operates through a unified local control console (`runtime_console.py`) or direct automation harness (`start_runtime_task.py`) that atomically orchestrates request generation, quality validation, contract issuance, readiness verification, and automatic clipboard prompt handoff.
+### Step 0: Interactive Unified Control Console & Startup Harness (`runtime_console` / `start_runtime_task`)
+The Controller operates through an interactive local control console (`runtime_console.py`) or direct CLI automation harness (`start_runtime_task.py`) for task execution lifecycle operations, atomically orchestrating quality validation, contract issuance, readiness verification, and automatic clipboard prompt handoff.
 
 ```bash
-# Start a task via unified console (automatically generates and copies worker handoff prompt to clipboard)
+# Launch the interactive menu loop UX (no arguments required)
+$env:PYTHONPATH="."; python src/tools/runtime/runtime_console.py
+```
+- **Output**: Interactive console banner presenting numbered options (1: Start Task & Copy Prompt, 2: Finish Task & Validate Completion, 3: Inspect Active Status Overview, 4: Inspect Specific Contract, 0: Exit).
+- **Behavior**: Guides the operator interactively through execution lifecycle operations while maintaining strict fail-closed deterministic validation and omitting autonomous commit/push authority.
+
+```bash
+# Scriptable automated task startup (non-interactive mode)
 $env:PYTHONPATH="."; python src/tools/runtime/runtime_console.py start \
     --task-id TASK-XXX \
     --actor-id WORKER-01 \
