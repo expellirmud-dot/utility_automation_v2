@@ -45,6 +45,7 @@ export type RuntimeTaskDetailResponse = z.infer<typeof runtimeTaskDetailResponse
 export type CreateTaskPayload = z.infer<typeof createTaskPayloadSchema>;
 export type StartTaskPayload = z.infer<typeof startTaskPayloadSchema>;
 export type FinishTaskPayload = z.infer<typeof finishTaskPayloadSchema>;
+export type RuntimeTaskAction = "create" | "start" | "finish";
 
 
 export type DomainPanel = z.infer<typeof domainPanelSchema>;

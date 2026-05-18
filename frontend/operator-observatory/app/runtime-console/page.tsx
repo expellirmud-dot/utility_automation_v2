@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { StatePanel } from "../../components/state-panel";
 import { useObservatoryFetch } from "../../hooks/use-observatory-fetch";
 import { fetchRuntimeTasks, createRuntimeTask, startRuntimeTask, finishRuntimeTask } from "../../lib/backend-client";
-import type { RuntimeTaskSummary } from "../../lib/types";
+import type {
+  CreateTaskPayload,
+  FinishTaskPayload,
+  RuntimeTaskAction,
+  RuntimeTaskSummary,
+  StartTaskPayload,
+} from "../../lib/types";
 
 function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: () => void }) {
   if (!task) return null;
@@ -120,73 +126,296 @@ function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: ()
   );
 }
 
+type RuntimeActionPayload = CreateTaskPayload | StartTaskPayload | FinishTaskPayload;
+
+type ActionFormState = {
+  taskId: string;
+  title: string;
+  objective: string;
+  rationale: string;
+  scope: string;
+  candidateModules: string;
+  tests: string;
+  validation: string;
+  acceptance: string;
+  nextTask: string;
+  outputFile: string;
+  actorId: string;
+  requestFile: string;
+  allowRead: string;
+  allowWrite: string;
+  expectedOutput: string;
+  workerId: string;
+  actualOutput: string;
+};
+
+const emptyActionFormState: ActionFormState = {
+  taskId: "",
+  title: "",
+  objective: "",
+  rationale: "",
+  scope: "",
+  candidateModules: "",
+  tests: "",
+  validation: "",
+  acceptance: "",
+  nextTask: "",
+  outputFile: "",
+  actorId: "",
+  requestFile: "",
+  allowRead: "",
+  allowWrite: "",
+  expectedOutput: "",
+  workerId: "",
+  actualOutput: "",
+};
+
+function parseListInput(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function requireText(value: string, label: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`${label} is required.`);
+  }
+  return trimmed;
+}
+
+function requireList(value: string, label: string): string[] {
+  const items = parseListInput(value);
+  if (items.length === 0) {
+    throw new Error(`${label} requires at least one value.`);
+  }
+  return items;
+}
+
+function buildActionPayload(action: RuntimeTaskAction, form: ActionFormState): RuntimeActionPayload {
+  const task_id = requireText(form.taskId, "Task ID");
+
+  if (action === "create") {
+    return {
+      task_id,
+      title: requireText(form.title, "Title"),
+      objective: requireText(form.objective, "Objective"),
+      rationale: requireText(form.rationale, "Rationale"),
+      scope: requireList(form.scope, "Scope"),
+      candidate_modules: parseListInput(form.candidateModules),
+      tests: parseListInput(form.tests),
+      validation: parseListInput(form.validation),
+      acceptance: parseListInput(form.acceptance),
+      ...(form.nextTask.trim() ? { next_task: form.nextTask.trim() } : {}),
+      ...(form.outputFile.trim() ? { output_file: form.outputFile.trim() } : {}),
+    };
+  }
+
+  if (action === "start") {
+    return {
+      task_id,
+      actor_id: requireText(form.actorId, "Actor ID"),
+      ...(form.requestFile.trim() ? { request_file: form.requestFile.trim() } : {}),
+      scope: [],
+      candidate_modules: [],
+      tests: [],
+      validation: [],
+      acceptance: [],
+      allow_read: parseListInput(form.allowRead),
+      allow_write: parseListInput(form.allowWrite),
+      expected_output: requireList(form.expectedOutput, "Expected output"),
+      duration_mins: 60,
+    };
+  }
+
+  return {
+    task_id,
+    worker_id: requireText(form.workerId, "Worker ID"),
+    actual_output: requireList(form.actualOutput, "Actual output"),
+  };
+}
+
+function ActionField({
+  label,
+  value,
+  onChange,
+  required = false,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2">
+        {label}{required ? " *" : ""}
+      </span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--ink)] shadow-sm focus:border-[var(--accent)] focus:outline-none"
+      />
+    </label>
+  );
+}
+
+function ActionTextArea({
+  label,
+  value,
+  onChange,
+  required = false,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2">
+        {label}{required ? " *" : ""}
+      </span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="w-full resize-y rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--ink)] shadow-sm focus:border-[var(--accent)] focus:outline-none"
+      />
+    </label>
+  );
+}
+
+function ActionModal({
+  action,
+  onClose,
+  onSubmit,
+}: {
+  action: RuntimeTaskAction;
+  onClose: () => void;
+  onSubmit: (action: RuntimeTaskAction, payload: RuntimeActionPayload) => Promise<void>;
+}) {
+  const [form, setForm] = useState<ActionFormState>(emptyActionFormState);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const setField = (field: keyof ActionFormState, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const submitAction = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onSubmit(action, buildActionPayload(action, form));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Action failed closed.");
+      setSubmitting(false);
+    }
+  };
+
+  const title = action === "create" ? "Create Runtime Task" : action === "start" ? "Start Runtime Task" : "Finish Runtime Task";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <form onSubmit={submitAction} className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--line)] bg-gray-50/70 p-5">
+          <div>
+            <h3 className="text-xl font-bold text-[var(--ink)]">{title}</h3>
+            <p className="mt-1 text-xs font-mono text-[var(--muted)]">Controlled operator input. Invalid payloads are not dispatched.</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+            X
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+              {error}
+            </div>
+          )}
+
+          <ActionField
+            label="Task ID"
+            value={form.taskId}
+            onChange={(value) => setField("taskId", value)}
+            required
+            placeholder="TASK-089"
+          />
+
+          {action === "create" && (
+            <>
+              <ActionField label="Title" value={form.title} onChange={(value) => setField("title", value)} required />
+              <ActionTextArea label="Objective" value={form.objective} onChange={(value) => setField("objective", value)} required />
+              <ActionTextArea label="Rationale" value={form.rationale} onChange={(value) => setField("rationale", value)} required />
+              <ActionTextArea label="Scope" value={form.scope} onChange={(value) => setField("scope", value)} required placeholder="One item per line or comma separated" />
+              <ActionTextArea label="Candidate modules" value={form.candidateModules} onChange={(value) => setField("candidateModules", value)} placeholder="Optional, one item per line or comma separated" />
+              <ActionTextArea label="Tests" value={form.tests} onChange={(value) => setField("tests", value)} placeholder="Optional, one item per line or comma separated" />
+              <ActionTextArea label="Validation" value={form.validation} onChange={(value) => setField("validation", value)} placeholder="Optional, one item per line or comma separated" />
+              <ActionTextArea label="Acceptance" value={form.acceptance} onChange={(value) => setField("acceptance", value)} placeholder="Optional, one item per line or comma separated" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <ActionField label="Next task" value={form.nextTask} onChange={(value) => setField("nextTask", value)} placeholder="Optional" />
+                <ActionField label="Output file" value={form.outputFile} onChange={(value) => setField("outputFile", value)} placeholder="Optional" />
+              </div>
+            </>
+          )}
+
+          {action === "start" && (
+            <>
+              <ActionField label="Actor ID" value={form.actorId} onChange={(value) => setField("actorId", value)} required />
+              <ActionField label="Request file" value={form.requestFile} onChange={(value) => setField("requestFile", value)} placeholder="Optional" />
+              <ActionTextArea label="Allow read" value={form.allowRead} onChange={(value) => setField("allowRead", value)} placeholder="Optional, one item per line or comma separated" />
+              <ActionTextArea label="Allow write" value={form.allowWrite} onChange={(value) => setField("allowWrite", value)} placeholder="Optional, one item per line or comma separated" />
+              <ActionTextArea label="Expected output" value={form.expectedOutput} onChange={(value) => setField("expectedOutput", value)} required placeholder="One item per line or comma separated" />
+            </>
+          )}
+
+          {action === "finish" && (
+            <>
+              <ActionField label="Worker ID" value={form.workerId} onChange={(value) => setField("workerId", value)} required />
+              <ActionTextArea label="Actual output" value={form.actualOutput} onChange={(value) => setField("actualOutput", value)} required placeholder="One item per line or comma separated" />
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-[var(--line)] bg-gray-50 p-4">
+          <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={submitting} className="rounded-lg border border-[var(--accent)] bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+            {submitting ? "Dispatching..." : title}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function RuntimeConsolePage() {
   const data = useObservatoryFetch(fetchRuntimeTasks);
   const [filter, setFilter] = useState<string>("ALL");
   const [selectedTask, setSelectedTask] = useState<RuntimeTaskSummary | null>(null);
+  const [actionDialog, setActionDialog] = useState<RuntimeTaskAction | null>(null);
 
-  const handleAction = async (action: 'create' | 'start' | 'finish') => {
-    try {
-      const taskId = window.prompt(`Enter Task ID to ${action} (e.g. TASK-999):`);
-      if (!taskId) return;
-
-      let payload: any = { task_id: taskId };
-
-      if (action === 'create') {
-        const titleInput = window.prompt("Task Title:");
-        if (!titleInput) throw new Error("Title is required");
-        const objectiveInput = window.prompt("Objective:");
-        if (!objectiveInput) throw new Error("Objective is required");
-        const rationaleInput = window.prompt("Rationale:");
-        if (!rationaleInput) throw new Error("Rationale is required");
-        const scopeInput = window.prompt("Scope (comma separated):");
-        if (!scopeInput) throw new Error("Scope is required");
-        
-        payload = {
-          ...payload,
-          title: titleInput.trim(),
-          objective: objectiveInput.trim(),
-          rationale: rationaleInput.trim(),
-          scope: scopeInput.split(",").map(s => s.trim()).filter(Boolean),
-          candidate_modules: [],
-          tests: [],
-          validation: [],
-          acceptance: []
-        };
-        await createRuntimeTask(payload);
-      } else if (action === 'start') {
-        const actorId = window.prompt("Enter Actor ID:");
-        if (!actorId) throw new Error("Actor ID is required");
-        const expectedOutput = window.prompt("Expected Output (comma separated):");
-        if (!expectedOutput) throw new Error("Expected output is required");
-        
-        payload = {
-          ...payload,
-          actor_id: actorId.trim(),
-          allow_read: (window.prompt("Allow Read (comma separated):") || "").split(",").map(s => s.trim()).filter(Boolean),
-          allow_write: (window.prompt("Allow Write (comma separated):") || "").split(",").map(s => s.trim()).filter(Boolean),
-          expected_output: expectedOutput.split(",").map(s => s.trim()).filter(Boolean)
-        };
-        await startRuntimeTask(payload);
-      } else if (action === 'finish') {
-        const workerId = window.prompt("Enter Worker ID:");
-        if (!workerId) throw new Error("Worker ID is required");
-        const actualOutput = window.prompt("Actual Output (comma separated):");
-        if (!actualOutput) throw new Error("Actual output is required");
-        
-        payload = {
-          ...payload,
-          worker_id: workerId.trim(),
-          actual_output: actualOutput.split(",").map(s => s.trim()).filter(Boolean)
-        };
-        await finishRuntimeTask(payload);
-      }
-
-      alert(`${action.toUpperCase()} action successfully dispatched for ${taskId}.`);
-      window.location.reload();
-    } catch (err: any) {
-      alert(`Action failed: ${err.message}`);
+  const handleActionSubmit = async (action: RuntimeTaskAction, payload: RuntimeActionPayload) => {
+    if (action === "create") {
+      await createRuntimeTask(payload as CreateTaskPayload);
+    } else if (action === "start") {
+      await startRuntimeTask(payload as StartTaskPayload);
+    } else {
+      await finishRuntimeTask(payload as FinishTaskPayload);
     }
+
+    window.location.reload();
   };
 
   if (data.status === "loading") {
@@ -216,13 +445,13 @@ export default function RuntimeConsolePage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => handleAction('create')} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <button onClick={() => setActionDialog("create")} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
               Create Task
             </button>
-            <button onClick={() => handleAction('start')} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <button onClick={() => setActionDialog("start")} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
               Start Task
             </button>
-            <button onClick={() => handleAction('finish')} className="px-3 py-1.5 text-xs font-bold bg-[var(--accent)] text-white border border-[var(--accent)] rounded-lg hover:opacity-90 transition-opacity shadow-sm">
+            <button onClick={() => setActionDialog("finish")} className="px-3 py-1.5 text-xs font-bold bg-[var(--accent)] text-white border border-[var(--accent)] rounded-lg hover:opacity-90 transition-opacity shadow-sm">
               Finish Task
             </button>
             <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-[var(--line)] shadow-sm ml-2">
@@ -334,6 +563,13 @@ export default function RuntimeConsolePage() {
         )}
 
         <Modal task={selectedTask} onClose={() => setSelectedTask(null)} />
+        {actionDialog && (
+          <ActionModal
+            action={actionDialog}
+            onClose={() => setActionDialog(null)}
+            onSubmit={handleActionSubmit}
+          />
+        )}
       </>
     );
   }

@@ -14,6 +14,9 @@ import {
   humanReviewIntentResponseSchema,
   runtimeTasksResponseSchema,
   runtimeTaskDetailResponseSchema,
+  createTaskPayloadSchema,
+  startTaskPayloadSchema,
+  finishTaskPayloadSchema,
 } from "./schemas";
 
 
@@ -180,13 +183,14 @@ export async function fetchRuntimeTaskDetail(taskId: string) {
 
 export async function createRuntimeTask(payload: CreateTaskPayload) {
   const path = `/api/ops/runtime-tasks/create`;
+  const parsedPayload = createTaskPayloadSchema.parse(payload);
   const response = await fetch(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(parsedPayload),
     cache: "no-store",
   });
 
@@ -199,13 +203,14 @@ export async function createRuntimeTask(payload: CreateTaskPayload) {
 
 export async function startRuntimeTask(payload: StartTaskPayload) {
   const path = `/api/ops/runtime-tasks/start`;
+  const parsedPayload = startTaskPayloadSchema.parse(payload);
   const response = await fetch(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(parsedPayload),
     cache: "no-store",
   });
 
@@ -218,13 +223,14 @@ export async function startRuntimeTask(payload: StartTaskPayload) {
 
 export async function finishRuntimeTask(payload: FinishTaskPayload) {
   const path = `/api/ops/runtime-tasks/finish`;
+  const parsedPayload = finishTaskPayloadSchema.parse(payload);
   const response = await fetch(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(parsedPayload),
     cache: "no-store",
   });
 

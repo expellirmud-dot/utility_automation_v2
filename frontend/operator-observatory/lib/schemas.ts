@@ -238,12 +238,15 @@ export const runtimeTaskDetailResponseSchema = z.object({
   task: runtimeTaskSummarySchema,
 });
 
+const requiredFormStringSchema = z.string().trim().min(1);
+const requiredFormStringListSchema = z.array(requiredFormStringSchema).min(1);
+
 export const createTaskPayloadSchema = z.object({
-  task_id: z.string(),
-  title: z.string(),
-  objective: z.string(),
-  rationale: z.string(),
-  scope: z.array(z.string()),
+  task_id: requiredFormStringSchema,
+  title: requiredFormStringSchema,
+  objective: requiredFormStringSchema,
+  rationale: requiredFormStringSchema,
+  scope: requiredFormStringListSchema,
   candidate_modules: z.array(z.string()),
   tests: z.array(z.string()),
   validation: z.array(z.string()),
@@ -253,8 +256,8 @@ export const createTaskPayloadSchema = z.object({
 });
 
 export const startTaskPayloadSchema = z.object({
-  task_id: z.string(),
-  actor_id: z.string(),
+  task_id: requiredFormStringSchema,
+  actor_id: requiredFormStringSchema,
   request_file: z.string().optional(),
   title: z.string().optional(),
   objective: z.string().optional(),
@@ -267,14 +270,14 @@ export const startTaskPayloadSchema = z.object({
   next_task: z.string().optional(),
   allow_read: z.array(z.string()).default([]),
   allow_write: z.array(z.string()).default([]),
-  expected_output: z.array(z.string()).default([]),
+  expected_output: requiredFormStringListSchema,
   allow_command: z.array(z.string()).optional(),
   forbid_pattern: z.array(z.string()).optional(),
   duration_mins: z.number().default(60),
 });
 
 export const finishTaskPayloadSchema = z.object({
-  task_id: z.string(),
-  worker_id: z.string(),
-  actual_output: z.array(z.string()),
+  task_id: requiredFormStringSchema,
+  worker_id: requiredFormStringSchema,
+  actual_output: requiredFormStringListSchema,
 });

@@ -19,6 +19,11 @@ def test_api_finish_task_invalid_payload():
     # Missing worker_id and actual_output
     assert res.status_code == 422
 
+@pytest.mark.parametrize("action", ["approve", "commit", "push"])
+def test_api_forbidden_authority_actions_not_postable(action):
+    res = client.post(f"/ops/api/runtime-tasks/{action}", json={"task_id": "TASK-123"})
+    assert res.status_code == 405
+
 def test_api_start_task_valid_payload_but_tool_fails():
     # If we provide a valid payload but the tool fails (e.g. no request file generated),
     # it should fail closed and return 500 with the tool's error dict.
