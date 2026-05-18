@@ -79,6 +79,9 @@ TASK 083
 TASK 084
 - Runtime Post-Task Automation Harness
 
+TASK 085
+- Unified Runtime Control Console
+
 ## Next
 
-TASK 085 [TBD]
+TASK 086 [TBD]
