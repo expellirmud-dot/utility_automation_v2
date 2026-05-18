@@ -39,11 +39,10 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
 | 3. worker execution                |  (Implementation Discipline)
 |    -> enforce_runtime_action       |  (Active Action Gate)
 +------------------------------------+
-                  |
-                  v
+======================================================================
+[Step 4.5 / Worker Post-Task Automation Harness: finish_runtime_task]
 +------------------------------------+
 | 3.1 generate runtime evidence      |  (Artifact Manifestation)
-|     artifacts                      |
 +------------------------------------+
                   |
                   v
@@ -58,8 +57,14 @@ The runtime contract lifecycle is enforced at CLI gate points. Every task must s
                   |
                   v
 +------------------------------------+
-| 4. validate completion evidence    |  (Post-Completion Gate)
+| 4.0 validate completion evidence   |  (Post-Completion Gate)
 +------------------------------------+
+                  |
+                  v
++------------------------------------+
+| 2.5 inspect_runtime_contract       |  (Verify VALIDATED_COMPLETION)
++------------------------------------+
+======================================================================
 ```
 
 ### Step 0: Controller Automation Harness (`start_runtime_task`)
@@ -195,7 +200,7 @@ $env:PYTHONPATH="."; python src/tools/runtime/generate_completion_evidence.py \
 - **Output**: Canonical JSON `CompletionEvidence` with computed `evidence_hash`.
 - **Behavior**: Verifies physical existence of all actual outputs on disk. Fail-closed if outputs are missing or trace files are malformed.
 
-### Step 4: Completion Validation Gate (`validate_completion_evidence`)
+### Step 4.0: Completion Validation Gate (`validate_completion_evidence`)
 Before declaring a task complete, the worker MUST validate the generated evidence manifest against the authoritative execution contract.
 
 ```bash
@@ -205,6 +210,18 @@ $env:PYTHONPATH="."; python src/tools/runtime/validate_completion_evidence.py \
 ```
 - **Output**: Canonical JSON validation report (`{"is_valid": true, ...}`).
 - **Behavior**: Exits with code 1 if any expected output is missing or if any unauthorized write occurred in the execution trace.
+
+### Step 4.5: Worker Post-Task Automation Harness (`finish_runtime_task`)
+The Worker post-task automation harness provides a single CLI entrypoint that atomically orchestrates bundle validation, evidence generation, completion validation, lifecycle inspection, and emission of a controller-ready commit review package summary without performing autonomous git commits or pushes.
+
+```bash
+$env:PYTHONPATH="."; python src/tools/runtime/finish_runtime_task.py \
+    --task-id TASK-XXX \
+    --worker-id WORKER-01 \
+    --actual-output src/tools/runtime/finish_runtime_task.py
+```
+- **Output**: Deterministic JSON containing completion state (`{"status": "SUCCESS", "lifecycle_state": "VALIDATED_COMPLETION", "controller_commit_package": {...}}`).
+- **Behavior**: Verifies completion gates sequentially. Fail-closed if any individual gate fails or if unauthorized actions occurred. Maintains strict separation of duty by omitting autonomous commit authority.
 
 ---
 
