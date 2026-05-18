@@ -17,7 +17,7 @@ import {
 } from "./schemas";
 
 
-import type { ObservatoryData } from "./types";
+import type { ObservatoryData, CreateTaskPayload, StartTaskPayload, FinishTaskPayload } from "./types";
 
 const DEFAULT_OPS_API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -176,6 +176,63 @@ export async function fetchRuntimeTaskDetail(taskId: string) {
 
   const json = await response.json();
   return runtimeTaskDetailResponseSchema.parse(json);
+}
+
+export async function createRuntimeTask(payload: CreateTaskPayload) {
+  const path = `/api/ops/runtime-tasks/create`;
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.error || json.detail || `${path} returned ${response.status}`);
+  }
+  return json;
+}
+
+export async function startRuntimeTask(payload: StartTaskPayload) {
+  const path = `/api/ops/runtime-tasks/start`;
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.error || json.detail || `${path} returned ${response.status}`);
+  }
+  return json;
+}
+
+export async function finishRuntimeTask(payload: FinishTaskPayload) {
+  const path = `/api/ops/runtime-tasks/finish`;
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.error || json.detail || `${path} returned ${response.status}`);
+  }
+  return json;
 }
 
 export async function fetchObservatoryData(): Promise<ObservatoryData> {

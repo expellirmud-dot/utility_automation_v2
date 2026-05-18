@@ -18,6 +18,9 @@ import type {
   runtimeTaskSummarySchema,
   runtimeTasksResponseSchema,
   runtimeTaskDetailResponseSchema,
+  createTaskPayloadSchema,
+  startTaskPayloadSchema,
+  finishTaskPayloadSchema,
 } from "./schemas";
 
 
@@ -39,6 +42,9 @@ export type HumanReviewIntentResponse = z.infer<typeof humanReviewIntentResponse
 export type RuntimeTaskSummary = z.infer<typeof runtimeTaskSummarySchema>;
 export type RuntimeTasksResponse = z.infer<typeof runtimeTasksResponseSchema>;
 export type RuntimeTaskDetailResponse = z.infer<typeof runtimeTaskDetailResponseSchema>;
+export type CreateTaskPayload = z.infer<typeof createTaskPayloadSchema>;
+export type StartTaskPayload = z.infer<typeof startTaskPayloadSchema>;
+export type FinishTaskPayload = z.infer<typeof finishTaskPayloadSchema>;
 
 
 export type DomainPanel = z.infer<typeof domainPanelSchema>;

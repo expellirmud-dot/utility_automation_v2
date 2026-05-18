@@ -237,3 +237,44 @@ export const runtimeTasksResponseSchema = z.object({
 export const runtimeTaskDetailResponseSchema = z.object({
   task: runtimeTaskSummarySchema,
 });
+
+export const createTaskPayloadSchema = z.object({
+  task_id: z.string(),
+  title: z.string(),
+  objective: z.string(),
+  rationale: z.string(),
+  scope: z.array(z.string()),
+  candidate_modules: z.array(z.string()),
+  tests: z.array(z.string()),
+  validation: z.array(z.string()),
+  acceptance: z.array(z.string()),
+  next_task: z.string().optional(),
+  output_file: z.string().optional(),
+});
+
+export const startTaskPayloadSchema = z.object({
+  task_id: z.string(),
+  actor_id: z.string(),
+  request_file: z.string().optional(),
+  title: z.string().optional(),
+  objective: z.string().optional(),
+  rationale: z.string().optional(),
+  scope: z.array(z.string()).default([]),
+  candidate_modules: z.array(z.string()).default([]),
+  tests: z.array(z.string()).default([]),
+  validation: z.array(z.string()).default([]),
+  acceptance: z.array(z.string()).default([]),
+  next_task: z.string().optional(),
+  allow_read: z.array(z.string()).default([]),
+  allow_write: z.array(z.string()).default([]),
+  expected_output: z.array(z.string()).default([]),
+  allow_command: z.array(z.string()).optional(),
+  forbid_pattern: z.array(z.string()).optional(),
+  duration_mins: z.number().default(60),
+});
+
+export const finishTaskPayloadSchema = z.object({
+  task_id: z.string(),
+  worker_id: z.string(),
+  actual_output: z.array(z.string()),
+});

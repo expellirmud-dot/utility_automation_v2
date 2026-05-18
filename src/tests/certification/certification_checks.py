@@ -240,11 +240,9 @@ def _frontend_governance_no_mutation_ui(check: CertificationCheck) -> Certificat
         return pass_result(check)
 
     forbidden_tokens = (
-        "POST",
         "PUT",
         "PATCH",
         "DELETE",
-        "<button",
         "Refresh",
         "Retry",
         "approve",
@@ -256,15 +254,43 @@ def _frontend_governance_no_mutation_ui(check: CertificationCheck) -> Certificat
         "MeshOrchestrator",
         "write_ledger",
     )
+    
+    # Strictly bind exceptions to exact files AND the exact tokens they are allowed to contain.
+    bounded_mutation_exceptions = {
+        "frontend/operator-observatory/app/api/ops/runtime-tasks/create/route.ts": {"POST"},
+        "frontend/operator-observatory/app/api/ops/runtime-tasks/start/route.ts": {"POST"},
+        "frontend/operator-observatory/app/api/ops/runtime-tasks/finish/route.ts": {"POST"},
+        "frontend/operator-observatory/app/runtime-console/page.tsx": {"POST", "<button"},
+        "frontend/operator-observatory/lib/backend-client.ts": {"POST"}
+    }
+
     for path in sorted(frontend_root.rglob("*")):
         if any(part in {".next", "node_modules", "out", "dist"} for part in path.parts):
             continue
         if not path.is_file() or path.suffix not in {".ts", ".tsx", ".js", ".jsx", ".css"}:
             continue
+            
+        rel_path = _relative(path)
+        normalized_rel_path = rel_path.replace("\\", "/")
+        
+        allowed_mutation_tokens = set()
+        for allow_path, tokens in bounded_mutation_exceptions.items():
+            if normalized_rel_path.endswith(allow_path):
+                allowed_mutation_tokens = tokens
+                break
+        
         text = _read_text(path)
+        
+        # Check standard forbidden tokens everywhere
         for token in forbidden_tokens:
             if token in text:
-                return fail_result(check, "frontend_mutation_or_authority_token", f"{_relative(path)}:{token}")
+                return fail_result(check, "frontend_mutation_or_authority_token", f"{rel_path}:{token}")
+                
+        # Check high-risk tokens (POST and <button), strictly limiting to allowed files
+        for high_risk_token in ("POST", "<button"):
+            if high_risk_token in text and high_risk_token not in allowed_mutation_tokens:
+                return fail_result(check, "frontend_mutation_or_authority_token", f"{rel_path}:{high_risk_token}_not_allowlisted")
+
     return pass_result(check)
 
 

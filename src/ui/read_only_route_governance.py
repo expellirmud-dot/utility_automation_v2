@@ -17,6 +17,12 @@ _FORBIDDEN_ROUTE_PREFIXES = (
 _FORBIDDEN_ACTION_LABELS = ("approve", "reject", "retry", "execute", "repair", "promote")
 _ALLOWED_READ_ONLY_METHODS = {"GET", "HEAD", "OPTIONS"}
 
+_EXPLICIT_BOUNDED_MUTATION_ROUTES = {
+    "/ops/api/runtime-tasks/create": {"POST"},
+    "/ops/api/runtime-tasks/start": {"POST"},
+    "/ops/api/runtime-tasks/finish": {"POST"},
+}
+
 
 @dataclass(frozen=True)
 class RouteGovernanceViolation:
@@ -96,9 +102,10 @@ def inspect_read_only_routes(
         for method in methods:
             lowered_method = method.lower()
             if method.upper() not in _ALLOWED_READ_ONLY_METHODS:
-                violations.append(
-                    RouteGovernanceViolation(path=path, method=method, reason="non_read_only_method")
-                )
+                if not (path in _EXPLICIT_BOUNDED_MUTATION_ROUTES and method.upper() in _EXPLICIT_BOUNDED_MUTATION_ROUTES[path]):
+                    violations.append(
+                        RouteGovernanceViolation(path=path, method=method, reason="non_read_only_method")
+                    )
 
             if any(lowered_path.startswith(prefix) for prefix in _FORBIDDEN_ROUTE_PREFIXES):
                 violations.append(

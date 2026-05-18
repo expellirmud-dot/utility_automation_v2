@@ -110,6 +110,43 @@ APPROVED FOR IMPLEMENTATION
 """
 
 
+def create_controller_request(args: argparse.Namespace) -> Dict[str, Any]:
+    validator = ControllerRequestValidator()
+
+    output_path = getattr(args, 'output_file', None) or f"ai_runtime/inbox/{args.task_id}-controller-request.md"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    content = create_request_content(args)
+
+    # Validate generated content before writing to ensure 100% placeholder-free compliance
+    val_res = validator.validate_request_content(content)
+    if not val_res["is_valid"]:
+        return {
+            "status": "FAILED",
+            "task_id": args.task_id,
+            "reason": f"Generated request failed internal validation: {val_res['reason']}",
+            "placeholders": val_res["placeholders_found"]
+        }
+
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        return {
+            "status": "FAILED",
+            "task_id": args.task_id,
+            "reason": f"Failed to write output file: {str(e)}"
+        }
+
+    return {
+        "status": "SUCCESS",
+        "task_id": args.task_id,
+        "title": args.title,
+        "output_file": output_path,
+        "is_valid": True
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Deterministic Controller Request Generator CLI.")
     parser.add_argument("--task-id", required=True, help="Task identifier (e.g. TASK-080).")
@@ -126,45 +163,14 @@ def main():
 
     args = parser.parse_args()
     serializer = ExecutionContractSerializer()
-    validator = ControllerRequestValidator()
-
-    output_path = args.output_file or f"ai_runtime/inbox/{args.task_id}-controller-request.md"
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    content = create_request_content(args)
-
-    # Validate generated content before writing to ensure 100% placeholder-free compliance
-    val_res = validator.validate_request_content(content)
-    if not val_res["is_valid"]:
-        err = {
-            "status": "FAILED",
-            "task_id": args.task_id,
-            "reason": f"Generated request failed internal validation: {val_res['reason']}",
-            "placeholders": val_res["placeholders_found"]
-        }
-        print(serializer.serialize(err))
+    
+    result = create_controller_request(args)
+    
+    if result["status"] == "FAILED":
+        print(serializer.serialize(result))
         sys.exit(1)
-
-    try:
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(content)
-    except Exception as e:
-        err = {
-            "status": "FAILED",
-            "task_id": args.task_id,
-            "reason": f"Failed to write output file: {str(e)}"
-        }
-        print(serializer.serialize(err))
-        sys.exit(1)
-
-    success_msg = {
-        "status": "SUCCESS",
-        "task_id": args.task_id,
-        "title": args.title,
-        "output_file": output_path,
-        "is_valid": True
-    }
-    print(serializer.serialize(success_msg))
+        
+    print(serializer.serialize(result))
     sys.exit(0)
 
 

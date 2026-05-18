@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { StatePanel } from "../../components/state-panel";
 import { useObservatoryFetch } from "../../hooks/use-observatory-fetch";
-import { fetchRuntimeTasks } from "../../lib/backend-client";
+import { fetchRuntimeTasks, createRuntimeTask, startRuntimeTask, finishRuntimeTask } from "../../lib/backend-client";
 import type { RuntimeTaskSummary } from "../../lib/types";
 
 function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: () => void }) {
@@ -125,6 +125,70 @@ export default function RuntimeConsolePage() {
   const [filter, setFilter] = useState<string>("ALL");
   const [selectedTask, setSelectedTask] = useState<RuntimeTaskSummary | null>(null);
 
+  const handleAction = async (action: 'create' | 'start' | 'finish') => {
+    try {
+      const taskId = window.prompt(`Enter Task ID to ${action} (e.g. TASK-999):`);
+      if (!taskId) return;
+
+      let payload: any = { task_id: taskId };
+
+      if (action === 'create') {
+        const titleInput = window.prompt("Task Title:");
+        if (!titleInput) throw new Error("Title is required");
+        const objectiveInput = window.prompt("Objective:");
+        if (!objectiveInput) throw new Error("Objective is required");
+        const rationaleInput = window.prompt("Rationale:");
+        if (!rationaleInput) throw new Error("Rationale is required");
+        const scopeInput = window.prompt("Scope (comma separated):");
+        if (!scopeInput) throw new Error("Scope is required");
+        
+        payload = {
+          ...payload,
+          title: titleInput.trim(),
+          objective: objectiveInput.trim(),
+          rationale: rationaleInput.trim(),
+          scope: scopeInput.split(",").map(s => s.trim()).filter(Boolean),
+          candidate_modules: [],
+          tests: [],
+          validation: [],
+          acceptance: []
+        };
+        await createRuntimeTask(payload);
+      } else if (action === 'start') {
+        const actorId = window.prompt("Enter Actor ID:");
+        if (!actorId) throw new Error("Actor ID is required");
+        const expectedOutput = window.prompt("Expected Output (comma separated):");
+        if (!expectedOutput) throw new Error("Expected output is required");
+        
+        payload = {
+          ...payload,
+          actor_id: actorId.trim(),
+          allow_read: (window.prompt("Allow Read (comma separated):") || "").split(",").map(s => s.trim()).filter(Boolean),
+          allow_write: (window.prompt("Allow Write (comma separated):") || "").split(",").map(s => s.trim()).filter(Boolean),
+          expected_output: expectedOutput.split(",").map(s => s.trim()).filter(Boolean)
+        };
+        await startRuntimeTask(payload);
+      } else if (action === 'finish') {
+        const workerId = window.prompt("Enter Worker ID:");
+        if (!workerId) throw new Error("Worker ID is required");
+        const actualOutput = window.prompt("Actual Output (comma separated):");
+        if (!actualOutput) throw new Error("Actual output is required");
+        
+        payload = {
+          ...payload,
+          worker_id: workerId.trim(),
+          actual_output: actualOutput.split(",").map(s => s.trim()).filter(Boolean)
+        };
+        await finishRuntimeTask(payload);
+      }
+
+      alert(`${action.toUpperCase()} action successfully dispatched for ${taskId}.`);
+      window.location.reload();
+    } catch (err: any) {
+      alert(`Action failed: ${err.message}`);
+    }
+  };
+
   if (data.status === "loading") {
     return <StatePanel title="Loading" detail="Fetching deterministic runtime task matrix..." />;
   }
@@ -151,11 +215,22 @@ export default function RuntimeConsolePage() {
               Deterministic read-only inspection of active and completed AI runtime execution contracts, completion evidence, and audit trails.
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-[var(--line)] shadow-sm self-start sm:self-auto">
-            <span className="text-xs font-mono font-bold text-[var(--muted)] px-2">MATRIX:</span>
-            <span className="bg-[var(--accent)] text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
-              {tasks.length} Total
-            </span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleAction('create')} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+              Create Task
+            </button>
+            <button onClick={() => handleAction('start')} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+              Start Task
+            </button>
+            <button onClick={() => handleAction('finish')} className="px-3 py-1.5 text-xs font-bold bg-[var(--accent)] text-white border border-[var(--accent)] rounded-lg hover:opacity-90 transition-opacity shadow-sm">
+              Finish Task
+            </button>
+            <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-[var(--line)] shadow-sm ml-2">
+              <span className="text-xs font-mono font-bold text-[var(--muted)] px-2">MATRIX:</span>
+              <span className="bg-[var(--accent)] text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
+                {tasks.length} Total
+              </span>
+            </div>
           </div>
         </header>
 
