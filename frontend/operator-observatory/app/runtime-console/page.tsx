@@ -1,18 +1,56 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { StatePanel } from "../../components/state-panel";
-import { useObservatoryFetch } from "../../hooks/use-observatory-fetch";
-import { fetchRuntimeTasks, createRuntimeTask, startRuntimeTask, finishRuntimeTask } from "../../lib/backend-client";
+import { fetchRuntimeTasks, fetchRuntimeTaskDetail, createRuntimeTask, startRuntimeTask, finishRuntimeTask } from "../../lib/backend-client";
 import type {
   CreateTaskPayload,
   FinishTaskPayload,
   RuntimeTaskAction,
+  RuntimeTasksResponse,
   RuntimeTaskSummary,
   StartTaskPayload,
 } from "../../lib/types";
 
-function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: () => void }) {
+const POLL_INTERVAL_MS = 10000;
+
+type RuntimeLoadState =
+  | { status: "loading" }
+  | { status: "ready"; data: RuntimeTasksResponse }
+  | { status: "error"; message: string };
+
+function formatUpdatedAt(value: Date | null): string {
+  return value ? value.toLocaleTimeString() : "Not yet synced";
+}
+
+function getLifecycleProgress(task: RuntimeTaskSummary): number {
+  if (task.state === "VALIDATED_COMPLETION") return 100;
+  if (task.state === "EVIDENCE_VALIDATION_FAILED" || task.state === "CORRUPT_EVIDENCE") return 80;
+  if (task.evidence_found) return 75;
+  if (task.state === "ACTIVE" || task.state === "EXPIRED") return 50;
+  if (task.contract) return 35;
+  return 15;
+}
+
+function getValidationLabel(task: RuntimeTaskSummary): string {
+  if (task.state === "VALIDATED_COMPLETION") return "Validated";
+  if (task.state === "EVIDENCE_VALIDATION_FAILED") return "Validation failed";
+  if (task.state === "CORRUPT_EVIDENCE" || task.state === "CORRUPT_CONTRACT") return "Corrupt artifact";
+  if (task.evidence_found) return "Evidence present";
+  return "Awaiting evidence";
+}
+
+function Modal({
+  task,
+  onClose,
+  syncing,
+  lastUpdated,
+}: {
+  task: RuntimeTaskSummary | null;
+  onClose: () => void;
+  syncing: boolean;
+  lastUpdated: Date | null;
+}) {
   if (!task) return null;
 
   const [activeTab, setActiveTab] = useState<"contract" | "evidence" | "reports">("contract");
@@ -36,6 +74,9 @@ function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: ()
             </div>
             <p className="text-xs text-[var(--muted)] mt-1 font-mono">
               Contract ID: {task.contract_id ?? "None"}
+            </p>
+            <p className="text-xs text-[var(--muted)] mt-1 font-mono">
+              Inspector sync: {syncing ? "Syncing..." : formatUpdatedAt(lastUpdated)}
             </p>
           </div>
           <div
@@ -84,6 +125,22 @@ function Modal({ task, onClose }: { task: RuntimeTaskSummary | null; onClose: ()
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 font-mono text-xs text-[var(--ink)] bg-gray-900/5">
+          <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans">
+            <div className="rounded-xl border border-[var(--line)] bg-white p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Lifecycle</p>
+              <div className="mt-3 h-2 rounded-full bg-gray-100">
+                <div className="h-2 rounded-full bg-[var(--accent)]" style={{ width: `${getLifecycleProgress(task)}%` }} />
+              </div>
+            </div>
+            <div className="rounded-xl border border-[var(--line)] bg-white p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Validation</p>
+              <p className="mt-2 text-sm font-bold text-[var(--ink)]">{getValidationLabel(task)}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--line)] bg-white p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Evidence</p>
+              <p className="mt-2 text-sm font-bold text-[var(--ink)]">{task.evidence_found ? "Available" : "Pending"}</p>
+            </div>
+          </div>
           {activeTab === "contract" && (
             <pre className="p-4 bg-gray-900 text-gray-100 rounded-xl overflow-x-auto shadow-inner font-mono text-xs">
               {task.contract ? JSON.stringify(task.contract, null, 2) : "No execution contract payload active."}
@@ -401,10 +458,74 @@ function ActionModal({
 }
 
 export default function RuntimeConsolePage() {
-  const data = useObservatoryFetch(fetchRuntimeTasks);
+  const [data, setData] = useState<RuntimeLoadState>({ status: "loading" });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
   const [selectedTask, setSelectedTask] = useState<RuntimeTaskSummary | null>(null);
+  const [inspectorLastUpdated, setInspectorLastUpdated] = useState<Date | null>(null);
+  const [inspectorSyncing, setInspectorSyncing] = useState(false);
   const [actionDialog, setActionDialog] = useState<RuntimeTaskAction | null>(null);
+
+  const syncTasks = useCallback(async (background = false) => {
+    if (background) {
+      setIsSyncing(true);
+    } else {
+      setData((current) => current.status === "ready" ? current : { status: "loading" });
+    }
+
+    try {
+      const nextData = await fetchRuntimeTasks();
+      setData({ status: "ready", data: nextData });
+      setLastUpdated(new Date());
+      setSyncError(null);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unable to read runtime task data.";
+      setSyncError(message);
+      setData((current) => current.status === "ready" ? current : { status: "error", message });
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void syncTasks(false);
+    const interval = window.setInterval(() => {
+      void syncTasks(true);
+    }, POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [syncTasks]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+
+    let active = true;
+    const syncSelectedTask = async (background = true) => {
+      if (background) setInspectorSyncing(true);
+      try {
+        const detail = await fetchRuntimeTaskDetail(selectedTask.task_id);
+        if (!active) return;
+        setSelectedTask(detail.task);
+        setInspectorLastUpdated(new Date());
+      } catch {
+        if (active) setInspectorLastUpdated(new Date());
+      } finally {
+        if (active) setInspectorSyncing(false);
+      }
+    };
+
+    void syncSelectedTask(false);
+    const interval = window.setInterval(() => {
+      void syncSelectedTask(true);
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [selectedTask?.task_id]);
 
   const handleActionSubmit = async (action: RuntimeTaskAction, payload: RuntimeActionPayload) => {
     if (action === "create") {
@@ -415,7 +536,8 @@ export default function RuntimeConsolePage() {
       await finishRuntimeTask(payload as FinishTaskPayload);
     }
 
-    window.location.reload();
+    setActionDialog(null);
+    await syncTasks(false);
   };
 
   if (data.status === "loading") {
@@ -443,6 +565,24 @@ export default function RuntimeConsolePage() {
             <p className="text-base text-[var(--muted)] mt-2">
               Deterministic read-only inspection of active and completed AI runtime execution contracts, completion evidence, and audit trails.
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-mono text-[var(--muted)]">
+              <span className="rounded-lg border border-[var(--line)] bg-gray-50 px-3 py-1">
+                Last updated: {formatUpdatedAt(lastUpdated)}
+              </span>
+              <span className="rounded-lg border border-[var(--line)] bg-gray-50 px-3 py-1">
+                Auto sync: {POLL_INTERVAL_MS / 1000}s
+              </span>
+              {isSyncing && (
+                <span className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 font-bold text-blue-700">
+                  Syncing...
+                </span>
+              )}
+              {syncError && (
+                <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 font-bold text-amber-700">
+                  Last sync failed
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setActionDialog("create")} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
@@ -460,6 +600,9 @@ export default function RuntimeConsolePage() {
                 {tasks.length} Total
               </span>
             </div>
+            <button onClick={() => syncTasks(true)} className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+              Sync
+            </button>
           </div>
         </header>
 
@@ -527,6 +670,19 @@ export default function RuntimeConsolePage() {
                     {t.summary}
                   </p>
 
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                      <span>Lifecycle</span>
+                      <span>{getLifecycleProgress(t)}%</span>
+                    </div>
+                    <div className="mt-2 h-2 rounded-full bg-gray-100">
+                      <div className="h-2 rounded-full bg-[var(--accent)] transition-all" style={{ width: `${getLifecycleProgress(t)}%` }} />
+                    </div>
+                    <div className="mt-2 text-xs font-mono font-bold text-[var(--ink)]">
+                      {getValidationLabel(t)}
+                    </div>
+                  </div>
+
                   <div className="space-y-3 mb-6 pt-4 border-t border-gray-100 font-mono text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-[var(--muted)]">Evidence:</span>
@@ -546,6 +702,12 @@ export default function RuntimeConsolePage() {
                         {t.reports.tool_trace ? "✔ Present" : "✖ Missing"}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--muted)]">Worker Report:</span>
+                      <span className={`font-bold ${t.reports.worker_report ? "text-teal-600" : "text-gray-400"}`}>
+                        {t.reports.worker_report ? "✔ Present" : "✖ Missing"}
+                      </span>
+                    </div>
                   </div>
 
                   <div
@@ -562,7 +724,12 @@ export default function RuntimeConsolePage() {
           </div>
         )}
 
-        <Modal task={selectedTask} onClose={() => setSelectedTask(null)} />
+        <Modal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          syncing={inspectorSyncing}
+          lastUpdated={inspectorLastUpdated}
+        />
         {actionDialog && (
           <ActionModal
             action={actionDialog}
