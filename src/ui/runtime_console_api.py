@@ -71,11 +71,11 @@ def get_runtime_tasks(state: Optional[str] = None) -> RuntimeTaskSummaryResponse
     )
 
 @runtime_console_router.get("/runtime-tasks/{task_id}", response_model=RuntimeContractDetailResponse)
-def get_runtime_task_detail(task_id: str) -> RuntimeContractDetailResponse:
+def get_runtime_task_detail(task_id: str, include_contents: bool = False) -> RuntimeContractDetailResponse:
     """
     Read-only operator surface for inspecting a specific runtime execution contract and its evidence.
     """
-    detail = inspect_contract_lifecycle(task_id, contracts_dir="ai_runtime/contracts", reports_dir="ai_runtime/reports")
+    detail = inspect_contract_lifecycle(task_id, contracts_dir="ai_runtime/contracts", reports_dir="ai_runtime/reports", include_contents=include_contents)
     return RuntimeContractDetailResponse(task=detail)
 
 @runtime_console_router.post("/runtime-tasks/create")

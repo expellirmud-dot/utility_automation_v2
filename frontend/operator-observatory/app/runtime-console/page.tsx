@@ -127,6 +127,45 @@ function TimelineRail({ task, compact = false }: { task: RuntimeTaskSummary; com
   );
 }
 
+function ArtifactBrowser({ task }: { task: RuntimeTaskSummary }) {
+  const [activeTab, setActiveTab] = useState<"transcript" | "trace" | "report">("transcript");
+  
+  const tabs: { key: "transcript" | "trace" | "report"; label: string; enabled: boolean }[] = [
+    { key: "transcript", label: "Transcript", enabled: !!task.reports.execution_transcript },
+    { key: "trace", label: "Trace", enabled: !!task.reports.tool_trace },
+    { key: "report", label: "Report", enabled: !!task.reports.worker_report },
+  ];
+
+  const content = activeTab === "transcript" ? task.artifact_contents?.execution_transcript :
+                  activeTab === "trace" ? task.artifact_contents?.tool_trace :
+                  activeTab === "report" ? task.artifact_contents?.worker_report : null;
+
+  return (
+    <div className="rounded-xl border border-[var(--line)] bg-white p-4 font-sans">
+      <div className="flex gap-2 mb-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            disabled={!tab.enabled}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+              activeTab === tab.key ? "bg-[var(--accent)] text-white" :
+              tab.enabled ? "bg-gray-100 text-[var(--ink)] hover:bg-gray-200" :
+              "bg-gray-50 text-[var(--muted)] cursor-not-allowed"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="h-64 overflow-auto rounded-lg border border-[var(--line)] bg-gray-50 p-4 font-mono text-[11px] text-[var(--ink)]">
+        {content ? <pre className="whitespace-pre-wrap">{content}</pre> : 
+                   <p className="text-[var(--muted)]">No {activeTab} available.</p>}
+      </div>
+    </div>
+  );
+}
+
 function Modal({
   task,
   onClose,
@@ -257,6 +296,11 @@ function Modal({
           <div className="mt-4 rounded-xl border border-[var(--line)] bg-white p-4 font-sans">
             <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Runtime Timeline</p>
             <TimelineRail task={task} />
+          </div>
+
+          <div className="mt-6">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Artifact Browser</p>
+            <ArtifactBrowser task={task} />
           </div>
         </div>
 

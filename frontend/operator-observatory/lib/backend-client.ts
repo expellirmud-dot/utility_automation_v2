@@ -164,7 +164,7 @@ export async function fetchRuntimeTasks() {
 }
 
 export async function fetchRuntimeTaskDetail(taskId: string) {
-  const path = `/api/ops/runtime-tasks/${taskId}`;
+  const path = `/api/ops/runtime-tasks/${taskId}?include_contents=true`;
   const response = await fetch(path, {
     method: "GET",
     headers: {

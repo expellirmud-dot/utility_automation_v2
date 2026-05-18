@@ -13,7 +13,8 @@ def inspect_contract_lifecycle(
     task_id: str,
     contracts_dir: str = "ai_runtime/contracts",
     reports_dir: str = "ai_runtime/reports",
-    reference_time: Optional[datetime] = None
+    reference_time: Optional[datetime] = None,
+    include_contents: bool = False
 ) -> Dict[str, Any]:
     now = reference_time or datetime.now()
     serializer = ExecutionContractSerializer()
@@ -31,6 +32,20 @@ def inspect_contract_lifecycle(
         "worker_report": os.path.exists(report_path)
     }
 
+    artifact_contents = {}
+    if include_contents:
+        for key, path in [
+            ("execution_transcript", transcript_path),
+            ("tool_trace", trace_path),
+            ("worker_report", report_path)
+        ]:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        artifact_contents[key] = f.read()
+                except Exception:
+                    artifact_contents[key] = None
+
     if not os.path.exists(contract_path):
         return {
             "task_id": task_id,
@@ -39,6 +54,7 @@ def inspect_contract_lifecycle(
             "contract": None,
             "evidence_found": reports_status["evidence_json"],
             "reports": reports_status,
+            "artifact_contents": artifact_contents if include_contents else None,
             "summary": f"No active contract found for {task_id}. Issuance is pending."
         }
 
@@ -71,6 +87,7 @@ def inspect_contract_lifecycle(
             "evidence_found": False,
             "evidence": None,
             "reports": reports_status,
+            "artifact_contents": artifact_contents if include_contents else None,
             "summary": summary
         }
 
@@ -88,6 +105,7 @@ def inspect_contract_lifecycle(
             "evidence_found": True,
             "evidence": None,
             "reports": reports_status,
+            "artifact_contents": artifact_contents if include_contents else None,
             "summary": f"Evidence file exists but failed to deserialize: {str(e)}"
         }
 
@@ -108,6 +126,7 @@ def inspect_contract_lifecycle(
         "evidence_found": True,
         "evidence": evidence_dict,
         "reports": reports_status,
+        "artifact_contents": artifact_contents if include_contents else None,
         "summary": summary
     }
 

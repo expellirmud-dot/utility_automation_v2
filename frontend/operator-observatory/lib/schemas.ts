@@ -225,6 +225,11 @@ export const runtimeTaskSummarySchema = z.object({
     tool_trace: z.boolean(),
     worker_report: z.boolean(),
   }),
+  artifact_contents: z.object({
+    execution_transcript: z.string().nullable().optional(),
+    tool_trace: z.string().nullable().optional(),
+    worker_report: z.string().nullable().optional(),
+  }).nullable().optional(),
   summary: z.string(),
 });
 
