@@ -1,0 +1,71 @@
+{
+  "schema_version": "runtime-tool-trace-v1",
+  "task_id": "TASK-097",
+  "worker_id": "WORKER-01",
+  "generated_at": "2026-05-19T21:28:00Z",
+  "events": [
+    {
+      "tool": "view_file",
+      "arguments": {
+        "path": "src/tests/certification/certification_checks.py"
+      },
+      "timestamp": "2026-05-19T21:25:32Z"
+    },
+    {
+      "tool": "write_to_file",
+      "arguments": {
+        "path": "src/tests/certification/runtime_task_governance_checks.py"
+      },
+      "timestamp": "2026-05-19T21:25:37Z"
+    },
+    {
+      "tool": "multi_replace_file_content",
+      "arguments": {
+        "path": "src/tests/certification/certification_checks.py"
+      },
+      "timestamp": "2026-05-19T21:25:57Z"
+    },
+    {
+      "tool": "replace_file_content",
+      "arguments": {
+        "path": "tests/test_certification_pipeline.py"
+      },
+      "timestamp": "2026-05-19T21:26:25Z"
+    },
+    {
+      "tool": "run_command",
+      "arguments": {
+        "CommandLine": "python -m src.tests.certification.deterministic_certifier"
+      },
+      "timestamp": "2026-05-19T21:26:28Z"
+    },
+    {
+      "tool": "run_command",
+      "arguments": {
+        "CommandLine": "python -m pytest -q"
+      },
+      "timestamp": "2026-05-19T21:26:43Z"
+    },
+    {
+      "tool": "replace_file_content",
+      "arguments": {
+        "path": "repo_memory/task_registry.md"
+      },
+      "timestamp": "2026-05-19T21:27:48Z"
+    },
+    {
+      "tool": "replace_file_content",
+      "arguments": {
+        "path": "repo_memory/project_state.json"
+      },
+      "timestamp": "2026-05-19T21:28:04Z"
+    },
+    {
+      "tool": "multi_replace_file_content",
+      "arguments": {
+        "path": "AI_HANDOFF.md"
+      },
+      "timestamp": "2026-05-19T21:28:19Z"
+    }
+  ]
+}

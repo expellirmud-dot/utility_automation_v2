@@ -115,6 +115,10 @@ TASK 095
 TASK 096
 - Queue Batch Workstation
 
+TASK 097
+- Runtime governance baseline reset
+
 ## Next
 
-TASK 097 [TBD]
+TASK 098 [TBD]
+

@@ -36,6 +36,7 @@ def test_registered_checks_are_in_explicit_canonical_order() -> None:
         "api_governance_get_only_ops",
         "frontend_governance_no_mutation_ui",
         "security_dependency_governance",
+        "runtime_task_governance_invariant",
     ]
 
 
@@ -64,3 +65,46 @@ def test_runner_writes_canonical_artifact(tmp_path: Path, monkeypatch) -> None:
     assert artifact.passed is True
     assert payload["artifact_hash"] == artifact.artifact_hash
     assert payload["results"][0]["check"]["key"] == "sample"
+
+
+def test_runtime_task_governance_checks(tmp_path: Path) -> None:
+    from src.tests.certification.runtime_task_governance_checks import check_runtime_task_governance
+    
+    # 1. Empty/no contracts dir should pass
+    passed, detail = check_runtime_task_governance(tmp_path)
+    assert passed is True
+    
+    # 2. Setup mock directories
+    contracts_dir = tmp_path / "ai_runtime" / "contracts"
+    inbox_dir = tmp_path / "ai_runtime" / "inbox"
+    reports_dir = tmp_path / "ai_runtime" / "reports"
+    contracts_dir.mkdir(parents=True)
+    inbox_dir.mkdir(parents=True)
+    reports_dir.mkdir(parents=True)
+    
+    # 3. Legacy task <= 96 should be exempt (even if request/evidence are missing)
+    legacy_contract = contracts_dir / "TASK-096.json"
+    legacy_contract.write_text("{}", encoding="utf-8")
+    passed, detail = check_runtime_task_governance(tmp_path)
+    assert passed is True
+    
+    # 4. Governed task > 96 with contract but no inbox request should fail
+    governed_contract = contracts_dir / "TASK-097.json"
+    governed_contract.write_text("{}", encoding="utf-8")
+    passed, detail = check_runtime_task_governance(tmp_path)
+    assert passed is False
+    assert "missing matching controller request" in detail
+    
+    # 5. Adding inbox request should pass (in-progress state)
+    inbox_req = inbox_dir / "TASK-097-controller-request.md"
+    inbox_req.write_text("mock request", encoding="utf-8")
+    passed, detail = check_runtime_task_governance(tmp_path)
+    assert passed is True
+    
+    # 6. Completed task (evidence file exists) but missing other reports should fail
+    evidence_file = reports_dir / "TASK-097-evidence.json"
+    evidence_file.write_text("{}", encoding="utf-8")
+    passed, detail = check_runtime_task_governance(tmp_path)
+    assert passed is False
+    assert "missing required" in detail
+

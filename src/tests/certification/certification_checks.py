@@ -21,6 +21,7 @@ from src.tests.certification.fork_resolution_tester import ForkResolutionTester
 from src.tests.certification.quorum_integrity_tester import QuorumIntegrityTester
 from src.tests.certification.replay_consistency_checker import ReplayConsistencyChecker
 from src.tests.certification.security_dependency_checks import check_security_dependencies
+from src.tests.certification.runtime_task_governance_checks import check_runtime_task_governance
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -72,6 +73,7 @@ def registered_checks() -> tuple[RegisteredCertificationCheck, ...]:
         _registered(90, "api_governance_get_only_ops", "validation", "Ops APIs remain GET-only.", _api_governance_get_only_ops),
         _registered(100, "frontend_governance_no_mutation_ui", "validation", "Frontend contains no mutation UI.", _frontend_governance_no_mutation_ui),
         _registered(110, "security_dependency_governance", "validation", "Security risks are registered and no unauthorized breaking upgrades exist.", _security_dependency_check),
+        _registered(120, "runtime_task_governance_invariant", "invariant", "Runtime tasks adhere to contract governance.", _runtime_task_governance_invariant),
     )
 
 
@@ -292,6 +294,13 @@ def _frontend_governance_no_mutation_ui(check: CertificationCheck) -> Certificat
                 return fail_result(check, "frontend_mutation_or_authority_token", f"{rel_path}:{high_risk_token}_not_allowlisted")
 
     return pass_result(check)
+
+
+def _runtime_task_governance_invariant(check: CertificationCheck) -> CertificationResult:
+    passed, detail = check_runtime_task_governance(REPO_ROOT)
+    if passed:
+        return pass_result(check)
+    return fail_result(check, "runtime_task_governance_violation", detail)
 
 
 def _security_dependency_check(check: CertificationCheck) -> CertificationResult:
