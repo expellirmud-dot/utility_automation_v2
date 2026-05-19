@@ -178,3 +178,4 @@ Completion:
   - proxy /api/ops/release-governance
   - backend GET /ops/api/release-governance
   - validation status: passed
+- TASK 094: Runtime artifact export UX
