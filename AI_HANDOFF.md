@@ -179,3 +179,4 @@ Completion:
   - backend GET /ops/api/release-governance
   - validation status: passed
 - TASK 094: Runtime artifact export UX
+- TASK 095: Governance advisory workbench

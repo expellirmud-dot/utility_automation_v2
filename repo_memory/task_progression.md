@@ -48,3 +48,4 @@ The following tasks constitute the deterministic evidence review chain for promo
 | TASK 092 | Runtime timeline and task history UX | Completed |
 | TASK 093 | Runtime Artifact Browser UX | Completed |
 | TASK 094 | Runtime Artifact Export UX | Completed |
+| TASK 095 | Governance Advisory Workbench | Completed |
