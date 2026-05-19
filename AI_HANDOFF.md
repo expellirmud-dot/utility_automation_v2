@@ -180,3 +180,4 @@ Completion:
   - validation status: passed
 - TASK 094: Runtime artifact export UX
 - TASK 095: Governance advisory workbench
+- TASK 096: Queue batch workstation

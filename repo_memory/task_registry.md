@@ -103,6 +103,9 @@ TASK 094
 TASK 095
 - Governance Advisory Workbench
 
+TASK 096
+- Queue Batch Workstation
+
 ## Next
 
-TASK 096 [TBD]
+TASK 097 [TBD]
