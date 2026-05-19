@@ -109,6 +109,9 @@ TASK 064 repository workflow memory hardening
 - TASK 095: Governance advisory workbench
 - TASK 096: Queue batch workstation
 - TASK 097: Runtime governance baseline reset
+- TASK 098: Runtime Governance History Reconciliation (Transitional)
+- TASK 099: Runtime Governance Transition (Transitional)
+- TASK 100: Runtime Governance Continuity Baseline
 
 no Dynamic server usage warning
 npm build passed
@@ -123,10 +126,10 @@ Known deferred risk:
  upgrade
 
 Current completed task:
-- TASK 098
+- TASK 100
 
-Recommended next task:
-- TASK 099
+Current active task:
+- TASK 101
 
 
 ## Non-Negotiable Invariants
@@ -198,3 +201,5 @@ Completion:
 - TASK 095: Governance advisory workbench
 - TASK 096: Queue batch workstation
 - TASK 097: Runtime governance baseline reset
+
+

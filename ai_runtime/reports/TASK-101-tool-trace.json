@@ -1,0 +1,77 @@
+[
+  {
+    "tool": "replace_file_content",
+    "target": "repo_memory/project_state.json",
+    "action": "update_project_state"
+  },
+  {
+    "tool": "replace_file_content",
+    "target": "repo_memory/task_registry.md",
+    "action": "update_task_registry"
+  },
+  {
+    "tool": "replace_file_content",
+    "target": "repo_memory/agent_bootstrap_prompt.txt",
+    "action": "update_agent_prompt"
+  },
+  {
+    "tool": "replace_file_content",
+    "target": "AI_HANDOFF.md",
+    "action": "update_handoff"
+  },
+  {
+    "tool": "replace_file_content",
+    "target": "README.md",
+    "action": "update_readme"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "SESSION_BOOTSTRAP.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "AI_TOOLS_KIT_STATUS.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "WORKFLOW_GUIDE.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "AI_ORG_ARCHITECTURE.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "RUNTIME_MATRIX.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "TOOL_MATRIX.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "NEXT_ACTIONS.md",
+    "action": "create_scaffold"
+  },
+  {
+    "tool": "write_to_file",
+    "target": "ai_runtime/contracts/TASK-101.json",
+    "action": "issue_contract"
+  },
+  {
+    "tool": "run_command",
+    "command": "python -m pytest -q",
+    "action": "validate"
+  },
+  {
+    "tool": "run_command",
+    "command": "python src/tests/certification/deterministic_certifier.py",
+    "action": "validate"
+  }
+]

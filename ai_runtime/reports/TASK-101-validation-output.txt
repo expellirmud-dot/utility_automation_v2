@@ -1,0 +1,170 @@
+=========================================
+pytest output:
+=========================================
+........................................................................ [ 14%]
+........................................................................ [ 28%]
+........................................................................ [ 42%]
+........................................................................ [ 56%]
+........................................................................ [ 70%]
+........................................................................ [ 84%]
+........................................................................ [ 98%]
+......                                                                   [100%]
+510 passed in 22.08s
+
+=========================================
+deterministic_certifier output:
+=========================================
+Node worker-1 freezing for reconciliation...
+Node worker-1 reconciliation complete. New head: e5c21452ed79918814f2e04ed759c457c41e55fe0d62389ef5b54e11e37a78f2
+Node worker-1 freezing for reconciliation...
+Node worker-1 reconciliation complete. New head: 335f0eaa339f227aedecf27f549d532564533e234d45b8637da4339a08ac0b78
+Anti-Entropy Sync complete for worker-1. Reason: STRUCTURAL_DIVERGENCE. Mode: DELTA_SYNC
+Node worker-2 freezing for reconciliation...
+Node worker-2 reconciliation complete. New head: e5c21452ed79918814f2e04ed759c457c41e55fe0d62389ef5b54e11e37a78f2
+Node worker-2 freezing for reconciliation...
+Node worker-2 reconciliation complete. New head: 335f0eaa339f227aedecf27f549d532564533e234d45b8637da4339a08ac0b78
+Anti-Entropy Sync complete for worker-2. Reason: STRUCTURAL_DIVERGENCE. Mode: DELTA_SYNC
+Node worker-0 freezing for reconciliation...
+Node worker-0 reconciliation complete. New head: 335f0eaa339f227aedecf27f549d532564533e234d45b8637da4339a08ac0b78
+Anti-Entropy Sync complete for worker-0. Reason: STRUCTURAL_DIVERGENCE. Mode: DELTA_SYNC
+{
+  "artifact_hash": "c267fcbcbd485f178fa5976e87d93c553cf31c81a7192579f384d8386ecbe014",
+  "artifact_version": "task-049-certification-v1",
+  "metadata": {},
+  "overall_score": 100.0,
+  "passed": true,
+  "results": [
+    {
+      "check": {
+        "category": "invariant",
+        "description": "Ledger remains the only source of truth.",
+        "key": "ledger_truth_invariant",
+        "required": true,
+        "stable_order": 10
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "invariant",
+        "description": "SQLite remains projection/cache only.",
+        "key": "sqlite_projection_only_invariant",
+        "required": true,
+        "stable_order": 20
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "invariant",
+        "description": "Mesh quorum remains runtime authority.",
+        "key": "mesh_authority_invariant",
+        "required": true,
+        "stable_order": 30
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "invariant",
+        "description": "AI remains advisory only.",
+        "key": "ai_advisory_only_invariant",
+        "required": true,
+        "stable_order": 40
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Existing mesh deterministic certification checks pass.",
+        "key": "mesh_determinism",
+        "required": true,
+        "stable_order": 50
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Required non-certifier pytest safety suite passes.",
+        "key": "pytest_pass",
+        "required": true,
+        "stable_order": 60
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Replay determinism tests pass.",
+        "key": "replay_determinism",
+        "required": true,
+        "stable_order": 70
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Projection consistency tests pass.",
+        "key": "projection_consistency",
+        "required": true,
+        "stable_order": 80
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Ops APIs remain GET-only.",
+        "key": "api_governance_get_only_ops",
+        "required": true,
+        "stable_order": 90
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Frontend contains no mutation UI.",
+        "key": "frontend_governance_no_mutation_ui",
+        "required": true,
+        "stable_order": 100
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "validation",
+        "description": "Security risks are registered and no unauthorized breaking upgrades exist.",
+        "key": "security_dependency_governance",
+        "required": true,
+        "stable_order": 110
+      },
+      "failure": null,
+      "passed": true
+    },
+    {
+      "check": {
+        "category": "invariant",
+        "description": "Runtime tasks adhere to contract governance.",
+        "key": "runtime_task_governance_invariant",
+        "required": true,
+        "stable_order": 120
+      },
+      "failure": null,
+      "passed": true
+    }
+  ]
+}
