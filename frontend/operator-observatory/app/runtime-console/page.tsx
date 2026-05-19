@@ -740,6 +740,107 @@ function ActionModal({
   );
 }
 
+function GovernanceAdvisoryWorkbench({ tasks, onSelectTask }: { tasks: RuntimeTaskSummary[], onSelectTask: (task: RuntimeTaskSummary) => void }) {
+  const [filter, setFilter] = useState<"ALL" | "REVIEW_READY" | "BLOCKED" | "VALIDATION_FAILED" | "CERTIFICATION_READY">("ALL");
+
+  const isBlocked = (t: RuntimeTaskSummary) => ["CORRUPT_EVIDENCE", "CORRUPT_CONTRACT", "EXPIRED", "EVIDENCE_VALIDATION_FAILED"].includes(t.state);
+  const isValidationFailed = (t: RuntimeTaskSummary) => t.state === "EVIDENCE_VALIDATION_FAILED";
+  const isCertificationReady = (t: RuntimeTaskSummary) => t.state === "VALIDATED_COMPLETION" && !!t.reports.certification_artifact;
+  const isReviewReady = (t: RuntimeTaskSummary) => t.state === "VALIDATED_COMPLETION" && !t.reports.certification_artifact;
+
+  const filteredTasks = tasks.filter(t => {
+    if (filter === "ALL") return true;
+    if (filter === "BLOCKED") return isBlocked(t);
+    if (filter === "VALIDATION_FAILED") return isValidationFailed(t);
+    if (filter === "CERTIFICATION_READY") return isCertificationReady(t);
+    if (filter === "REVIEW_READY") return isReviewReady(t);
+    return true;
+  });
+
+  return (
+    <div className="mb-6 rounded-xl border border-[var(--line)] bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--line)] pb-4">
+        <div>
+          <h3 className="text-lg font-bold text-[var(--ink)] flex items-center gap-2">
+            Governance Advisory Workbench
+            <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider">ADVISORY ONLY</span>
+          </h3>
+          <p className="text-xs text-[var(--muted)] mt-1">
+            Read-only evaluation of task readiness, approval queues, and promotion advisory signals.
+          </p>
+        </div>
+        <div className="flex gap-2 mt-3 sm:mt-0 overflow-x-auto pb-1">
+          {[
+            { id: "ALL", label: "All" },
+            { id: "REVIEW_READY", label: "Review Ready" },
+            { id: "BLOCKED", label: "Blocked" },
+            { id: "VALIDATION_FAILED", label: "Validation Failed" },
+            { id: "CERTIFICATION_READY", label: "Certification Ready" }
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id as any)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-colors ${filter === f.id ? "bg-[var(--accent)] text-white" : "bg-gray-100 text-[var(--ink)] hover:bg-gray-200"}`}
+            >
+              {f.label} ({tasks.filter(t => {
+                 if (f.id === "ALL") return true;
+                 if (f.id === "BLOCKED") return isBlocked(t);
+                 if (f.id === "VALIDATION_FAILED") return isValidationFailed(t);
+                 if (f.id === "CERTIFICATION_READY") return isCertificationReady(t);
+                 if (f.id === "REVIEW_READY") return isReviewReady(t);
+                 return true;
+              }).length})
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div className="bg-gray-50 rounded-xl p-4 border border-[var(--line)]">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">Readiness Panel</p>
+          <p className="text-2xl font-mono font-bold text-[var(--ink)]">{tasks.filter(t => t.state === "VALIDATED_COMPLETION").length} <span className="text-sm font-sans font-normal text-[var(--muted)]">Ready</span></p>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 border border-[var(--line)]">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">Approval Queue</p>
+          <p className="text-2xl font-mono font-bold text-[var(--ink)]">{tasks.filter(isReviewReady).length} <span className="text-sm font-sans font-normal text-[var(--muted)]">Pending</span></p>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 border border-[var(--line)]">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">Blocked Flags</p>
+          <p className="text-2xl font-mono font-bold text-red-600">{tasks.filter(isBlocked).length} <span className="text-sm font-sans font-normal text-[var(--muted)]">Tasks</span></p>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 border border-[var(--line)]">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">Promotion Advisory</p>
+          <p className="text-2xl font-mono font-bold text-teal-600">{tasks.filter(isCertificationReady).length} <span className="text-sm font-sans font-normal text-[var(--muted)]">Eligible</span></p>
+        </div>
+      </div>
+
+      <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--line)] divide-y divide-gray-100">
+        {filteredTasks.length === 0 ? (
+          <div className="p-4 text-center text-sm text-[var(--muted)]">No tasks match this filter.</div>
+        ) : (
+          filteredTasks.map(t => (
+            <div key={t.task_id} className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-bold text-[var(--ink)] cursor-pointer hover:underline" onClick={() => onSelectTask(t)}>{t.task_id}</span>
+                  {isCertificationReady(t) && <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">PROMOTION ELIGIBLE</span>}
+                  {isValidationFailed(t) && <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">VALIDATION FAILED</span>}
+                  {isBlocked(t) && !isValidationFailed(t) && <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">BLOCKED</span>}
+                  {isReviewReady(t) && <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">REVIEW READY</span>}
+                </div>
+                <p className="text-xs text-[var(--muted)] truncate max-w-lg mt-1">{t.summary}</p>
+              </div>
+              <button onClick={() => onSelectTask(t)} className="text-xs font-bold text-[var(--accent)] hover:underline">
+                Inspect
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function RuntimeConsolePage() {
   const [data, setData] = useState<RuntimeLoadState>({ status: "loading" });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -902,6 +1003,8 @@ export default function RuntimeConsolePage() {
             </button>
           </div>
         </header>
+
+        <GovernanceAdvisoryWorkbench tasks={tasks} onSelectTask={setSelectedTask} />
 
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
           <section className="rounded-xl border border-[var(--line)] bg-white p-4 shadow-sm">
