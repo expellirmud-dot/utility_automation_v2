@@ -91,6 +91,15 @@ TASK 087
 TASK 088
 - Runtime Operator Control Actions
 
+TASK 089
+- Runtime Operator Control Forms UX
+
+TASK 090
+- Runtime Progress and Evidence Viewer
+
+TASK 091
+- Runtime Task Templates / Quick Launch UX
+
 TASK 092
 - Runtime timeline and task history UX
 

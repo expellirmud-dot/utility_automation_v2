@@ -17,8 +17,7 @@ Core invariants:
 ## Serena Bootstrap
 
 Project path:
-D:\utility_automation_v2
-
+D:\utility_automation_v2_light
 If Serena activation fails:
 STOP
 Do not implement from memory.

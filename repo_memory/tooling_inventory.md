@@ -36,6 +36,25 @@ This document inventories the local AI automation scripts used for repository ma
 
 ## External Tooling
 
+### D:\ai-tools\ai-tools-kit
+- **Role**: Unified AI automation master toolkit.
+- **Usage**: Reference path for local utility scripts, runtimes, and skills.
+
+### Gemini CLI
+- **Role**: Command Line Interface for repository-aware execution.
+
+### Antigravity
+- **Role**: Premium agent runtime environment.
+
+### Codex
+- **Role**: Dedicated coding runtime environment.
+
+### OpenCode
+- **Role**: Portable orchestration runtime environment.
+
+### Serena MCP
+- **Role**: Model Context Protocol server validating 29 repository-aware intelligence tools.
+
 ### Aider
 - **Role**: Bounded mechanical repair.
 - **Usage**: Use only for localized, low-complexity fixes after a triage gate has identified the exact change required.

@@ -53,7 +53,7 @@ After implementation:
 - Gemma 4: long-context architecture stitching and roadmap
 - Gemini Flash 3.1: boilerplate, API wrappers, test scaffolding, dashboard plumbing
 
-## Current Recommended Next Task
+## Historical Baseline
 
 TASK 039 COMPLETE — Recovery governance visibility plane implemented
 

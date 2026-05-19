@@ -1,6 +1,6 @@
 # AI Operating Context & Institutional Memory
 
-Last Updated: 2026-05-17
+Last Updated: 2026-05-19
 
 ## Purpose
 This file is the source of truth for global AI engineering workflow context.
@@ -11,6 +11,24 @@ Any AI assistant must read this before modifying:
 - Gemini skills
 - Serena setup
 - AI workflow architecture
+
+---
+
+## AI Tools Kit & Modernized Runtime Ecosystem
+
+- **Master Path**: `D:\ai-tools\ai-tools-kit`
+- **Supported Runtimes**:
+  - Gemini CLI
+  - Antigravity
+  - Codex
+  - OpenCode
+- **Serena MCP**: Validated with 29 tools.
+- **Skill Sync Targets**:
+  - `C:\Users\Expellirmud\.gemini\skills`
+  - `C:\Users\Expellirmud\.gemini\antigravity\skills`
+  - `C:\Users\Expellirmud\.codex\skills`
+  - `D:\utility_automation_v2_light\ai_runtime\skills`
+- **Governance Priority**: Project-local rules strictly override global rules.
 
 ---
 

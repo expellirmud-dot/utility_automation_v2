@@ -4,6 +4,15 @@
 
 utility_automation_v2 is a deterministic governance operating platform.
 
+### AI Tools Kit Integration Summary
+- Master Path: `D:\ai-tools\ai-tools-kit`
+- Runtimes validated:
+  - Gemini CLI validated
+  - OpenCode validated
+  - Codex validated
+  - Antigravity validated
+  - Serena MCP (29 tools validated)
+
 Completed baselines:
 - TASK 036: Distributed deterministic mesh
 - TASK 037: Policy graph / rollback / persistence
@@ -96,6 +105,9 @@ TASK 064 repository workflow memory hardening
     - deterministic certifier 100.0
     - next build
     - typecheck
+- TASK 094: Runtime artifact export UX
+- TASK 095: Governance advisory workbench
+- TASK 096: Queue batch workstation
 
 no Dynamic server usage warning
 npm build passed
@@ -109,8 +121,11 @@ Known deferred risk:
 - frontend/operator-observatory npm audit reports Next.js/PostCSS vulnerabilities; fix requires breaking Next 16
  upgrade
 
+Current completed task:
+- TASK 096
+
 Recommended next task:
-- TASK 094 [TBD]
+- TASK 097
 
 
 ## Non-Negotiable Invariants
