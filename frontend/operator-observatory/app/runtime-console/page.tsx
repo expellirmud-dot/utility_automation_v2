@@ -142,6 +142,8 @@ type ArtifactTab = {
   label: string;
   enabled: boolean;
   content: string | null;
+  fileName: string;
+  mediaType: string;
 };
 
 function stringifyArtifact(value: unknown): string | null {
@@ -149,39 +151,90 @@ function stringifyArtifact(value: unknown): string | null {
   return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 
+function normalizeArtifactFileName(value: string): string {
+  return value.trim().replace(/[^A-Za-z0-9._-]/g, "_") || "runtime-task";
+}
+
+function downloadTextArtifact(fileName: string, content: string, mediaType: string) {
+  const blob = new Blob([content], { type: `${mediaType};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function ArtifactBrowser({ task }: { task: RuntimeTaskSummary }) {
   const [activeTab, setActiveTab] = useState<ArtifactTabKey>("contract");
+  const taskFilePrefix = normalizeArtifactFileName(task.task_id);
 
   const tabs: ArtifactTab[] = [
-    { key: "contract", label: "Contract JSON", enabled: !!task.contract, content: stringifyArtifact(task.contract) },
-    { key: "evidence", label: "Evidence Payload", enabled: !!task.evidence || !!task.artifact_contents?.evidence_json, content: task.artifact_contents?.evidence_json ?? stringifyArtifact(task.evidence) },
-    { key: "transcript", label: "Transcript", enabled: !!task.reports.execution_transcript, content: task.artifact_contents?.execution_transcript ?? null },
-    { key: "trace", label: "Tool Trace", enabled: !!task.reports.tool_trace, content: task.artifact_contents?.tool_trace ?? null },
-    { key: "report", label: "Worker Report", enabled: !!task.reports.worker_report, content: task.artifact_contents?.worker_report ?? null },
-    { key: "validation", label: "Validation Output", enabled: !!task.reports.validation_output, content: task.artifact_contents?.validation_output ?? null },
-    { key: "manifest", label: "Runtime Manifest", enabled: !!task.reports.runtime_manifest, content: task.artifact_contents?.runtime_manifest ?? null },
-    { key: "certification", label: "Certification Artifact", enabled: !!task.reports.certification_artifact, content: task.artifact_contents?.certification_artifact ?? null },
+    { key: "contract", label: "Contract JSON", enabled: !!task.contract, content: stringifyArtifact(task.contract), fileName: `${taskFilePrefix}-contract.json`, mediaType: "application/json" },
+    { key: "evidence", label: "Evidence Payload", enabled: !!task.evidence || !!task.artifact_contents?.evidence_json, content: task.artifact_contents?.evidence_json ?? stringifyArtifact(task.evidence), fileName: `${taskFilePrefix}-evidence.json`, mediaType: "application/json" },
+    { key: "transcript", label: "Transcript", enabled: !!task.reports.execution_transcript, content: task.artifact_contents?.execution_transcript ?? null, fileName: `${taskFilePrefix}-execution-transcript.md`, mediaType: "text/markdown" },
+    { key: "trace", label: "Tool Trace", enabled: !!task.reports.tool_trace, content: task.artifact_contents?.tool_trace ?? null, fileName: `${taskFilePrefix}-tool-trace.json`, mediaType: "application/json" },
+    { key: "report", label: "Worker Report", enabled: !!task.reports.worker_report, content: task.artifact_contents?.worker_report ?? null, fileName: `${taskFilePrefix}-worker-report.md`, mediaType: "text/markdown" },
+    { key: "validation", label: "Validation Output", enabled: !!task.reports.validation_output, content: task.artifact_contents?.validation_output ?? null, fileName: `${taskFilePrefix}-validation-output.txt`, mediaType: "text/plain" },
+    { key: "manifest", label: "Runtime Manifest", enabled: !!task.reports.runtime_manifest, content: task.artifact_contents?.runtime_manifest ?? null, fileName: `${taskFilePrefix}-runtime-manifest.json`, mediaType: "application/json" },
+    { key: "certification", label: "Certification Artifact", enabled: !!task.reports.certification_artifact, content: task.artifact_contents?.certification_artifact ?? null, fileName: `${taskFilePrefix}-certification-artifact.json`, mediaType: "application/json" },
   ];
 
   const activeArtifact = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
+  const downloadableArtifacts = tabs.filter((tab) => tab.content);
+  const bundleContent = JSON.stringify({
+    bundle_version: "runtime-artifact-browser-v1",
+    task_id: task.task_id,
+    artifacts: downloadableArtifacts.map((tab) => ({
+      key: tab.key,
+      label: tab.label,
+      file_name: tab.fileName,
+      content: tab.content,
+    })),
+  }, null, 2);
 
   return (
     <div className="rounded-xl border border-[var(--line)] bg-white p-4 font-sans">
-      <div className="flex gap-2 mb-3">
-        {tabs.map((tab) => (
+      <div className="mb-3 flex flex-col gap-3">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              disabled={!tab.enabled}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                activeTab === tab.key ? "bg-[var(--accent)] text-white" :
+                tab.enabled ? "bg-gray-100 text-[var(--ink)] hover:bg-gray-200" :
+                "bg-gray-50 text-[var(--muted)] cursor-not-allowed"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            disabled={!tab.enabled}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-              activeTab === tab.key ? "bg-[var(--accent)] text-white" :
-              tab.enabled ? "bg-gray-100 text-[var(--ink)] hover:bg-gray-200" :
-              "bg-gray-50 text-[var(--muted)] cursor-not-allowed"
-            }`}
+            type="button"
+            disabled={!activeArtifact.content}
+            onClick={() => activeArtifact.content && downloadTextArtifact(activeArtifact.fileName, activeArtifact.content, activeArtifact.mediaType)}
+            className="rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--ink)] shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-[var(--muted)] disabled:opacity-60"
           >
-            {tab.label}
+            Download artifact
           </button>
-        ))}
+          <button
+            type="button"
+            disabled={downloadableArtifacts.length === 0}
+            onClick={() => downloadTextArtifact(`${taskFilePrefix}-runtime-artifact-bundle.json`, bundleContent, "application/json")}
+            className="rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--ink)] shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-[var(--muted)] disabled:opacity-60"
+          >
+            Download bundle
+          </button>
+          <span className="text-[11px] font-mono text-[var(--muted)]">
+            {downloadableArtifacts.length} exportable artifact{downloadableArtifacts.length === 1 ? "" : "s"}
+          </span>
+        </div>
       </div>
       <div className="h-64 overflow-auto rounded-lg border border-[var(--line)] bg-gray-50 p-4 font-mono text-[11px] text-[var(--ink)]">
         {activeArtifact.content ? <pre className="whitespace-pre-wrap">{activeArtifact.content}</pre> :
