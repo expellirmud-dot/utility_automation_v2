@@ -1,0 +1,23 @@
+[
+  {
+    "tool": "serena_replace_content",
+    "target": "repo_memory/task_registry.md",
+    "action": "mark_transitional",
+    "tasks": ["TASK-098", "TASK-099"]
+  },
+  {
+    "tool": "serena_create_text_file",
+    "target": "ai_runtime/contracts/TASK-100.json",
+    "action": "issue_contract"
+  },
+  {
+    "tool": "bash",
+    "command": "pytest",
+    "action": "validate"
+  },
+  {
+    "tool": "bash",
+    "command": "deterministic_certifier.py",
+    "action": "validate"
+  }
+]

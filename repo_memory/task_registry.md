@@ -119,9 +119,13 @@ TASK 097
 - Runtime governance baseline reset
 
 TASK 098
-- Runtime Governance History Reconciliation
+- Runtime Governance History Reconciliation (Transitional)
 
-## Next
+TASK 099
+- Runtime Governance Transition (Transitional)
 
-TASK 099 [TBD]
+## Current Active Task
+
+TASK 100
+- Runtime Governance Continuity Baseline
 

@@ -1,0 +1,18 @@
+﻿{
+    "generated_at":  "2026-05-20T00:53:43",
+    "task_id":  "TASK-100",
+    "hashes":  {
+                   "worker_report":  "dce29291098ea1ccebf8defadad88b8d6bbca7046748ed210547bc8518b48f50",
+                   "contract":  "cdcf3d52a084501a6df1ff460bfd02b6289323932144b25f68d291087c1b9169",
+                   "tool_trace":  "8338f25257439936303f7236906c4fc1724f0ac3ea5e4dd86815966ae4ad218e",
+                   "execution_transcript":  "9d7e3a6ed4d9e9c89c21332ed421bd73635b28f78c7759eb375832c52c52506c",
+                   "validation_output":  "18d44f8aa8a78751917b40b547361ba86ff70b45b20c9b65274689f1220f909a"
+               },
+    "artifacts":  {
+                      "tool_trace":  "ai_runtime/reports/TASK-100-tool-trace.json",
+                      "contract":  "ai_runtime/contracts/TASK-100.json",
+                      "validation_output":  "ai_runtime/reports/TASK-100-validation-output.txt",
+                      "execution_transcript":  "ai_runtime/reports/TASK-100-execution-transcript.md",
+                      "worker_report":  "ai_runtime/reports/TASK-100-worker-report.md"
+                  }
+}
