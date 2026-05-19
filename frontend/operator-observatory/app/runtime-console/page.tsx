@@ -740,6 +740,111 @@ function ActionModal({
   );
 }
 
+function QueueBatchWorkstation({
+  tasks,
+  filteredTasks,
+  selectedTaskIds,
+  onSelectAllVisible,
+  onClearSelection,
+}: {
+  tasks: RuntimeTaskSummary[];
+  filteredTasks: RuntimeTaskSummary[];
+  selectedTaskIds: Set<string>;
+  onSelectAllVisible: () => void;
+  onClearSelection: () => void;
+}) {
+  const [showInspect, setShowInspect] = useState(false);
+  if (selectedTaskIds.size === 0) return null;
+
+  const selectedTasks = tasks.filter((t) => selectedTaskIds.has(t.task_id));
+  const stuckTasks = selectedTasks.filter((t) =>
+    ["EXPIRED", "CORRUPT_CONTRACT", "CORRUPT_EVIDENCE", "EVIDENCE_VALIDATION_FAILED"].includes(t.state)
+  );
+  const activeTasks = selectedTasks.filter((t) => t.state === "ACTIVE");
+  const readyTasks = selectedTasks.filter((t) => t.state === "VALIDATED_COMPLETION");
+
+  const exportBundle = () => {
+    const payload = {
+      bundle_version: "queue-batch-v1",
+      exported_at: new Date().toISOString(),
+      task_count: selectedTasks.length,
+      tasks: selectedTasks,
+    };
+    downloadTextArtifact("batch-export.json", JSON.stringify(payload, null, 2), "application/json");
+  };
+
+  return (
+    <div className="mb-6 rounded-xl border-2 border-blue-500 bg-blue-50 p-4 shadow-sm relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-blue-200 pb-3 gap-3 sm:gap-0">
+        <div>
+          <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+            Queue / Batch Operations Workstation
+          </h3>
+          <p className="text-xs text-blue-700 mt-1">
+            {selectedTaskIds.size} task{selectedTaskIds.size === 1 ? "" : "s"} selected
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={onSelectAllVisible}
+            className="px-3 py-1.5 text-xs font-bold bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+          >
+            Select All Visible
+          </button>
+          <button
+            onClick={() => setShowInspect(!showInspect)}
+            className="px-3 py-1.5 text-xs font-bold bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+          >
+            {showInspect ? "Hide Queue Details" : "Bulk Inspect"}
+          </button>
+          <button
+            onClick={exportBundle}
+            className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm"
+          >
+            Export Bundle
+          </button>
+          <button
+            onClick={onClearSelection}
+            className="px-3 py-1.5 text-xs font-bold bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-3 border border-blue-100 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1">Total Selected</p>
+          <p className="text-xl font-mono font-bold text-blue-900">{selectedTasks.length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-blue-100 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1">Ready for Review</p>
+          <p className="text-xl font-mono font-bold text-teal-600">{readyTasks.length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-blue-100 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1">Active Workload</p>
+          <p className="text-xl font-mono font-bold text-blue-600">{activeTasks.length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-blue-100 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1">Stuck / Blocked</p>
+          <p className="text-xl font-mono font-bold text-red-600">{stuckTasks.length}</p>
+        </div>
+      </div>
+
+      {showInspect && (
+        <div className="mt-4 border-t border-blue-200 pt-4 max-h-64 overflow-y-auto space-y-2">
+          {selectedTasks.map((t) => (
+            <div key={t.task_id} className="flex justify-between items-center p-2 bg-white rounded-lg border border-blue-100 shadow-sm">
+              <span className="font-mono text-sm font-bold text-[var(--ink)]">{t.task_id}</span>
+              <span className="text-xs text-[var(--muted)] truncate max-w-sm mx-4 flex-1">{t.summary}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100">{t.state}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GovernanceAdvisoryWorkbench({ tasks, onSelectTask }: { tasks: RuntimeTaskSummary[], onSelectTask: (task: RuntimeTaskSummary) => void }) {
   const [filter, setFilter] = useState<"ALL" | "REVIEW_READY" | "BLOCKED" | "VALIDATION_FAILED" | "CERTIFICATION_READY">("ALL");
 
@@ -853,6 +958,18 @@ export default function RuntimeConsolePage() {
   const [inspectorSyncing, setInspectorSyncing] = useState(false);
   const [actionDialog, setActionDialog] = useState<RuntimeTaskAction | null>(null);
   const [createTemplateForm, setCreateTemplateForm] = useState<ActionFormState | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (selected) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedTaskIds(new Set());
 
   const syncTasks = useCallback(async (background = false) => {
     if (background) {
@@ -1122,13 +1239,21 @@ export default function RuntimeConsolePage() {
                 <div key={t.task_id} className="flex flex-col bg-white rounded-2xl border border-[var(--line)] p-6 shadow-soft hover:shadow-md transition-shadow relative overflow-hidden group">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold font-mono text-[var(--ink)]">{t.task_id}</h3>
-                      <p className="text-xs font-mono text-[var(--muted)] mt-1 truncate max-w-[180px]">
-                        {t.contract_id ? `ID: ${t.contract_id.substring(0, 12)}...` : "No Contract"}
-                      </p>
+                    <div className="flex gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedTaskIds.has(t.task_id)}
+                        onChange={(e) => toggleSelection(t.task_id, e.target.checked)}
+                        className="mt-1.5 w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                      />
+                      <div>
+                        <h3 className="text-lg font-bold font-mono text-[var(--ink)] cursor-pointer hover:underline" onClick={() => setSelectedTask(t)}>{t.task_id}</h3>
+                        <p className="text-xs font-mono text-[var(--muted)] mt-1 truncate max-w-[150px]">
+                          {t.contract_id ? `ID: ${t.contract_id.substring(0, 12)}...` : "No Contract"}
+                        </p>
+                      </div>
                     </div>
-                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider font-mono shadow-sm ${
+                    <span className={`shrink-0 px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider font-mono shadow-sm ${
                       isVal ? "bg-teal-100 text-teal-800" :
                       isAct ? "bg-blue-100 text-blue-800" :
                       isExp ? "bg-amber-100 text-amber-800" :
