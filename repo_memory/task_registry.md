@@ -118,7 +118,10 @@ TASK 096
 TASK 097
 - Runtime governance baseline reset
 
+TASK 098
+- Runtime Governance History Reconciliation
+
 ## Next
 
-TASK 098 [TBD]
+TASK 099 [TBD]
 

@@ -1,0 +1,18 @@
+﻿{
+    "task_id":  "TASK-099",
+    "version":  "1.0",
+    "generated_at":  "2026-05-19T23:59:40",
+    "artifacts":  {
+                      "worker_report":  "ai_runtime\\reports/TASK-099-worker-report.md",
+                      "execution_transcript":  "ai_runtime\\reports/TASK-099-execution-transcript.md",
+                      "tool_trace":  "ai_runtime\\reports/TASK-099-tool-trace.json",
+                      "validation_output":  "ai_runtime\\reports/TASK-099-validation-output.txt",
+                      "runtime_manifest":  "ai_runtime\\reports/TASK-099-runtime-manifest.json"
+                  },
+    "hashes":  {
+                   "worker_report":  "ba7ad148f6b4ef50ea3ec6fbccaeab3f4e7ccf107caf4fe8d3ca183bf4dab9fb",
+                   "execution_transcript":  "94bc00d71e2b2d6d1de25118b470d631f4125c9b2a220f1573660c1115b27d95",
+                   "tool_trace":  "ee5010caeade7a1f7774de99b6e3b03096daffa26dfe0ccb9bff4ecdb4f86920",
+                   "validation_output":  "c150a9cf91db5e7961f677fb7f98536a9cdb1f122824310870c17a3d1cdcd504"
+               }
+}

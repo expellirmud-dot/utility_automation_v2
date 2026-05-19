@@ -123,10 +123,10 @@ Known deferred risk:
  upgrade
 
 Current completed task:
-- TASK 097
+- TASK 098
 
 Recommended next task:
-- TASK 098
+- TASK 099
 
 
 ## Non-Negotiable Invariants

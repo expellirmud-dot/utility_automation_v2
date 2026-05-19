@@ -1,0 +1,60 @@
+{
+  "task_id": "TASK-099",
+  "tool_calls": [
+    {
+      "tool": "read",
+      "path": "ai_runtime/inbox/TASK-099-controller-request.md",
+      "purpose": "Load task requirements"
+    },
+    {
+      "tool": "bash",
+      "command": "cat repo_memory/project_state.json repo_memory/task_registry.md repo_memory/agent_bootstrap_prompt.txt AI_HANDOFF.md",
+      "purpose": "Gather state for synchronization"
+    },
+    {
+      "tool": "edit",
+      "path": "repo_memory/project_state.json",
+      "purpose": "Mark TASK-098 completed, TASK-099 current"
+    },
+    {
+      "tool": "edit",
+      "path": "repo_memory/task_registry.md",
+      "purpose": "Move TASK-098 to completed, add TASK-099 to next"
+    },
+    {
+      "tool": "edit",
+      "path": "repo_memory/agent_bootstrap_prompt.txt",
+      "purpose": "Update bootstrap state"
+    },
+    {
+      "tool": "edit",
+      "path": "AI_HANDOFF.md",
+      "purpose": "Update handoff state"
+    },
+    {
+      "tool": "write",
+      "path": "ai_runtime/reports/TASK-099-worker-report.md",
+      "purpose": "Create worker report"
+    },
+    {
+      "tool": "write",
+      "path": "ai_runtime/reports/TASK-099-execution-transcript.md",
+      "purpose": "Create execution transcript"
+    },
+    {
+      "tool": "write",
+      "path": "ai_runtime/reports/TASK-099-tool-trace.json",
+      "purpose": "Create tool trace"
+    },
+    {
+      "tool": "write",
+      "path": "ai_runtime/reports/TASK-099-validation-output.txt",
+      "purpose": "Create validation output"
+    },
+    {
+      "tool": "write",
+      "path": "ai_runtime/reports/TASK-099-runtime-manifest.json",
+      "purpose": "Create runtime manifest"
+    }
+  ]
+}
