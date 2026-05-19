@@ -1,0 +1,22 @@
+{
+  "task_id": "TASK-098",
+  "worker_id": "WORKER-01",
+  "generated_at": "2026-05-19T23:31:12",
+  "artifacts": {
+    "reconciliation_report": "ai_runtime\\reports/TASK-098-runtime-governance-history-reconciliation.md",
+    "evidence_json": "ai_runtime\\reports/TASK-098-evidence.json",
+    "worker_report": "ai_runtime\\reports/TASK-098-worker-report.md",
+    "execution_transcript": "ai_runtime\\reports/TASK-098-execution-transcript.md",
+    "tool_trace": "ai_runtime\\reports/TASK-098-tool-trace.json",
+    "validation_output": "ai_runtime\\reports/TASK-098-validation-output.txt",
+    "runtime_manifest": "ai_runtime\\reports/TASK-098-runtime-manifest.json"
+  },
+  "hashes": {
+    "reconciliation_report": "6f25a863458b1a2e49f9cdf2440df3fbce4b30f2960d3d785c216bf1f93a526b",
+    "evidence_json": "7595830d920ea7b4097bd33e850d5fee7492013f97aac4d49b5a70c39557e2c5",
+    "worker_report": "0239db44cf585c8c4ec5fb0db61c631178fc64b319335ae1ec1501a9b5dfd642",
+    "execution_transcript": "bc553bc964c14224b07f791870b1ada50bf161da6eb7715e3d10a3ab2f314e25",
+    "tool_trace": "3584ac26596203c3d1ec7747bfc94d0507cfa190d623167253e20f46eaa35a5b",
+    "validation_output": "a18cd34057108b03df2620b5f7fe1babee6a0cce6a00171a8cc1f880f94ab33b"
+  }
+}

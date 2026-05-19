@@ -1,0 +1,42 @@
+{
+  "task_id": "TASK-098",
+  "reconciliation_date": "2026-05-19",
+  "gold_sample": "TASK-097",
+  "summary": {
+    "total_tasks": 27,
+    "full_evidence": 1,
+    "partial_evidence": 2,
+    "report_only": 12,
+    "controller_contract_only": 2,
+    "evidence_gap": 10
+  },
+  "details": [
+    { "id": "TASK-071", "class": "partial runtime evidence", "artifacts": ["inbox", "worker-report", "read-first-report"] },
+    { "id": "TASK-072", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-073", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-074", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-075", "class": "partial runtime evidence", "artifacts": ["execution-transcript", "tool-trace", "worker-report"] },
+    { "id": "TASK-076", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-077", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-078", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-079", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-080", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-081", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-082", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-083", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-084", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-085", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-086", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-087", "class": "report only", "artifacts": ["evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] },
+    { "id": "TASK-088", "class": "controller/contract only", "artifacts": ["inbox", "contract"] },
+    { "id": "TASK-089", "class": "controller/contract only", "artifacts": ["inbox", "contract"] },
+    { "id": "TASK-090", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-091", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-092", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-093", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-094", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-095", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-096", "class": "runtime evidence gap", "artifacts": [] },
+    { "id": "TASK-097", "class": "full runtime evidence", "artifacts": ["inbox", "contract", "evidence", "execution-transcript", "manifest", "tool-trace", "validation", "worker-report"] }
+  ]
+}
