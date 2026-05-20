@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from src.product.db.session import get_db
 from src.product.db.models import Case, ElaasPayload
 from src.product.services.elaas_payload_builder import ElaasPayloadBuilder
+from src.product.services.workflow_lifecycle import WorkflowLifecycleService
 
 router = APIRouter(prefix="/api/cases", tags=["e-LAAS"])
 
@@ -33,6 +34,14 @@ def save_elaas_payload(case_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Case not found")
     payload = ElaasPayloadBuilder.build(case, db)
     record = ElaasPayloadBuilder.save(case, payload, db)
+
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "elaas_payload_saved",
+        "Saved e-LAAS submission payload data"
+    )
+
     return {
         "elaas_payload_id": record.id,
         "status": record.status,

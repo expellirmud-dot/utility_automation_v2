@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from src.product.db.session import get_db
 from src.product.db.models import Case, Dika, Memo, SourceDocument, BillHeader
 from src.product.services.word_generation import WordGenerationService
+from src.product.services.workflow_lifecycle import WorkflowLifecycleService
 
 router = APIRouter(prefix="/api/cases", tags=["Memos"])
 
@@ -90,6 +91,13 @@ def save_dika(case_id: int, payload: DikaSaveRequest, db: Session = Depends(get_
     db.refresh(dika)
     db.refresh(memo)
 
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "dika_saved",
+        f"Saved Dika No. {dika.dika_number or '-'} and Memo No. {memo.memo_number or '-'}"
+    )
+
     return DikaResponse(
         id=dika.id,
         dika_number=dika.dika_number,
@@ -151,9 +159,15 @@ def generate_memo(case_id: int, db: Session = Depends(get_db)):
 
     # Persist file path on Memo record
     memo.file_path = str(output_path)
-    case.status = "word_generated"
     db.commit()
     db.refresh(memo)
+
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "memo_generated",
+        f"Generated Word memo: {output_path.name}"
+    )
 
     return MemoGenerateResponse(
         memo_id=memo.id,

@@ -70,6 +70,23 @@ type ElaasPayload = {
   attachment_checklist: AttachmentItem[];
 };
 
+type TimelineEvent = {
+  id: number;
+  case_id: number;
+  event_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  detail: string | null;
+  created_at: string;
+};
+
+type CaseNote = {
+  id: number;
+  case_id: number;
+  note_text: string;
+  created_at: string;
+};
+
 type Case = {
   id: number;
   case_number: string;
@@ -126,6 +143,40 @@ export default function CaseDetailPage() {
   const [elaasError, setElaasError] = useState("");
   const [elaasConfirm, setElaasConfirm] = useState([false, false, false]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [timelineError, setTimelineError] = useState("");
+  const [notes, setNotes] = useState<CaseNote[]>([]);
+  const [noteText, setNoteText] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState("");
+  const [statusActionLoading, setStatusActionLoading] = useState<string | null>(null);
+  const [statusActionError, setStatusActionError] = useState("");
+
+  const lifecycleLabels: Record<string, string> = {
+    draft: "รับเรื่อง",
+    intake: "รับเรื่อง",
+    documents_uploaded: "อัปโหลดเอกสารแล้ว",
+    ocr_processed: "วิเคราะห์ OCR แล้ว",
+    dika_prepared: "เตรียมฎีกาแล้ว",
+    word_generated: "สร้างบันทึกแล้ว",
+    memo_generated: "สร้างบันทึกแล้ว",
+    readiness_passed: "ผ่านความพร้อม",
+    elaas_prepared: "เตรียม e-LAAS แล้ว",
+    submitted_manual: "ส่ง e-LAAS แล้ว",
+    completed: "เสร็จสิ้น",
+  };
+
+  const eventLabels: Record<string, string> = {
+    document_uploaded: "อัปโหลดเอกสาร",
+    ocr_success: "วิเคราะห์ OCR สำเร็จ",
+    dika_saved: "บันทึกข้อมูลฎีกา",
+    memo_generated: "สร้างบันทึกข้อความ",
+    elaas_payload_saved: "บันทึกข้อมูล e-LAAS",
+    submitted_manually: "ทำเครื่องหมายว่าส่งแล้ว",
+    completed_manually: "ทำเครื่องหมายว่าเสร็จสิ้น",
+  };
+
+  const displayStatus = (status: string | null | undefined) => lifecycleLabels[status || ""] || status || "-";
 
   const fetchReadiness = async () => {
     setLoadingReadiness(true);
@@ -156,6 +207,32 @@ export default function CaseDetailPage() {
       console.error("Failed to fetch e-LAAS payload", err);
     } finally {
       setElaasLoading(false);
+    }
+  };
+
+  const fetchTimeline = async () => {
+    setTimelineError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/timeline`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setTimeline(await res.json());
+    } catch (err: any) {
+      setTimelineError(err.message || "ไม่สามารถโหลดประวัติเคสได้");
+    }
+  };
+
+  const fetchNotes = async () => {
+    setNoteError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/notes`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setNotes(await res.json());
+    } catch (err: any) {
+      setNoteError(err.message || "ไม่สามารถโหลดบันทึกผู้ปฏิบัติงานได้");
     }
   };
 
@@ -195,10 +272,54 @@ export default function CaseDetailPage() {
       });
       if (!res.ok) throw new Error(await res.text());
       setElaasSaved(true);
+      await fetchCaseDetails();
+      await fetchTimeline();
     } catch (err: any) {
       setElaasError(err.message || "บันทึกไม่สำเร็จ");
     } finally {
       setElaasSaving(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = noteText.trim();
+    if (!trimmed) {
+      setNoteError("กรุณากรอกบันทึก");
+      return;
+    }
+    setNoteSaving(true);
+    setNoteError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note_text: trimmed }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setNoteText("");
+      await fetchNotes();
+    } catch (err: any) {
+      setNoteError(err.message || "บันทึกหมายเหตุไม่สำเร็จ");
+    } finally {
+      setNoteSaving(false);
+    }
+  };
+
+  const handleStatusAction = async (action: "submitted" | "completed") => {
+    setStatusActionLoading(action);
+    setStatusActionError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/status/${action}`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchCaseDetails();
+      await fetchTimeline();
+    } catch (err: any) {
+      setStatusActionError(err.message || "ปรับสถานะไม่สำเร็จ");
+    } finally {
+      setStatusActionLoading(null);
     }
   };
 
@@ -224,6 +345,8 @@ export default function CaseDetailPage() {
       fetchCaseDetails();
       fetchReadiness();
       fetchElaas();
+      fetchTimeline();
+      fetchNotes();
     }
   }, [caseId]);
 
@@ -282,6 +405,7 @@ export default function CaseDetailPage() {
       // Refresh case details to update documents list
       await fetchCaseDetails();
       await fetchReadiness();
+      await fetchTimeline();
     } catch (err: any) {
       setUploadError(err.message || "อัปโหลดเอกสารไม่สำเร็จ");
     } finally {
@@ -301,6 +425,7 @@ export default function CaseDetailPage() {
       }
       await fetchCaseDetails();
       await fetchReadiness();
+      await fetchTimeline();
     } catch (err: any) {
       alert(err.message || "เกิดข้อผิดพลาดในการวิเคราะห์เอกสาร");
     } finally {
@@ -338,6 +463,7 @@ export default function CaseDetailPage() {
       setMemoDownloadUrl(`http://127.0.0.1:8000${genData.download_url}`);
       await fetchCaseDetails();
       await fetchReadiness();
+      await fetchTimeline();
     } catch (err: any) {
       setMemoError(err.message || "เกิดข้อผิดพลาดในการสร้างเอกสาร");
     } finally {
@@ -386,7 +512,7 @@ export default function CaseDetailPage() {
                 casedata.status === 'completed' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                 'bg-green-50 text-green-700 border-green-200'}
             `}>
-              {casedata.status}
+              {displayStatus(casedata.status)}
             </span>
           </h2>
         </div>
@@ -640,6 +766,106 @@ export default function CaseDetailPage() {
                 ไม่พบข้อมูลความพร้อม
               </div>
             )}
+          </div>
+
+          {/* Card: Workflow Timeline and Notes */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-lg">🧭</div>
+                <h3 className="font-bold text-[16px] text-slate-800">วงจรงานและประวัติ</h3>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold">
+                {displayStatus(casedata.status)}
+              </span>
+            </div>
+
+            {statusActionError && (
+              <div className="p-2.5 bg-red-50 border-l-4 border-red-500 text-red-700 rounded text-xs break-words">
+                {statusActionError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleStatusAction("submitted")}
+                disabled={statusActionLoading !== null || casedata.status !== "elaas_prepared"}
+                className="py-2 px-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-40 transition"
+              >
+                {statusActionLoading === "submitted" ? "กำลังบันทึก..." : "ทำเครื่องหมายว่าส่งแล้ว"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusAction("completed")}
+                disabled={statusActionLoading !== null || casedata.status !== "submitted_manual"}
+                className="py-2 px-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 disabled:opacity-40 transition"
+              >
+                {statusActionLoading === "completed" ? "กำลังบันทึก..." : "ทำเครื่องหมายว่าเสร็จสิ้น"}
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Timeline</div>
+              {timelineError && (
+                <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700 break-words">{timelineError}</div>
+              )}
+              {timeline.length === 0 ? (
+                <div className="text-center py-4 text-xs text-slate-400 italic border border-dashed border-slate-200 rounded-lg">
+                  ยังไม่มีประวัติการดำเนินงาน
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  {timeline.map((event) => (
+                    <div key={event.id} className="border border-slate-100 rounded-lg p-2.5 bg-slate-50">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-bold text-xs text-slate-700">{eventLabels[event.event_type] || event.event_type}</div>
+                        <div className="text-[10px] text-slate-400 shrink-0">{new Date(event.created_at).toLocaleString("th-TH")}</div>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        {displayStatus(event.from_status)} → {displayStatus(event.to_status)}
+                      </div>
+                      {event.detail && <div className="text-xs text-slate-600 mt-1 leading-relaxed">{event.detail}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 pt-3 border-t border-slate-100">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">บันทึกผู้ปฏิบัติงาน</div>
+              <form onSubmit={handleAddNote} className="space-y-2">
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={3}
+                  className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  placeholder="เช่น รอเอกสารจากกองคลัง"
+                />
+                <button
+                  type="submit"
+                  disabled={noteSaving || !noteText.trim()}
+                  className="w-full py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 disabled:opacity-40 transition"
+                >
+                  {noteSaving ? "กำลังเพิ่มบันทึก..." : "เพิ่มบันทึก"}
+                </button>
+              </form>
+              {noteError && (
+                <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700 break-words">{noteError}</div>
+              )}
+              {notes.length === 0 ? (
+                <div className="text-center py-3 text-xs text-slate-400 italic">ยังไม่มีบันทึก</div>
+              ) : (
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  {notes.map((note) => (
+                    <div key={note.id} className="p-2.5 bg-amber-50 border border-amber-100 rounded-lg">
+                      <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{note.note_text}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">{new Date(note.created_at).toLocaleString("th-TH")}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Card: e-LAAS Assist Panel — visible only when ready */}

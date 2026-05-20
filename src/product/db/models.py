@@ -53,7 +53,7 @@ class Case(Base):
     division = Column(String, nullable=True)
     vendor_name = Column(String, nullable=True) # ผู้รับเงิน
     total_amount = Column(Float, default=0.0)
-    status = Column(String, default="draft")
+    status = Column(String, default="intake")
     note = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -61,6 +61,8 @@ class Case(Base):
     ledger_entries = relationship("ExpenseLedger", back_populates="case")
     documents = relationship("SourceDocument", back_populates="case")
     dika = relationship("Dika", back_populates="case", uselist=False)
+    timeline_events = relationship("CaseTimelineEvent", back_populates="case", order_by="desc(CaseTimelineEvent.created_at)")
+    notes = relationship("CaseNote", back_populates="case", order_by="desc(CaseNote.created_at)")
 
 class SourceDocument(Base):
     __tablename__ = "source_documents"
@@ -126,3 +128,24 @@ class ElaasPayload(Base):
     status = Column(String, default="prepared")
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class CaseTimelineEvent(Base):
+    __tablename__ = "case_timeline_events"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)
+    event_type = Column(String, nullable=False)
+    from_status = Column(String, nullable=True)
+    to_status = Column(String, nullable=True)
+    detail = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    case = relationship("Case", back_populates="timeline_events")
+
+class CaseNote(Base):
+    __tablename__ = "case_notes"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)
+    note_text = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    case = relationship("Case", back_populates="notes")

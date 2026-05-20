@@ -5,6 +5,7 @@ import datetime
 
 from src.product.db.session import get_db
 from src.product.db.models import Case, SourceDocument, BillHeader
+from src.product.services.workflow_lifecycle import WorkflowLifecycleService
 from src.workflows.unified_bill_pipeline import UnifiedBillPipeline
 
 router = APIRouter(prefix="/api/cases", tags=["Documents"])
@@ -44,6 +45,13 @@ async def upload_document(
     db.add(db_doc)
     db.commit()
     db.refresh(db_doc)
+
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "document_uploaded",
+        f"Uploaded document {file.filename} ({document_type})"
+    )
 
     return {
         "id": db_doc.id,
@@ -108,6 +116,13 @@ def process_document(
 
     db.commit()
     db.refresh(bill_hdr)
+
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "ocr_success",
+        f"Extracted bill data successfully from {doc.file_name}"
+    )
 
     return {
         "id": bill_hdr.id,
