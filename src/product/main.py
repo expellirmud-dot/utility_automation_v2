@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.product.api.cases import router as cases_router
 from src.product.api.budget import router as budget_router
+from src.product.api.documents import router as documents_router
 
 app = FastAPI(title="Municipal Finance Utility Disbursement API")
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 app.include_router(cases_router)
 app.include_router(budget_router)
+app.include_router(documents_router)
 
 @app.get("/health")
 def health_check():

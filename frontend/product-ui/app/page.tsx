@@ -123,10 +123,12 @@ export default async function Dashboard() {
                     <td colSpan={4} className="px-5 py-8 text-center text-slate-500">ไม่มีข้อมูลเคส</td>
                   </tr>
                 )}
-                {cases.map((c: Case) => (
-                  <tr key={c.id} className="hover:bg-slate-50 transition-colors cursor-pointer">
+                 {cases.map((c: Case) => (
+                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-4">
-                      <div className="font-bold text-[#1e3a5f]">{c.case_number}</div>
+                      <Link href={`/cases/${c.id}`} className="font-bold text-[#1e3a5f] hover:underline cursor-pointer">
+                        {c.case_number}
+                      </Link>
                       <div className="text-[12px] text-slate-400 mt-0.5">{new Date(c.created_at).toLocaleString('th-TH')}</div>
                     </td>
                     <td className="px-5 py-4">

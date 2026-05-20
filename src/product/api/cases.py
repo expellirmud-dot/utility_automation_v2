@@ -33,6 +33,33 @@ class CaseResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class SourceDocumentResponse(BaseModel):
+    id: int
+    file_name: str
+    file_path: str
+    file_type: str
+    document_type: str
+    created_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CaseDetailResponse(BaseModel):
+    id: int
+    case_number: str
+    fiscal_year_be: int
+    work_month: str
+    case_type: str
+    expense_group: str
+    department: str
+    division: Optional[str]
+    status: str
+    total_amount: float
+    note: Optional[str]
+    created_at: datetime.datetime
+    documents: List[SourceDocumentResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
 @router.post("/", response_model=CaseResponse)
 def create_case(case: CaseCreate, db: Session = Depends(get_db)):
     # Generate case number e.g. CASE-2569-03-001
@@ -62,3 +89,10 @@ def create_case(case: CaseCreate, db: Session = Depends(get_db)):
 def list_cases(db: Session = Depends(get_db)):
     cases = db.query(Case).order_by(Case.created_at.desc()).all()
     return cases
+
+@router.get("/{case_id}", response_model=CaseDetailResponse)
+def get_case(case_id: int, db: Session = Depends(get_db)):
+    case = db.query(Case).filter(Case.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return case
