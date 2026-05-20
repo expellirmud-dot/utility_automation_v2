@@ -9,3 +9,4 @@ sqlalchemy
 pandas
 openpyxl
 python-multipart
+python-docx

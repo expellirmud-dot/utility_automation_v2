@@ -96,6 +96,7 @@ class Dika(Base):
     case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)
     dika_number = Column(String, unique=True, nullable=True)
     dika_date = Column(Date, nullable=True)
+    payee_name = Column(String, nullable=True)  # ผู้รับเงิน
     status = Column(String, default="draft")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -111,6 +112,7 @@ class Memo(Base):
     memo_number = Column(String, nullable=True)
     memo_date = Column(Date, nullable=True)
     content = Column(Text, nullable=True)
+    file_path = Column(String, nullable=True)  # path to generated .docx output
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     dika = relationship("Dika", back_populates="memo")

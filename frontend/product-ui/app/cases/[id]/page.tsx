@@ -56,6 +56,16 @@ export default function CaseDetailPage() {
   const [dragActive, setDragActive] = useState(false);
   const [processingDocs, setProcessingDocs] = useState<Record<number, boolean>>({});
 
+  // Memo States
+  const [dikaNo, setDikaNo] = useState("");
+  const [dikaDate, setDikaDate] = useState("");
+  const [payeeName, setPayeeName] = useState("");
+  const [memoNumber, setMemoNumber] = useState("");
+  const [memoDate, setMemoDate] = useState("");
+  const [memoGenerating, setMemoGenerating] = useState(false);
+  const [memoError, setMemoError] = useState("");
+  const [memoDownloadUrl, setMemoDownloadUrl] = useState<string | null>(null);
+
   const fetchCaseDetails = async () => {
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}`, {
@@ -155,6 +165,42 @@ export default function CaseDetailPage() {
       alert(err.message || "เกิดข้อผิดพลาดในการวิเคราะห์เอกสาร");
     } finally {
       setProcessingDocs((prev) => ({ ...prev, [docId]: false }));
+    }
+  };
+
+  const handleGenerateMemo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMemoGenerating(true);
+    setMemoError("");
+    setMemoDownloadUrl(null);
+    try {
+      const dikaRes = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/dika`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dika_no: dikaNo,
+          dika_date: dikaDate,
+          payee_name: payeeName,
+          memo_number: memoNumber,
+          memo_date: memoDate,
+        }),
+      });
+      if (!dikaRes.ok) {
+        throw new Error(await dikaRes.text());
+      }
+      const genRes = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/memo/generate`, {
+        method: "POST",
+      });
+      if (!genRes.ok) {
+        throw new Error(await genRes.text());
+      }
+      const genData = await genRes.json();
+      setMemoDownloadUrl(`http://127.0.0.1:8000${genData.download_url}`);
+      await fetchCaseDetails();
+    } catch (err: any) {
+      setMemoError(err.message || "เกิดข้อผิดพลาดในการสร้างเอกสาร");
+    } finally {
+      setMemoGenerating(false);
     }
   };
 
@@ -446,6 +492,72 @@ export default function CaseDetailPage() {
                 {uploading ? "กำลังอัปโหลด..." : "อัปโหลดเข้าแฟ้มเอกสาร"}
               </button>
             </form>
+          </div>
+
+          {/* Card: Memo Generation Panel */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg">📝</div>
+              <h3 className="font-bold text-[16px] text-slate-800">สร้างเอกสารเบิกจ่าย</h3>
+            </div>
+
+            {memoError && (
+              <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-800 rounded text-xs break-words">
+                {memoError}
+              </div>
+            )}
+
+            {memoDownloadUrl ? (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center space-y-3">
+                <div className="text-green-700 font-bold text-sm">สร้างเอกสารสำเร็จ!</div>
+                <a
+                  href={memoDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block w-full py-2 bg-green-600 text-white rounded-lg shadow text-sm font-bold hover:bg-green-700 transition"
+                >
+                  📥 ดาวน์โหลด Word
+                </a>
+                <button
+                  onClick={() => setMemoDownloadUrl(null)}
+                  className="text-xs text-green-600 underline font-semibold hover:text-green-800"
+                >
+                  สร้างใหม่
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleGenerateMemo} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">เลขที่ฎีกา</label>
+                    <input type="text" required value={dikaNo} onChange={e => setDikaNo(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="เช่น 123/2569" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">วันที่ฎีกา</label>
+                    <input type="date" required value={dikaDate} onChange={e => setDikaDate(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
+                    <input type="date" required value={memoDate} onChange={e => setMemoDate(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">ชื่อผู้รับเงิน / ผู้ให้บริการ</label>
+                    <input type="text" required value={payeeName} onChange={e => setPayeeName(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="ระบุชื่อบริษัทหรือผู้รับเงิน" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">เลขที่เอกสารภายใน</label>
+                    <input type="text" required value={memoNumber} onChange={e => setMemoNumber(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="เช่น กค 001/2569" />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={memoGenerating}
+                  className="w-full mt-2 py-2.5 bg-gradient-to-br from-emerald-600 to-green-700 text-white rounded-lg shadow text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {memoGenerating ? "กำลังสร้างเอกสาร..." : "📄 สร้าง Word Document"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

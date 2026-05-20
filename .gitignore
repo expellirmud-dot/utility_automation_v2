@@ -47,3 +47,7 @@ tools/watch_opencode_prompts.py
 
 frontend/product-ui/.next/
 frontend/product-ui/node_modules/
+
+# Product runtime data — never commit
+data/uploads/
+data/generated/
