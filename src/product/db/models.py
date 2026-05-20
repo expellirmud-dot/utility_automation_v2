@@ -74,6 +74,7 @@ class SourceDocument(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     case = relationship("Case", back_populates="documents")
+    bill_header = relationship("BillHeader", back_populates="document", uselist=False)
 
 class BillHeader(Base):
     __tablename__ = "bill_headers"
@@ -85,6 +86,8 @@ class BillHeader(Base):
     total_amount = Column(Float, default=0.0)
     status = Column(String, default="pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    document = relationship("SourceDocument", back_populates="bill_header")
 
 class Dika(Base):
     __tablename__ = "dikas"

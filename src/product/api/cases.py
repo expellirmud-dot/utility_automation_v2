@@ -33,6 +33,16 @@ class CaseResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class BillHeaderResponse(BaseModel):
+    id: int
+    provider: Optional[str]
+    bill_date: Optional[datetime.date]
+    total_amount: float
+    status: str
+    created_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
 class SourceDocumentResponse(BaseModel):
     id: int
     file_name: str
@@ -40,6 +50,7 @@ class SourceDocumentResponse(BaseModel):
     file_type: str
     document_type: str
     created_at: datetime.datetime
+    bill_header: Optional[BillHeaderResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 

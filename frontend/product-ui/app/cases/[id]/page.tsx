@@ -3,6 +3,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
+type BillHeader = {
+  id: number;
+  provider: string | null;
+  bill_date: string | null;
+  total_amount: number;
+  status: string;
+  created_at: string;
+};
+
 type SourceDocument = {
   id: number;
   file_name: string;
@@ -10,6 +19,7 @@ type SourceDocument = {
   file_type: string;
   document_type: string;
   created_at: string;
+  bill_header: BillHeader | null;
 };
 
 type Case = {
@@ -44,6 +54,7 @@ export default function CaseDetailPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState("bill");
   const [dragActive, setDragActive] = useState(false);
+  const [processingDocs, setProcessingDocs] = useState<Record<number, boolean>>({});
 
   const fetchCaseDetails = async () => {
     try {
@@ -126,6 +137,24 @@ export default function CaseDetailPage() {
       setUploadError(err.message || "อัปโหลดเอกสารไม่สำเร็จ");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleProcessDocument = async (docId: number) => {
+    setProcessingDocs((prev) => ({ ...prev, [docId]: true }));
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/documents/${docId}/process`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "ไม่สามารถวิเคราะห์เอกสารได้");
+      }
+      await fetchCaseDetails();
+    } catch (err: any) {
+      alert(err.message || "เกิดข้อผิดพลาดในการวิเคราะห์เอกสาร");
+    } finally {
+      setProcessingDocs((prev) => ({ ...prev, [docId]: false }));
     }
   };
 
@@ -244,50 +273,94 @@ export default function CaseDetailPage() {
                     <th className="px-6 py-3">ชื่อไฟล์เอกสาร</th>
                     <th className="px-6 py-3">ประเภทเอกสาร</th>
                     <th className="px-6 py-3">วันที่เพิ่ม</th>
-                    <th className="px-6 py-3 text-right">ลิงก์ไฟล์</th>
+                    <th className="px-6 py-3">ข้อมูลบิลที่ดึงได้</th>
+                    <th className="px-6 py-3 text-right">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {casedata.documents.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-slate-500 italic">
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic">
                         ยังไม่มีเอกสารอัปโหลดสำหรับเคสนี้
                       </td>
                     </tr>
                   )}
-                  {casedata.documents.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center font-bold text-xs uppercase border border-red-100">
-                            {doc.file_type}
-                          </span>
-                          <div>
-                            <div className="font-bold text-slate-700">{doc.file_name}</div>
-                            <div className="text-[11px] text-slate-400 font-mono truncate max-w-[250px]">{doc.file_path}</div>
+                  {casedata.documents.map((doc) => {
+                    const isProcessing = !!processingDocs[doc.id];
+                    const header = doc.bill_header;
+                    return (
+                      <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center font-bold text-xs uppercase border border-red-100">
+                              {doc.file_type}
+                            </span>
+                            <div>
+                              <div className="font-bold text-slate-700">{doc.file_name}</div>
+                              <div className="text-[11px] text-slate-400 font-mono truncate max-w-[180px]">{doc.file_path}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 text-[11px] rounded font-bold border
-                          ${doc.document_type === 'bill' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            doc.document_type === 'receipt' ? 'bg-green-50 text-green-700 border-green-200' :
-                            'bg-slate-50 text-slate-600 border-slate-200'}
-                        `}>
-                          {doc.document_type === 'bill' ? 'ใบแจ้งหนี้ / บิล' :
-                           doc.document_type === 'receipt' ? 'ใบเสร็จรับเงิน' : 'อื่นๆ'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
-                        {new Date(doc.created_at).toLocaleString('th-TH')}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-xs text-blue-500 hover:text-blue-700 font-semibold cursor-pointer underline">
-                          เปิดดูไฟล์ (Local)
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-0.5 text-[11px] rounded font-bold border
+                            ${doc.document_type === 'bill' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              doc.document_type === 'receipt' ? 'bg-green-50 text-green-700 border-green-200' :
+                              'bg-slate-50 text-slate-600 border-slate-200'}
+                          `}>
+                            {doc.document_type === 'bill' ? 'ใบแจ้งหนี้ / บิล' :
+                             doc.document_type === 'receipt' ? 'ใบเสร็จรับเงิน' : 'อื่นๆ'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 text-xs">
+                          {new Date(doc.created_at).toLocaleString('th-TH')}
+                        </td>
+                        <td className="px-6 py-4">
+                          {header ? (
+                            header.status === 'extracted' ? (
+                              <div className="text-xs space-y-0.5 text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 max-w-[200px]">
+                                <div><span className="font-semibold text-slate-400">ผู้ให้บริการ:</span> <span className="font-bold text-slate-700">{header.provider || "-"}</span></div>
+                                <div><span className="font-semibold text-slate-400">วันที่บิล:</span> <span className="font-semibold text-slate-700">{header.bill_date ? new Date(header.bill_date).toLocaleDateString('th-TH') : "-"}</span></div>
+                                <div><span className="font-semibold text-slate-400">ยอดสุทธิ:</span> <span className="font-bold text-blue-600">{header.total_amount.toLocaleString('th-TH')} บาท</span></div>
+                              </div>
+                            ) : header.status === 'failed' ? (
+                              <span className="px-2 py-0.5 text-xs rounded bg-red-50 text-red-700 border border-red-200 font-bold">
+                                ⚠️ ล้มเหลว
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-xs rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold">
+                                {header.status}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">ยังไม่ได้วิเคราะห์</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex flex-col items-end gap-2">
+                            {doc.document_type === 'bill' && (
+                              <button
+                                disabled={isProcessing}
+                                onClick={() => handleProcessDocument(doc.id)}
+                                className="px-3 py-1 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded text-xs font-bold hover:opacity-90 disabled:opacity-50 transition shadow-sm"
+                              >
+                                {isProcessing ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    กำลังวิเคราะห์...
+                                  </span>
+                                ) : (
+                                  "⚡ วิเคราะห์บิล (Run OCR)"
+                                )}
+                              </button>
+                            )}
+                            <span className="text-xs text-blue-500 hover:text-blue-700 font-semibold cursor-pointer underline">
+                              เปิดดูไฟล์ (Local)
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
