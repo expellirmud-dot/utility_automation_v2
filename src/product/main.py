@@ -6,6 +6,7 @@ from src.product.api.budget import router as budget_router
 from src.product.api.documents import router as documents_router
 from src.product.api.memos import router as memos_router
 from src.product.api.validation import router as validation_router
+from src.product.api.elaas import router as elaas_router
 
 app = FastAPI(title="Municipal Finance Utility Disbursement API")
 
@@ -22,6 +23,7 @@ app.include_router(budget_router)
 app.include_router(documents_router)
 app.include_router(memos_router)
 app.include_router(validation_router)
+app.include_router(elaas_router)
 
 @app.get("/health")
 def health_check():

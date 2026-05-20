@@ -70,6 +70,15 @@ export default function CaseDetailPage() {
   const [readinessData, setReadinessData] = useState<any>(null);
   const [loadingReadiness, setLoadingReadiness] = useState(false);
 
+  // e-LAAS Assist States
+  const [elaasPayload, setElaasPayload] = useState<any>(null);
+  const [elaasLoading, setElaasLoading] = useState(false);
+  const [elaasSaving, setElaasSaving] = useState(false);
+  const [elaasSaved, setElaasSaved] = useState(false);
+  const [elaasError, setElaasError] = useState("");
+  const [elaasConfirm, setElaasConfirm] = useState([false, false, false]);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
   const fetchReadiness = async () => {
     setLoadingReadiness(true);
     try {
@@ -83,6 +92,45 @@ export default function CaseDetailPage() {
       console.error("Failed to fetch readiness", err);
     } finally {
       setLoadingReadiness(false);
+    }
+  };
+
+  const fetchElaas = async () => {
+    setElaasLoading(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/elaas-payload`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        setElaasPayload(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch e-LAAS payload", err);
+    } finally {
+      setElaasLoading(false);
+    }
+  };
+
+  const handleCopyField = (value: string, fieldId: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(fieldId);
+      setTimeout(() => setCopiedField(null), 1500);
+    });
+  };
+
+  const handleSaveElaas = async () => {
+    setElaasSaving(true);
+    setElaasError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/elaas-payload/save`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setElaasSaved(true);
+    } catch (err: any) {
+      setElaasError(err.message || "บันทึกไม่สำเร็จ");
+    } finally {
+      setElaasSaving(false);
     }
   };
 
@@ -107,6 +155,7 @@ export default function CaseDetailPage() {
     if (caseId) {
       fetchCaseDetails();
       fetchReadiness();
+      fetchElaas();
     }
   }, [caseId]);
 
@@ -502,6 +551,122 @@ export default function CaseDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Card: e-LAAS Assist Panel — visible only when ready */}
+          {elaasPayload && readinessData?.ready && (
+            <div className="bg-white rounded-xl border border-emerald-200 shadow-sm p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">🏛️</div>
+                  <h3 className="font-bold text-[16px] text-slate-800">เตรียมข้อมูล e-LAAS</h3>
+                </div>
+                {elaasLoading && <span className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>}
+              </div>
+
+              {/* Copy-ready fields */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">ข้อมูลพร้อมคัดลอก</div>
+                {[
+                  {id: "department",     label: "หน่วยงาน",           value: elaasPayload.department},
+                  {id: "fiscal_year",   label: "ปีงบประมาณ (พ.ศ.)",  value: String(elaasPayload.fiscal_year_be)},
+                  {id: "work_month",    label: "เดือน",              value: elaasPayload.work_month},
+                  {id: "expense_group", label: "กลุ่มค่าใช้จ่าย",   value: elaasPayload.expense_group},
+                  {id: "payee_name",    label: "ผู้รับเงิน",         value: elaasPayload.payee_name},
+                  {id: "provider",      label: "ผู้ให้บริการ",       value: elaasPayload.provider},
+                  {id: "bill_date",     label: "วันที่บิล (ไทย)",   value: elaasPayload.bill_date_thai || "โปรดกรอกด้วยตนเอง"},
+                  {id: "bill_amount",   label: "ยอดเงิน (ตัวเลข)",  value: elaasPayload.bill_amount?.toLocaleString("th-TH", {minimumFractionDigits: 2})},
+                  {id: "bill_amount_t", label: "ยอดเงิน (ตัวอักษร)", value: elaasPayload.bill_amount_thai},
+                  {id: "dika_number",   label: "เลขที่ฎีกา",         value: elaasPayload.dika_number},
+                  {id: "dika_date",     label: "วันที่ฎีกา (ไทย)",  value: elaasPayload.dika_date_thai},
+                  {id: "memo_number",   label: "เลขที่บันทึก",       value: elaasPayload.memo_number},
+                  {id: "memo_date",     label: "วันที่บันทึก (ไทย)", value: elaasPayload.memo_date_thai},
+                ].map(({id, label, value}) => (
+                  <div key={id} className="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50 last:border-0">
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{label}</div>
+                      <div className="text-xs font-bold text-slate-700 truncate max-w-[160px]" title={value}>{value || "–"}</div>
+                    </div>
+                    <button
+                      onClick={() => handleCopyField(value || "", id)}
+                      className={`shrink-0 px-2 py-0.5 text-[10px] rounded font-bold border transition ${
+                        copiedField === id
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {copiedField === id ? "✓ คัดลอก" : "คัดลอก"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Budget info-only */}
+              {elaasPayload.budget_available !== null && elaasPayload.budget_available !== undefined && (
+                <div className="bg-slate-50 rounded-lg p-2.5 flex justify-between items-center text-xs border border-slate-100">
+                  <span className="text-slate-500 font-semibold">งบประมาณคงเหลือ (ข้อมูล)</span>
+                  <span className="font-bold text-slate-700">{elaasPayload.budget_available?.toLocaleString("th-TH", {minimumFractionDigits: 2})} บาท</span>
+                </div>
+              )}
+
+              {/* Attachment checklist */}
+              <div className="space-y-1">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">รายการเอกสารแนบ</div>
+                {elaasPayload.attachment_checklist?.map((item: any) => (
+                  <div key={item.id} className="flex items-center gap-2 text-xs py-1">
+                    <span className={item.present ? "text-emerald-600 font-bold" : "text-slate-300"}>
+                      {item.present ? "✅" : "⬜"}
+                    </span>
+                    <span className={item.present ? "text-slate-700" : "text-slate-400"}>
+                      {item.label}
+                      {item.required && !item.present && <span className="ml-1 text-red-500 font-bold">*</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Operator confirmation */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ยืนยันความถูกต้อง</div>
+                {[
+                  "ตรวจสอบข้อมูลถูกต้องแล้ว",
+                  "เอกสารแนบครบถ้วนแล้ว",
+                  "พร้อมนำเข้า e-LAAS",
+                ].map((label, idx) => (
+                  <label key={idx} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={elaasConfirm[idx]}
+                      onChange={() => setElaasConfirm(prev => {
+                        const next = [...prev];
+                        next[idx] = !next[idx];
+                        return next;
+                      })}
+                      className="w-3.5 h-3.5 accent-emerald-600"
+                    />
+                    <span className={elaasConfirm[idx] ? "text-emerald-700 font-semibold" : "text-slate-600"}>{label}</span>
+                  </label>
+                ))}
+              </div>
+
+              {elaasError && (
+                <div className="p-2 bg-red-50 border-l-4 border-red-500 text-red-700 rounded text-xs">{elaasError}</div>
+              )}
+
+              {elaasSaved ? (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-center text-xs font-bold text-emerald-700">
+                  ✅ บันทึกเตรียมข้อมูลเรียบร้อยแล้ว
+                </div>
+              ) : (
+                <button
+                  onClick={handleSaveElaas}
+                  disabled={!elaasConfirm.every(Boolean) || elaasSaving}
+                  className="w-full py-2.5 bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-lg shadow text-sm font-bold hover:opacity-90 transition disabled:opacity-40"
+                >
+                  {elaasSaving ? "กำลังบันทึก..." : "💾 บันทึกเตรียมข้อมูล e-LAAS"}
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5">
             <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
