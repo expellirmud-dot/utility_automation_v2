@@ -37,11 +37,32 @@ class ReadinessValidator:
         if not name:
             return ""
         name_lower = name.lower()
-        if "nt" in name_lower or "กสท" in name_lower or "โทรคมนาคม" in name_lower:
+        if (
+            "nt" in name_lower
+            or "tot" in name_lower
+            or "cat" in name_lower
+            or "กสท" in name_lower
+            or "โทรคมนาคม" in name_lower
+        ):
             return "บริษัท โทรคมนาคมแห่งชาติ จำกัด (มหาชน)"
+        if (
+            "ais" in name_lower
+            or "advanced info service" in name_lower
+            or "แอดวานซ์ อินโฟร์" in name_lower
+        ):
+            return "บริษัท แอดวานซ์ อินโฟร์ เซอร์วิส จำกัด (มหาชน)"
         if "pea" in name_lower or "กฟภ" in name_lower or ("ไฟฟ้า" in name_lower and "ภูมิภาค" in name_lower):
             return "การไฟฟ้าส่วนภูมิภาค"
+        if (
+            "mea" in name_lower
+            or "กฟน" in name_lower
+            or "metropolitan electricity" in name_lower
+            or ("ไฟฟ้า" in name_lower and "นครหลวง" in name_lower)
+        ):
+            return "การไฟฟ้านครหลวง"
         if "pwa" in name_lower or "กปภ" in name_lower or ("ประปา" in name_lower and "ภูมิภาค" in name_lower):
+            return "การประปาส่วนภูมิภาค"
+        if "water" in name_lower or "ค่าน้ำ" in name_lower or "ประปา" in name_lower:
             return "การประปาส่วนภูมิภาค"
         return name.strip()
 

@@ -126,6 +126,7 @@ class ElaasPayloadBuilder:
 
         # Budget
         available_budget = ElaasPayloadBuilder._get_available_budget(case, db)
+        readiness = ReadinessValidator.evaluate_readiness(case, db)
 
         payload = {
             # หมวดหน่วยงาน
@@ -161,12 +162,7 @@ class ElaasPayloadBuilder:
             "budget_available":    available_budget,
 
             # สถานะความพร้อม
-            "readiness_passed":    all([
-                bool(case.documents),
-                bill_header is not None,
-                dika is not None and bool(dika.dika_number),
-                memo is not None and bool(memo.file_path),
-            ]),
+            "readiness_passed":    readiness["ready"],
 
             # รายการเอกสารแนบ
             "attachment_checklist": ElaasPayloadBuilder._build_attachment_status(case),
