@@ -66,6 +66,26 @@ export default function CaseDetailPage() {
   const [memoError, setMemoError] = useState("");
   const [memoDownloadUrl, setMemoDownloadUrl] = useState<string | null>(null);
 
+  // Readiness States
+  const [readinessData, setReadinessData] = useState<any>(null);
+  const [loadingReadiness, setLoadingReadiness] = useState(false);
+
+  const fetchReadiness = async () => {
+    setLoadingReadiness(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/readiness`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        setReadinessData(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch readiness", err);
+    } finally {
+      setLoadingReadiness(false);
+    }
+  };
+
   const fetchCaseDetails = async () => {
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}`, {
@@ -86,6 +106,7 @@ export default function CaseDetailPage() {
   useEffect(() => {
     if (caseId) {
       fetchCaseDetails();
+      fetchReadiness();
     }
   }, [caseId]);
 
@@ -143,6 +164,7 @@ export default function CaseDetailPage() {
       setSelectedFile(null);
       // Refresh case details to update documents list
       await fetchCaseDetails();
+      await fetchReadiness();
     } catch (err: any) {
       setUploadError(err.message || "อัปโหลดเอกสารไม่สำเร็จ");
     } finally {
@@ -161,6 +183,7 @@ export default function CaseDetailPage() {
         throw new Error(text || "ไม่สามารถวิเคราะห์เอกสารได้");
       }
       await fetchCaseDetails();
+      await fetchReadiness();
     } catch (err: any) {
       alert(err.message || "เกิดข้อผิดพลาดในการวิเคราะห์เอกสาร");
     } finally {
@@ -197,6 +220,7 @@ export default function CaseDetailPage() {
       const genData = await genRes.json();
       setMemoDownloadUrl(`http://127.0.0.1:8000${genData.download_url}`);
       await fetchCaseDetails();
+      await fetchReadiness();
     } catch (err: any) {
       setMemoError(err.message || "เกิดข้อผิดพลาดในการสร้างเอกสาร");
     } finally {
@@ -413,9 +437,73 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        {/* Right 1 Column: Upload Panel */}
-        <div className="col-span-1">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5 sticky top-[94px]">
+        {/* Right 1 Column: Upload Panel & Validator */}
+        <div className="col-span-1 space-y-6">
+          {/* Card: Readiness Validator Panel */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg">🛡️</div>
+                <h3 className="font-bold text-[16px] text-slate-800">สถานะความพร้อม</h3>
+              </div>
+              {loadingReadiness && <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>}
+            </div>
+
+            {readinessData && (
+              <div className="space-y-4">
+                <div className={`p-3 rounded-lg text-center border font-bold ${readinessData.ready ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                  {readinessData.ready ? '✅ พร้อมส่งเรื่อง (READY)' : '❌ ยังไม่พร้อม (NOT READY)'}
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">เอกสารแนบ</span>
+                    <span>{readinessData.summary?.document_status ? '✅' : '❌'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">สกัดข้อมูล (OCR)</span>
+                    <span>{readinessData.summary?.ocr_status ? '✅' : '❌'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">ข้อมูลฎีกา</span>
+                    <span>{readinessData.summary?.dika_status ? '✅' : '❌'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">สร้างเอกสาร Word</span>
+                    <span>{readinessData.summary?.memo_status ? '✅' : '❌'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">ยอดเงินงบประมาณ</span>
+                    <span>{readinessData.budget_ok ? '✅' : '❌'}</span>
+                  </div>
+                </div>
+
+                {readinessData.blockers && readinessData.blockers.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <div className="text-xs font-bold text-red-600 uppercase">ข้อขัดข้อง (Blockers)</div>
+                    <ul className="list-disc pl-4 text-xs text-red-700 space-y-0.5">
+                      {readinessData.blockers.map((b: string, idx: number) => (
+                        <li key={idx}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {readinessData.warnings && readinessData.warnings.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <div className="text-xs font-bold text-amber-600 uppercase">ข้อควรระวัง (Warnings)</div>
+                    <ul className="list-disc pl-4 text-xs text-amber-700 space-y-0.5">
+                      {readinessData.warnings.map((w: string, idx: number) => (
+                        <li key={idx}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5">
             <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-lg">📤</div>
               <h3 className="font-bold text-[16px] text-slate-800">อัปโหลดเข้าคลังเอกสาร</h3>
