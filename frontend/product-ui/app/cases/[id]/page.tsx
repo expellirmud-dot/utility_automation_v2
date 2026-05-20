@@ -22,6 +22,54 @@ type SourceDocument = {
   bill_header: BillHeader | null;
 };
 
+type ReadinessSummary = {
+  document_status: boolean;
+  ocr_status: boolean;
+  dika_status: boolean;
+  memo_status: boolean;
+};
+
+type ReadinessData = {
+  ready: boolean;
+  budget_ok: boolean;
+  blockers: string[];
+  warnings: string[];
+  summary: ReadinessSummary;
+};
+
+type AttachmentItem = {
+  id: number;
+  label: string;
+  required: boolean;
+  doc_type: string;
+  present: boolean;
+};
+
+type ElaasPayload = {
+  case_number: string;
+  department: string;
+  division: string;
+  fiscal_year_be: number;
+  expense_group: string;
+  work_month: string;
+  payee_name: string;
+  provider: string;
+  bill_date: string;
+  bill_date_thai: string;
+  bill_amount: number;
+  bill_amount_thai: string;
+  dika_number: string;
+  dika_date: string;
+  dika_date_thai: string;
+  memo_number: string;
+  memo_date: string;
+  memo_date_thai: string;
+  memo_file_path: string;
+  budget_available: number | null;
+  readiness_passed: boolean;
+  attachment_checklist: AttachmentItem[];
+};
+
 type Case = {
   id: number;
   case_number: string;
@@ -67,11 +115,11 @@ export default function CaseDetailPage() {
   const [memoDownloadUrl, setMemoDownloadUrl] = useState<string | null>(null);
 
   // Readiness States
-  const [readinessData, setReadinessData] = useState<any>(null);
+  const [readinessData, setReadinessData] = useState<ReadinessData | null>(null);
   const [loadingReadiness, setLoadingReadiness] = useState(false);
 
   // e-LAAS Assist States
-  const [elaasPayload, setElaasPayload] = useState<any>(null);
+  const [elaasPayload, setElaasPayload] = useState<ElaasPayload | null>(null);
   const [elaasLoading, setElaasLoading] = useState(false);
   const [elaasSaving, setElaasSaving] = useState(false);
   const [elaasSaved, setElaasSaved] = useState(false);
@@ -115,6 +163,26 @@ export default function CaseDetailPage() {
     navigator.clipboard.writeText(value).then(() => {
       setCopiedField(fieldId);
       setTimeout(() => setCopiedField(null), 1500);
+    });
+  };
+
+  const handleCopyAll = () => {
+    if (!elaasPayload) return;
+    const text = `หน่วยงาน: ${elaasPayload.department}
+ปีงบประมาณ: ${elaasPayload.fiscal_year_be}
+เดือน: ${elaasPayload.work_month}
+กลุ่มค่าใช้จ่าย: ${elaasPayload.expense_group}
+ผู้รับเงิน (ตามฎีกา): ${elaasPayload.payee_name}
+ผู้ให้บริการ (ตามบิล): ${elaasPayload.provider}
+วันที่บิล: ${elaasPayload.bill_date_thai || "-"}
+ยอดเงิน: ${elaasPayload.bill_amount}
+เลขที่ฎีกา: ${elaasPayload.dika_number || "-"}
+วันที่ฎีกา: ${elaasPayload.dika_date_thai || "-"}
+เลขที่บันทึก: ${elaasPayload.memo_number || "-"}
+วันที่บันทึก: ${elaasPayload.memo_date_thai || "-"}`.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField("all");
+      setTimeout(() => setCopiedField(null), 2000);
     });
   };
 
@@ -498,56 +566,78 @@ export default function CaseDetailPage() {
               {loadingReadiness && <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>}
             </div>
 
-            {readinessData && (
+            {loadingReadiness ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-xs text-slate-500 font-medium">กำลังตรวจสอบความพร้อม...</div>
+              </div>
+            ) : readinessData ? (
               <div className="space-y-4">
                 <div className={`p-3 rounded-lg text-center border font-bold ${readinessData.ready ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
                   {readinessData.ready ? '✅ พร้อมส่งเรื่อง (READY)' : '❌ ยังไม่พร้อม (NOT READY)'}
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-1">
                     <span className="text-slate-600">เอกสารแนบ</span>
                     <span>{readinessData.summary?.document_status ? '✅' : '❌'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-1">
                     <span className="text-slate-600">สกัดข้อมูล (OCR)</span>
                     <span>{readinessData.summary?.ocr_status ? '✅' : '❌'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-1">
                     <span className="text-slate-600">ข้อมูลฎีกา</span>
                     <span>{readinessData.summary?.dika_status ? '✅' : '❌'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-1">
                     <span className="text-slate-600">สร้างเอกสาร Word</span>
                     <span>{readinessData.summary?.memo_status ? '✅' : '❌'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">ยอดเงินงบประมาณ</span>
-                    <span>{readinessData.budget_ok ? '✅' : '❌'}</span>
+                  <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg mt-2 border border-slate-100">
+                    <span className="text-slate-700 font-semibold text-xs">สถานะงบประมาณ</span>
+                    <span className={`text-xs px-2 py-1 rounded font-bold border ${readinessData.budget_ok ? "bg-green-100 text-green-700 border-green-200 shadow-sm" : "bg-red-100 text-red-700 border-red-200 shadow-sm"}`}>
+                      {readinessData.budget_ok ? '✅ เพียงพอ' : '❌ ไม่เพียงพอ / ไม่พบ'}
+                    </span>
                   </div>
                 </div>
 
                 {readinessData.blockers && readinessData.blockers.length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    <div className="text-xs font-bold text-red-600 uppercase">ข้อขัดข้อง (Blockers)</div>
-                    <ul className="list-disc pl-4 text-xs text-red-700 space-y-0.5">
+                  <div className="mt-4 space-y-2">
+                    <div className="text-xs font-bold text-red-600 uppercase tracking-wider">ข้อขัดข้อง (Blockers)</div>
+                    <div className="space-y-1.5">
                       {readinessData.blockers.map((b: string, idx: number) => (
-                        <li key={idx}>{b}</li>
+                        <div key={idx} className="p-2.5 bg-red-50 border border-red-100 rounded-lg text-xs font-medium text-red-800 flex gap-2 items-start">
+                          <span className="shrink-0 mt-0.5">❌</span>
+                          <span className="leading-relaxed">{b}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
                 {readinessData.warnings && readinessData.warnings.length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    <div className="text-xs font-bold text-amber-600 uppercase">ข้อควรระวัง (Warnings)</div>
-                    <ul className="list-disc pl-4 text-xs text-amber-700 space-y-0.5">
-                      {readinessData.warnings.map((w: string, idx: number) => (
-                        <li key={idx}>{w}</li>
-                      ))}
-                    </ul>
+                  <div className="mt-4 space-y-2">
+                    <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">ข้อควรระวัง (Warnings)</div>
+                    <div className="space-y-1.5">
+                      {readinessData.warnings.map((w: string, idx: number) => {
+                        const isDuplicate = w.includes("ซ้ำ") || w.includes("Duplicate") || w.includes("ตรงกัน");
+                        return (
+                          <div key={idx} className={`p-2.5 rounded-lg text-xs font-medium flex gap-2 items-start ${
+                            isDuplicate ? 'bg-orange-100 border border-orange-300 text-orange-900 shadow-sm' : 'bg-amber-50 border border-amber-100 text-amber-800'
+                          }`}>
+                            <span className="shrink-0 mt-0.5">{isDuplicate ? '🚨' : '⚠️'}</span>
+                            <span className="leading-relaxed">{w}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-sm text-slate-400 italic">
+                ไม่พบข้อมูลความพร้อม
               </div>
             )}
           </div>
@@ -560,7 +650,15 @@ export default function CaseDetailPage() {
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">🏛️</div>
                   <h3 className="font-bold text-[16px] text-slate-800">เตรียมข้อมูล e-LAAS</h3>
                 </div>
-                {elaasLoading && <span className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>}
+                <div className="flex items-center gap-2">
+                  {elaasLoading && <span className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>}
+                  <button
+                    onClick={handleCopyAll}
+                    className="px-3 py-1.5 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1.5 border border-slate-200 shadow-sm"
+                  >
+                    {copiedField === "all" ? "✓ คัดลอกทั้งหมดแล้ว" : "📋 คัดลอกทั้งหมด"}
+                  </button>
+                </div>
               </div>
 
               {/* Copy-ready fields */}
@@ -571,8 +669,8 @@ export default function CaseDetailPage() {
                   {id: "fiscal_year",   label: "ปีงบประมาณ (พ.ศ.)",  value: String(elaasPayload.fiscal_year_be)},
                   {id: "work_month",    label: "เดือน",              value: elaasPayload.work_month},
                   {id: "expense_group", label: "กลุ่มค่าใช้จ่าย",   value: elaasPayload.expense_group},
-                  {id: "payee_name",    label: "ผู้รับเงิน",         value: elaasPayload.payee_name},
-                  {id: "provider",      label: "ผู้ให้บริการ",       value: elaasPayload.provider},
+                  {id: "payee_name",    label: "ผู้รับเงิน (ตามฎีกา)", value: elaasPayload.payee_name},
+                  {id: "provider",      label: "ผู้ให้บริการ (ตามบิล)", value: elaasPayload.provider},
                   {id: "bill_date",     label: "วันที่บิล (ไทย)",   value: elaasPayload.bill_date_thai || "โปรดกรอกด้วยตนเอง"},
                   {id: "bill_amount",   label: "ยอดเงิน (ตัวเลข)",  value: elaasPayload.bill_amount?.toLocaleString("th-TH", {minimumFractionDigits: 2})},
                   {id: "bill_amount_t", label: "ยอดเงิน (ตัวอักษร)", value: elaasPayload.bill_amount_thai},
@@ -609,19 +707,33 @@ export default function CaseDetailPage() {
               )}
 
               {/* Attachment checklist */}
-              <div className="space-y-1">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">รายการเอกสารแนบ</div>
-                {elaasPayload.attachment_checklist?.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-2 text-xs py-1">
-                    <span className={item.present ? "text-emerald-600 font-bold" : "text-slate-300"}>
-                      {item.present ? "✅" : "⬜"}
-                    </span>
-                    <span className={item.present ? "text-slate-700" : "text-slate-400"}>
-                      {item.label}
-                      {item.required && !item.present && <span className="ml-1 text-red-500 font-bold">*</span>}
-                    </span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">รายการเอกสารแนบ</div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {elaasPayload.attachment_checklist?.map((item: any) => {
+                    const isMissingRequired = item.required && !item.present;
+                    return (
+                      <div key={item.id} className={`flex items-center justify-between p-2 rounded border ${
+                        item.present ? "bg-slate-50 border-slate-100" :
+                        isMissingRequired ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100 opacity-60"
+                      }`}>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className={item.present ? "text-emerald-600 font-bold" : "text-slate-300"}>
+                            {item.present ? "✅" : "⬜"}
+                          </span>
+                          <span className={`${item.present ? "text-slate-700 font-medium" : isMissingRequired ? "text-red-700 font-bold" : "text-slate-500"}`}>
+                            {item.label}
+                          </span>
+                        </div>
+                        {isMissingRequired && (
+                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                            ต้องแนบ
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Operator confirmation */}
