@@ -44,3 +44,6 @@ tools/stream_tailer.py
 tools/watch_opencode_prompts.py
 
 .gemini/
+
+frontend/product-ui/.next/
+frontend/product-ui/node_modules/

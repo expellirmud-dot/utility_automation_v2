@@ -5,3 +5,7 @@ opencv-python
 fastapi==0.111.0
 httpx==0.27.0
 cryptography==45.0.4
+sqlalchemy
+pandas
+openpyxl
+python-multipart
