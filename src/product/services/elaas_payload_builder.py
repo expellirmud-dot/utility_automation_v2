@@ -52,14 +52,18 @@ class ElaasPayloadBuilder:
     @staticmethod
     def _get_available_budget(case: Case, db: Session) -> Optional[float]:
         """Return available budget for the case's budget line, or None if not found."""
-        query = db.query(BudgetLine).join(FiscalYear).filter(
-            FiscalYear.year_be == case.fiscal_year_be,
-            BudgetLine.department == case.department,
-            BudgetLine.expense_type == case.expense_group,
-        )
-        if case.division:
-            query = query.filter(BudgetLine.division == case.division)
-        budget_line = query.first()
+        if case.budget_line_id:
+            budget_line = db.query(BudgetLine).filter(BudgetLine.id == case.budget_line_id).first()
+        else:
+            query = db.query(BudgetLine).join(FiscalYear).filter(
+                FiscalYear.year_be == case.fiscal_year_be,
+                BudgetLine.department == case.department,
+                BudgetLine.expense_type == case.expense_group,
+            )
+            if case.division:
+                query = query.filter(BudgetLine.division == case.division)
+            matches = query.order_by(BudgetLine.id.asc()).all()
+            budget_line = matches[0] if len(matches) == 1 else None
         if not budget_line:
             return None
         deducted = db.query(func.sum(ExpenseLedger.amount_deducted)).filter(

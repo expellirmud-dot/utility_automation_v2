@@ -19,7 +19,10 @@ type BudgetLine = {
   department: string;
   division: string;
   expense_type: string;
+  appropriation_category: string;
   initial_amount: number;
+  deducted_amount: number;
+  available_amount: number;
   fiscal_year_be: number;
 };
 
@@ -29,7 +32,7 @@ export default async function Dashboard() {
   try {
     const casesRes = await fetch("http://127.0.0.1:8000/api/cases/", { cache: "no-store" });
     if (casesRes.ok) cases = await casesRes.json();
-    
+
     const budgetsRes = await fetch("http://127.0.0.1:8000/api/budget/", { cache: "no-store" });
     if (budgetsRes.ok) budgets = await budgetsRes.json();
   } catch (e) {
@@ -37,14 +40,16 @@ export default async function Dashboard() {
   }
 
   let totalBudget = 0;
+  let totalPaid = 0;
   budgets.forEach((b: BudgetLine) => totalBudget += b.initial_amount);
-  
-  const stats = { 
-    fy: 2569, 
-    totalBudget: totalBudget, 
-    totalPaid: 0, 
-    remaining: totalBudget, 
-    openCases: cases.filter((c: Case) => c.status !== 'closed').length 
+  budgets.forEach((b: BudgetLine) => totalPaid += b.deducted_amount || 0);
+
+  const stats = {
+    fy: 2569,
+    totalBudget: totalBudget,
+    totalPaid: totalPaid,
+    remaining: totalBudget - totalPaid,
+    openCases: cases.filter((c: Case) => c.status !== 'closed').length
   };
 
   return (
@@ -56,9 +61,9 @@ export default async function Dashboard() {
           <p className="text-slate-500 text-sm mt-1">ข้อมูลสรุปการเบิกจ่ายค่าสาธารณูปโภค ปีงบประมาณ {stats.fy}</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg shadow-sm text-sm font-semibold hover:bg-slate-50 transition">
-            🔄 รีเฟรช
-          </button>
+          <Link href="/budget" className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg shadow-sm text-sm font-semibold hover:bg-slate-50 transition">
+            นำเข้างบประมาณ
+          </Link>
           <Link href="/create" className="px-4 py-2 bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8e] text-white rounded-lg shadow text-sm font-semibold hover:opacity-90 transition">
             ➕ สร้างเคสใหม่
           </Link>
@@ -169,7 +174,7 @@ export default async function Dashboard() {
               <div className="text-center text-slate-500 py-4">ไม่มีข้อมูลงบประมาณ</div>
             )}
             {budgets.map((b: BudgetLine) => {
-              const paid = 0; // Mock paid for now
+              const paid = b.deducted_amount || 0;
               const pct = b.initial_amount > 0 ? Math.round((paid / b.initial_amount) * 100) : 0;
               return (
                 <div key={b.id}>
@@ -177,8 +182,9 @@ export default async function Dashboard() {
                     <span className="font-bold text-slate-700">{b.expense_type} ({b.department})</span>
                     <span className="font-semibold text-slate-600">฿{paid.toLocaleString()} / ฿{b.initial_amount.toLocaleString()} <span className="text-slate-400">({pct}%)</span></span>
                   </div>
+                  <div className="text-[11px] text-slate-400 mb-1">{b.division} · {b.appropriation_category || "-"}</div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className={`h-full rounded-full ${pct > 60 ? 'bg-amber-500' : pct > 80 ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}></div>
+                    <div className={`h-full rounded-full ${pct > 80 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}></div>
                   </div>
                 </div>
               );

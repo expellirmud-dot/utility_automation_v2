@@ -84,17 +84,27 @@ class ReadinessValidator:
         else:
             required_amount = case.total_amount or 0.0
 
-        # Find matching budget line
-        query = db.query(BudgetLine).join(FiscalYear).filter(
-            FiscalYear.year_be == case.fiscal_year_be,
-            BudgetLine.department == case.department,
-            BudgetLine.expense_type == case.expense_group
-        )
+        if case.budget_line_id:
+            budget_line = db.query(BudgetLine).filter(BudgetLine.id == case.budget_line_id).first()
+        else:
+            query = db.query(BudgetLine).join(FiscalYear).filter(
+                FiscalYear.year_be == case.fiscal_year_be,
+                BudgetLine.department == case.department,
+                BudgetLine.expense_type == case.expense_group
+            )
 
-        if case.division:
-            query = query.filter(BudgetLine.division == case.division)
+            if case.division:
+                query = query.filter(BudgetLine.division == case.division)
 
-        budget_line = query.first()
+            matches = query.order_by(BudgetLine.id.asc()).all()
+            if len(matches) > 1:
+                return {
+                    "budget_ok": False,
+                    "available_budget": 0.0,
+                    "required_amount": required_amount,
+                    "reason": "พบรายการงบประมาณมากกว่า 1 รายการ กรุณาเลือกงบประมาณด้วยตนเอง"
+                }
+            budget_line = matches[0] if matches else None
 
         if not budget_line:
             return {

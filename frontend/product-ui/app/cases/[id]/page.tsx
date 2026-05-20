@@ -87,6 +87,24 @@ type CaseNote = {
   created_at: string;
 };
 
+type BudgetLineSummary = {
+  id: number;
+  department: string;
+  division: string;
+  expense_type: string;
+  appropriation_category: string;
+  initial_amount: number;
+  deducted_amount: number;
+  available_amount: number;
+  fiscal_year_be: number;
+};
+
+type BudgetMatch = {
+  status: "selected" | "matched" | "ambiguous" | "not_found";
+  selected: BudgetLineSummary | null;
+  candidates: BudgetLineSummary[];
+};
+
 type Case = {
   id: number;
   case_number: string;
@@ -151,6 +169,10 @@ export default function CaseDetailPage() {
   const [noteError, setNoteError] = useState("");
   const [statusActionLoading, setStatusActionLoading] = useState<string | null>(null);
   const [statusActionError, setStatusActionError] = useState("");
+  const [budgetMatch, setBudgetMatch] = useState<BudgetMatch | null>(null);
+  const [budgetLoading, setBudgetLoading] = useState(false);
+  const [budgetError, setBudgetError] = useState("");
+  const [budgetSelecting, setBudgetSelecting] = useState<number | null>(null);
 
   const lifecycleLabels: Record<string, string> = {
     draft: "รับเรื่อง",
@@ -233,6 +255,22 @@ export default function CaseDetailPage() {
       setNotes(await res.json());
     } catch (err: any) {
       setNoteError(err.message || "ไม่สามารถโหลดบันทึกผู้ปฏิบัติงานได้");
+    }
+  };
+
+  const fetchBudgetMatch = async () => {
+    setBudgetLoading(true);
+    setBudgetError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/budget/cases/${caseId}/match`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setBudgetMatch(await res.json());
+    } catch (err: any) {
+      setBudgetError(err.message || "ไม่สามารถโหลดงบประมาณที่เกี่ยวข้องได้");
+    } finally {
+      setBudgetLoading(false);
     }
   };
 
@@ -323,6 +361,26 @@ export default function CaseDetailPage() {
     }
   };
 
+  const handleBudgetSelection = async (budgetLineId: number) => {
+    setBudgetSelecting(budgetLineId);
+    setBudgetError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/budget/cases/${caseId}/selection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ budget_line_id: budgetLineId }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchBudgetMatch();
+      await fetchReadiness();
+      await fetchElaas();
+    } catch (err: any) {
+      setBudgetError(err.message || "เลือกงบประมาณไม่สำเร็จ");
+    } finally {
+      setBudgetSelecting(null);
+    }
+  };
+
   const fetchCaseDetails = async () => {
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}`, {
@@ -347,6 +405,7 @@ export default function CaseDetailPage() {
       fetchElaas();
       fetchTimeline();
       fetchNotes();
+      fetchBudgetMatch();
     }
   }, [caseId]);
 
@@ -764,6 +823,71 @@ export default function CaseDetailPage() {
             ) : (
               <div className="text-center py-6 text-sm text-slate-400 italic">
                 ไม่พบข้อมูลความพร้อม
+              </div>
+            )}
+          </div>
+
+          {/* Card: Budget Match */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-lg">💰</div>
+                <h3 className="font-bold text-[16px] text-slate-800">งบประมาณที่ใช้</h3>
+              </div>
+              {budgetLoading && <span className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span>}
+            </div>
+
+            {budgetError && (
+              <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700 break-words">{budgetError}</div>
+            )}
+
+            {!budgetMatch ? (
+              <div className="text-center py-4 text-xs text-slate-400 italic">ยังไม่มีข้อมูลงบประมาณ</div>
+            ) : budgetMatch.selected ? (
+              <div className="space-y-2">
+                <div className={`p-2.5 rounded-lg border text-xs font-bold ${
+                  budgetMatch.status === "selected"
+                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                    : "bg-green-50 text-green-700 border-green-200"
+                }`}>
+                  {budgetMatch.status === "selected" ? "เลือกงบประมาณด้วยตนเองแล้ว" : "พบงบประมาณที่ตรงกัน"}
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-xs space-y-1">
+                  <div className="font-bold text-slate-700">{budgetMatch.selected.expense_type}</div>
+                  <div className="text-slate-500">{budgetMatch.selected.department} · {budgetMatch.selected.division}</div>
+                  <div className="text-slate-500">{budgetMatch.selected.appropriation_category || "-"}</div>
+                  <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
+                    <span className="text-slate-500">งบคงเหลือ</span>
+                    <span className="font-bold text-slate-800">{budgetMatch.selected.available_amount.toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท</span>
+                  </div>
+                </div>
+              </div>
+            ) : budgetMatch.status === "ambiguous" ? (
+              <div className="space-y-2">
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-bold text-amber-800">
+                  พบหลายรายการ กรุณาเลือกงบประมาณที่ถูกต้อง
+                </div>
+                <div className="space-y-2">
+                  {budgetMatch.candidates.map((candidate) => (
+                    <button
+                      key={candidate.id}
+                      type="button"
+                      onClick={() => handleBudgetSelection(candidate.id)}
+                      disabled={budgetSelecting !== null}
+                      className="w-full text-left p-2.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 disabled:opacity-50"
+                    >
+                      <div className="flex justify-between gap-2 text-xs">
+                        <span className="font-bold text-slate-700">{candidate.expense_type}</span>
+                        <span className="font-bold text-slate-800">{candidate.available_amount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1">{candidate.appropriation_category || "-"} · {candidate.division}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-red-50 border border-red-100 rounded-lg text-xs text-red-700">
+                ไม่พบรายการงบประมาณที่ตรงกับเคสนี้
               </div>
             )}
           </div>

@@ -23,7 +23,10 @@ class BudgetLine(Base):
     department = Column(String, index=True) # หน่วยงาน
     division = Column(String, index=True) # ฝ่าย/งาน
     expense_type = Column(String, index=True) # ประเภทรายจ่าย (e.g. ค่าไฟฟ้า, ค่าน้ำประปา)
+    appropriation_category = Column(String, nullable=True) # หมวดงบประมาณ
     initial_amount = Column(Float, default=0.0) # งบตั้งต้น
+    source_import_batch_id = Column(String, nullable=True)
+    source_row_number = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     fiscal_year = relationship("FiscalYear")
@@ -52,6 +55,7 @@ class Case(Base):
     department = Column(String)
     division = Column(String, nullable=True)
     vendor_name = Column(String, nullable=True) # ผู้รับเงิน
+    budget_line_id = Column(Integer, ForeignKey("budget_lines.id"), nullable=True)
     total_amount = Column(Float, default=0.0)
     status = Column(String, default="intake")
     note = Column(Text, nullable=True)
@@ -59,6 +63,7 @@ class Case(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     ledger_entries = relationship("ExpenseLedger", back_populates="case")
+    selected_budget_line = relationship("BudgetLine", foreign_keys=[budget_line_id])
     documents = relationship("SourceDocument", back_populates="case")
     dika = relationship("Dika", back_populates="case", uselist=False)
     timeline_events = relationship("CaseTimelineEvent", back_populates="case", order_by="desc(CaseTimelineEvent.created_at)")
