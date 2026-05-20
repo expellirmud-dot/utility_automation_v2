@@ -67,4 +67,23 @@ It does **not** prohibit approved product application flows such as:
 - `POST /api/cases/{case_id}/documents`
 - `POST /api/cases/{case_id}/memo/generate`
 
-Product mutation is allowed only when explicitly inside the approved PRODUCT scope.
+
+---
+
+## Product Execution Override Rule
+
+For current product execution:
+
+PRODUCT roadmap and controller instructions override legacy TASK registries unless those legacy task systems are explicitly reactivated by controller instruction.
+
+Examples:
+
+Current:
+- PRODUCT-001
+- PRODUCT-002
+- PRODUCT-003
+- PRODUCT-004
+- PRODUCT-005
+
+Legacy references such as TASK-088 / TASK-101 are historical execution artifacts unless explicitly reactivated.
+
