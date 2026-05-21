@@ -6,8 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 type BillHeader = {
   id: number;
   provider: string | null;
+  invoice_no: string | null;
   bill_date: string | null;
   total_amount: number;
+  vat_amount: number | null;
+  withholding_tax: number | null;
   status: string;
   created_at: string;
 };
@@ -173,6 +176,46 @@ export default function CaseDetailPage() {
   const [budgetLoading, setBudgetLoading] = useState(false);
   const [budgetError, setBudgetError] = useState("");
   const [budgetSelecting, setBudgetSelecting] = useState<number | null>(null);
+
+  // OCR Edit States — keyed by document id
+  type OcrEditForm = { provider: string; invoice_no: string; bill_date: string; total_amount: string; vat_amount: string; withholding_tax: string; };
+  const [ocrEditOpen, setOcrEditOpen] = useState<Record<number, boolean>>({});
+  const [ocrEditForm, setOcrEditForm] = useState<Record<number, OcrEditForm>>({});
+  const [ocrSaving, setOcrSaving] = useState<Record<number, boolean>>({});
+  const [ocrSaveError, setOcrSaveError] = useState<Record<number, string>>({});
+  const [ocrSaved, setOcrSaved] = useState<Record<number, boolean>>({});
+
+  const openOcrEdit = (doc: SourceDocument) => {
+    const h = doc.bill_header;
+    setOcrEditForm((prev) => ({ ...prev, [doc.id]: { provider: h?.provider ?? "", invoice_no: h?.invoice_no ?? "", bill_date: h?.bill_date ?? "", total_amount: String(h?.total_amount ?? ""), vat_amount: String(h?.vat_amount ?? ""), withholding_tax: String(h?.withholding_tax ?? "") } }));
+    setOcrEditOpen((prev) => ({ ...prev, [doc.id]: true }));
+    setOcrSaved((prev) => ({ ...prev, [doc.id]: false }));
+    setOcrSaveError((prev) => ({ ...prev, [doc.id]: "" }));
+  };
+
+  const handleOcrSave = async (docId: number) => {
+    setOcrSaving((prev) => ({ ...prev, [docId]: true }));
+    setOcrSaveError((prev) => ({ ...prev, [docId]: "" }));
+    const form = ocrEditForm[docId];
+    const body: Record<string, unknown> = {};
+    if (form.provider !== "") body.provider = form.provider;
+    if (form.invoice_no !== "") body.invoice_no = form.invoice_no;
+    if (form.bill_date !== "") body.bill_date = form.bill_date;
+    if (form.total_amount !== "") body.total_amount = parseFloat(form.total_amount) || 0;
+    if (form.vat_amount !== "") body.vat_amount = parseFloat(form.vat_amount) || 0;
+    if (form.withholding_tax !== "") body.withholding_tax = parseFloat(form.withholding_tax) || 0;
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/cases/${caseId}/documents/${docId}/bill`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      setOcrSaved((prev) => ({ ...prev, [docId]: true }));
+      setOcrEditOpen((prev) => ({ ...prev, [docId]: false }));
+      await fetchCaseDetails(); await fetchReadiness(); await fetchElaas(); await fetchTimeline();
+    } catch (err: any) {
+      setOcrSaveError((prev) => ({ ...prev, [docId]: err.message || "บันทึกไม่สำเร็จ" }));
+    } finally {
+      setOcrSaving((prev) => ({ ...prev, [docId]: false }));
+    }
+  };
 
   const lifecycleLabels: Record<string, string> = {
     draft: "รับเรื่อง",
@@ -661,7 +704,8 @@ export default function CaseDetailPage() {
                     const isProcessing = !!processingDocs[doc.id];
                     const header = doc.bill_header;
                     return (
-                      <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
+                      <React.Fragment key={doc.id}>
+                      <tr className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2.5">
                             <span className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center font-bold text-xs uppercase border border-red-100">
@@ -715,22 +759,58 @@ export default function CaseDetailPage() {
                                 onClick={() => handleProcessDocument(doc.id)}
                                 className="px-3 py-1 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded text-xs font-bold hover:opacity-90 disabled:opacity-50 transition shadow-sm"
                               >
-                                {isProcessing ? (
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    กำลังวิเคราะห์...
-                                  </span>
-                                ) : (
-                                  "⚡ วิเคราะห์บิล (Run OCR)"
-                                )}
+                                {isProcessing ? (<span className="flex items-center gap-1"><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>กำลังวิเคราะห์...</span>) : ("⚡ วิเคราะห์บิล (Run OCR)")}
                               </button>
                             )}
+                            {header?.status === 'extracted' && (
+                              <button
+                                onClick={() => ocrEditOpen[doc.id] ? setOcrEditOpen(p => ({...p, [doc.id]: false})) : openOcrEdit(doc)}
+                                className="px-3 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-bold hover:bg-amber-200 transition"
+                              >
+                                {ocrEditOpen[doc.id] ? "✕ ปิดแก้ไข" : "✏️ แก้ไขข้อมูล OCR"}
+                              </button>
+                            )}
+                            {ocrSaved[doc.id] && <span className="text-xs font-bold text-emerald-600">✓ บันทึกแล้ว</span>}
                             <span className="text-xs text-blue-500 hover:text-blue-700 font-semibold cursor-pointer underline">
                               เปิดดูไฟล์ (Local)
                             </span>
                           </div>
                         </td>
                       </tr>
+                      {ocrEditOpen[doc.id] && header?.status === 'extracted' && (
+                        <tr key={`ocr-edit-${doc.id}`}>
+                          <td colSpan={5} className="px-6 pb-4 bg-amber-50">
+                            <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3 shadow-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-amber-600 font-bold text-sm">✏️ แก้ไขข้อมูลที่ดึงจาก OCR</span>
+                                <span className="text-xs text-slate-400">— ค่าที่แก้ไขจะถูกใช้ในกระบวนการถัดไป</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3 text-xs">
+                                {[{key: "provider", label: "ผู้ให้บริการ", type: "text"}, {key: "invoice_no", label: "เลขที่ใบแจ้งหนี้", type: "text"}, {key: "bill_date", label: "วันที่บิล", type: "date"}, {key: "total_amount", label: "ยอดรวมสุทธิ (฿)", type: "number"}, {key: "vat_amount", label: "VAT (฿)", type: "number"}, {key: "withholding_tax", label: "ภาษีหัก ณ (฿)", type: "number"}].map(({key, label, type}) => (
+                                  <div key={key}>
+                                    <label className="block text-slate-500 font-semibold mb-1">{label}</label>
+                                    <input
+                                      type={type}
+                                      step={type === "number" ? "0.01" : undefined}
+                                      value={(ocrEditForm[doc.id] as any)?.[key] ?? ""}
+                                      onChange={e => setOcrEditForm(p => ({...p, [doc.id]: {...p[doc.id], [key]: e.target.value}}))}
+                                      className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              {ocrSaveError[doc.id] && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">{ocrSaveError[doc.id]}</div>}
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => handleOcrSave(doc.id)} disabled={ocrSaving[doc.id]} className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-50">
+                                  {ocrSaving[doc.id] ? "กำลังบันทึก..." : "💾 บันทึกการแก้ไข"}
+                                </button>
+                                <button onClick={() => setOcrEditOpen(p => ({...p, [doc.id]: false}))} className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition">ยกเลิก</button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

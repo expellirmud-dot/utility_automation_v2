@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Optional
 import os
 import datetime
 
@@ -103,7 +105,7 @@ def process_document(
         except Exception:
             pass
 
-    # 4. Save/Update BillHeader
+    # 4. Save/Update BillHeader (persist all extracted fields)
     bill_hdr = db.query(BillHeader).filter(BillHeader.document_id == document_id).first()
     if not bill_hdr:
         bill_hdr = BillHeader(document_id=document_id)
@@ -112,6 +114,13 @@ def process_document(
     bill_hdr.provider = bill.vendor_name
     bill_hdr.bill_date = parsed_date
     bill_hdr.total_amount = bill.total if bill.total is not None else 0.0
+    # Persist new fields if the pipeline exposes them (graceful fallback)
+    if hasattr(bill, "invoice_no") and bill.invoice_no:
+        bill_hdr.invoice_no = bill.invoice_no
+    if hasattr(bill, "vat_amount") and bill.vat_amount is not None:
+        bill_hdr.vat_amount = bill.vat_amount
+    if hasattr(bill, "withholding_tax") and bill.withholding_tax is not None:
+        bill_hdr.withholding_tax = bill.withholding_tax
     bill_hdr.status = "extracted"
 
     db.commit()
@@ -128,8 +137,81 @@ def process_document(
         "id": bill_hdr.id,
         "document_id": bill_hdr.document_id,
         "provider": bill_hdr.provider,
+        "invoice_no": bill_hdr.invoice_no,
         "bill_date": bill_hdr.bill_date,
         "total_amount": bill_hdr.total_amount,
+        "vat_amount": bill_hdr.vat_amount,
+        "withholding_tax": bill_hdr.withholding_tax,
+        "status": bill_hdr.status,
+        "created_at": bill_hdr.created_at
+    }
+
+
+class BillHeaderUpdate(BaseModel):
+    provider: Optional[str] = None
+    invoice_no: Optional[str] = None
+    bill_date: Optional[str] = None  # ISO date string YYYY-MM-DD
+    total_amount: Optional[float] = None
+    vat_amount: Optional[float] = None
+    withholding_tax: Optional[float] = None
+
+
+@router.patch("/{case_id}/documents/{document_id}/bill")
+def update_bill_header(
+    case_id: int,
+    document_id: int,
+    payload: BillHeaderUpdate,
+    db: Session = Depends(get_db)
+):
+    """Allow operator to manually correct extracted BillHeader values."""
+    case = db.query(Case).filter(Case.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    doc = db.query(SourceDocument).filter(SourceDocument.id == document_id, SourceDocument.case_id == case_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    bill_hdr = db.query(BillHeader).filter(BillHeader.document_id == document_id).first()
+    if not bill_hdr:
+        raise HTTPException(status_code=404, detail="No BillHeader found — run OCR first")
+
+    # Apply only fields that were provided
+    if payload.provider is not None:
+        bill_hdr.provider = payload.provider
+    if payload.invoice_no is not None:
+        bill_hdr.invoice_no = payload.invoice_no
+    if payload.bill_date is not None:
+        try:
+            bill_hdr.bill_date = datetime.date.fromisoformat(payload.bill_date)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid bill_date format, expected YYYY-MM-DD")
+    if payload.total_amount is not None:
+        bill_hdr.total_amount = payload.total_amount
+    if payload.vat_amount is not None:
+        bill_hdr.vat_amount = payload.vat_amount
+    if payload.withholding_tax is not None:
+        bill_hdr.withholding_tax = payload.withholding_tax
+
+    db.commit()
+    db.refresh(bill_hdr)
+
+    WorkflowLifecycleService.record_event(
+        db,
+        case,
+        "ocr_corrected",
+        f"Operator manually corrected bill data for document {doc.file_name}"
+    )
+
+    return {
+        "id": bill_hdr.id,
+        "document_id": bill_hdr.document_id,
+        "provider": bill_hdr.provider,
+        "invoice_no": bill_hdr.invoice_no,
+        "bill_date": bill_hdr.bill_date,
+        "total_amount": bill_hdr.total_amount,
+        "vat_amount": bill_hdr.vat_amount,
+        "withholding_tax": bill_hdr.withholding_tax,
         "status": bill_hdr.status,
         "created_at": bill_hdr.created_at
     }
