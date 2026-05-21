@@ -1244,8 +1244,9 @@ export default function CaseDetailPage() {
               </div>
 
               {/* Drag & Drop File Zone */}
-              <div
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer relative
+              <label
+                htmlFor="file-upload-input"
+                className={`block border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer relative
                   ${dragActive ? 'border-blue-500 bg-blue-50/50' : 'border-slate-300 hover:bg-slate-50/50'}
                 `}
                 onDragEnter={handleDrag}
@@ -1260,24 +1261,22 @@ export default function CaseDetailPage() {
                   className="hidden"
                   accept=".pdf,.png,.jpg,.jpeg"
                 />
-                <label htmlFor="file-upload-input" className="cursor-pointer">
-                  <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-lg mx-auto mb-2 border border-slate-100">
-                    📂
+                <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-lg mx-auto mb-2 border border-slate-100">
+                  📂
+                </div>
+                {selectedFile ? (
+                  <div>
+                    <div className="font-bold text-slate-700 text-xs break-all">{selectedFile.name}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</div>
+                    <span className="text-[11px] text-blue-500 hover:underline font-semibold block mt-2">เปลี่ยนไฟล์</span>
                   </div>
-                  {selectedFile ? (
-                    <div>
-                      <div className="font-bold text-slate-700 text-xs break-all">{selectedFile.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</div>
-                      <span className="text-[11px] text-blue-500 hover:underline font-semibold block mt-2">เปลี่ยนไฟล์</span>
-                    </div>
-                  ) : (
-                    <div>
-                      <h4 className="font-bold text-slate-700 text-xs mb-1">เลือกไฟล์ หรือลากมาวาง</h4>
-                      <p className="text-[10px] text-slate-400">PDF, PNG, JPG (สูงสุด 10MB)</p>
-                    </div>
-                  )}
-                </label>
-              </div>
+                ) : (
+                  <div>
+                    <h4 className="font-bold text-slate-700 text-xs mb-1">เลือกไฟล์ หรือลากมาวาง</h4>
+                    <p className="text-[10px] text-slate-400">PDF, PNG, JPG (สูงสุด 10MB)</p>
+                  </div>
+                )}
+              </label>
 
               <button
                 type="submit"
