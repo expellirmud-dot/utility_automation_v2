@@ -16,6 +16,34 @@ export default function CreateCase() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Budget Preview States
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState("");
+
+  React.useEffect(() => {
+    const fetchPreview = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/budget/preview/remained-budget");
+        if (!res.ok) {
+          throw new Error("ไม่พบไฟล์ B_RemainedBudget.xlsx หรือไม่สามารถโหลดตัวอย่างได้");
+        }
+        const data = await res.json();
+        setPreviewData(data);
+      } catch (err: any) {
+        setPreviewError(err.message);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+    fetchPreview();
+  }, []);
+
+  const formatCurrency = (val: any) => {
+    if (val === null || val === undefined) return "-";
+    return Number(val).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const handleFiles = (files: FileList) => {
     const newFiles: File[] = [];
     const errors: string[] = [];
@@ -287,6 +315,89 @@ export default function CreateCase() {
                 ))}
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Budget Preview Section */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">📊</div>
+            <h3 className="font-bold text-[16px] text-slate-800">ตัวอย่างงบประมาณ (Budget Preview)</h3>
+          </div>
+
+          <div className="p-3 mb-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm flex items-start gap-2">
+            <span className="text-amber-500">⚠️</span>
+            <p><strong>ข้อมูลนี้เป็นตัวอย่างตรวจสอบเท่านั้น ยังไม่นำเข้า DB</strong> (db_import_safe=false)</p>
+          </div>
+
+          {previewLoading ? (
+            <div className="text-center py-8 text-slate-500 text-sm">
+              <span className="inline-block animate-spin mr-2">⏳</span> กำลังโหลดข้อมูล...
+            </div>
+          ) : previewError ? (
+            <div className="text-center py-8 text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+              <span className="text-slate-400">{previewError}</span>
+            </div>
+          ) : previewData && previewData.rows && previewData.rows.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div><span className="text-slate-500">ปีงบประมาณ:</span> <strong>{previewData.metadata?.fiscal_year_be || "-"}</strong></div>
+                <div><span className="text-slate-500">เดือน:</span> <strong>{previewData.metadata?.printed_month || "-"}</strong></div>
+                <div><span className="text-slate-500">อปท.:</span> <strong>{previewData.metadata?.municipality || "-"}</strong></div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <tr>
+                      <th className="px-4 py-2 border-r border-slate-200">แถว (Excel)</th>
+                      <th className="px-4 py-2 border-r border-slate-200">แผนงาน (Plan)</th>
+                      <th className="px-4 py-2 border-r border-slate-200">งาน (Work)</th>
+                      <th className="px-4 py-2 border-r border-slate-200">หมวดรายจ่าย</th>
+                      <th className="px-4 py-2 border-r border-slate-200">ประเภทรายจ่าย</th>
+                      <th className="px-4 py-2 border-r border-slate-200">รหัสงบประมาณ</th>
+                      <th className="px-4 py-2 border-r border-slate-200 text-right">งบอนุมัติ</th>
+                      <th className="px-4 py-2 border-r border-slate-200 text-right">ผูกพัน</th>
+                      <th className="px-4 py-2 border-r border-slate-200 text-right">เบิกจ่าย</th>
+                      <th className="px-4 py-2 border-r border-slate-200 text-right">คงเหลือ</th>
+                      <th className="px-4 py-2 border-r border-slate-200 text-center">ภาษี หัก ณ ที่จ่าย</th>
+                      <th className="px-4 py-2 border-r border-slate-200">หน่วยงาน (Dept)</th>
+                      <th className="px-4 py-2">งบ (Budget)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {previewData.rows.slice(0, 50).map((row: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="px-4 py-2 border-r border-slate-100 text-slate-500">{row.source_row}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-slate-400 italic">{row.placeholders?.plan}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 truncate max-w-[150px]" title={row.extracted?.work}>{row.extracted?.work}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 truncate max-w-[150px]">{row.extracted?.appropriation_category}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 truncate max-w-[150px]" title={row.extracted?.expense_type}>{row.extracted?.expense_type}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 font-mono text-xs">{row.extracted?.budget_code}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-right">{formatCurrency(row.extracted?.approved_amount)}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-right">{formatCurrency(row.extracted?.obligated_amount)}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-right">{formatCurrency(row.extracted?.disbursed_amount)}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-right font-bold text-slate-700">{formatCurrency(row.extracted?.remaining_amount)}</td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-center">
+                          <span className={`px-2 py-0.5 rounded text-xs ${row.derived?.withholding_tax?.applies === true ? 'bg-purple-100 text-purple-700' : row.derived?.withholding_tax?.applies === false ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'}`}>
+                            {row.derived?.withholding_tax?.display_label || "-"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 border-r border-slate-100 text-slate-400 italic">{row.placeholders?.department}</td>
+                        <td className="px-4 py-2 text-slate-400 italic">{row.placeholders?.budget}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="text-right text-xs text-slate-500 mt-2">
+                แสดงผลตัวอย่างสูงสุด 50 รายการ (จากทั้งหมด {previewData.summary?.total_rows || 0})
+              </div>
+            </div>
+          ) : (
+             <div className="text-center py-8 text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+               ไม่มีข้อมูลให้แสดงผล
+             </div>
           )}
         </div>
 
