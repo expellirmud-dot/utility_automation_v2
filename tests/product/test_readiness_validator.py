@@ -148,4 +148,51 @@ def test_evaluate_readiness_all_ok(db_session):
     result = ReadinessValidator.evaluate_readiness(case, db_session)
     assert result["ready"] == True
     assert len(result["blockers"]) == 0
+    assert len(result["blocker_details"]) == 0
     assert result["budget_ok"] == True
+
+def test_evaluate_readiness_structured_failures(db_session):
+    case = Case(case_number="CASE-FAIL", fiscal_year_be=2569, department="สำนักปลัด", expense_group="ค่าไฟฟ้า")
+    db_session.add(case)
+    db_session.commit()
+
+    # Base failure state: no docs, no OCR, no memo, no dika, insufficient/missing budget
+    res = ReadinessValidator.evaluate_readiness(case, db_session)
+    assert res["ready"] == False
+    
+    # Check flat lists are preserved
+    assert "ไม่มีเอกสารอัปโหลด" in res["blockers"]
+    assert "ยังไม่มีบิลที่ผ่านการวิเคราะห์ (OCR) สำเร็จ" in res["blockers"]
+    assert "ข้อมูลฎีกาไม่ครบถ้วน" in res["blockers"]
+    assert "ยังไม่ได้สร้างบันทึกข้อความ (Word)" in res["blockers"]
+    
+    # Check structured blocker details
+    codes = [b["code"] for b in res["blocker_details"]]
+    assert "MISSING_SOURCE_DOCUMENT" in codes
+    assert "MISSING_SUCCESSFUL_OCR" in codes
+    assert "INCOMPLETE_DIKA_METADATA" in codes
+    assert "MISSING_MEMO" in codes
+    assert "INSUFFICIENT_BUDGET" in codes
+
+def test_evaluate_readiness_structured_warnings(db_session):
+    # Setup duplicate scenario
+    case1 = Case(case_number="CASE-W1")
+    doc1 = SourceDocument(case=case1)
+    bill1 = BillHeader(document=doc1, status="extracted", provider="กฟภ.", bill_date=datetime.date(2026, 1, 1), total_amount=1500.0)
+
+    case2 = Case(case_number="CASE-W2")
+    doc2 = SourceDocument(case=case2)
+    bill2 = BillHeader(document=doc2, status="extracted", provider="กฟภ.", bill_date=datetime.date(2026, 1, 1), total_amount=1500.0)
+
+    db_session.add_all([case1, doc1, bill1, case2, doc2, bill2])
+    db_session.commit()
+
+    res = ReadinessValidator.evaluate_readiness(case2, db_session)
+    
+    # Check flat warning
+    assert any("ซ้ำซ้อน" in w for w in res["warnings"])
+    
+    # Check structured warning
+    assert len(res["warning_details"]) == 1
+    assert res["warning_details"][0]["code"] == "DUPLICATE_BILL_WARNING"
+    assert res["warning_details"][0]["level"] == "warning"

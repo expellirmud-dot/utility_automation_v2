@@ -163,18 +163,29 @@ class ReadinessValidator:
         budget_ok = budget_info["budget_ok"]
 
         blockers = []
+        blocker_details = []
         if not doc_ok:
             blockers.append("ไม่มีเอกสารอัปโหลด")
+            blocker_details.append({"code": "MISSING_SOURCE_DOCUMENT", "level": "blocker", "message": "ไม่มีเอกสารอัปโหลด", "component": "readiness_validator", "field": "documents", "detail": {}})
         if not ocr_ok:
             blockers.append("ยังไม่มีบิลที่ผ่านการวิเคราะห์ (OCR) สำเร็จ")
+            blocker_details.append({"code": "MISSING_SUCCESSFUL_OCR", "level": "blocker", "message": "ยังไม่มีบิลที่ผ่านการวิเคราะห์ (OCR) สำเร็จ", "component": "readiness_validator", "field": "ocr_status", "detail": {}})
         if not dika_ok:
             blockers.append("ข้อมูลฎีกาไม่ครบถ้วน")
+            blocker_details.append({"code": "INCOMPLETE_DIKA_METADATA", "level": "blocker", "message": "ข้อมูลฎีกาไม่ครบถ้วน", "component": "readiness_validator", "field": "dika_metadata", "detail": {}})
         if not memo_ok:
             blockers.append("ยังไม่ได้สร้างบันทึกข้อความ (Word)")
+            blocker_details.append({"code": "MISSING_MEMO", "level": "blocker", "message": "ยังไม่ได้สร้างบันทึกข้อความ (Word)", "component": "readiness_validator", "field": "memo_generated", "detail": {}})
         if not budget_ok:
-            blockers.append(f"ปัญหาด้านงบประมาณ: {budget_info['reason']}")
+            msg = f"ปัญหาด้านงบประมาณ: {budget_info['reason']}"
+            blockers.append(msg)
+            blocker_details.append({"code": "INSUFFICIENT_BUDGET", "level": "blocker", "message": msg, "component": "readiness_validator", "field": "budget", "detail": {"reason": budget_info["reason"], "available": budget_info["available_budget"], "required": budget_info["required_amount"]}})
 
-        warnings = ReadinessValidator.check_duplicate_bill(case, db)
+        warnings_text = ReadinessValidator.check_duplicate_bill(case, db)
+        warnings = warnings_text
+        warning_details = []
+        for w in warnings_text:
+            warning_details.append({"code": "DUPLICATE_BILL_WARNING", "level": "warning", "message": w, "component": "readiness_validator", "field": "duplicate_bill", "detail": {}})
 
         ready = (doc_ok and ocr_ok and dika_ok and memo_ok and budget_ok)
 
@@ -185,6 +196,8 @@ class ReadinessValidator:
             "required_amount": budget_info["required_amount"],
             "blockers": blockers,
             "warnings": warnings,
+            "blocker_details": blocker_details,
+            "warning_details": warning_details,
             "summary": {
                 "document_status": doc_ok,
                 "ocr_status": ocr_ok,
