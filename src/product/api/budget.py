@@ -7,7 +7,10 @@ from sqlalchemy.sql import func
 
 from src.product.db.models import BudgetLine, Case, ExpenseLedger, FiscalYear
 from src.product.db.session import get_db
+import os
 from src.product.services.budget_import import BudgetImportService
+from src.product.services.remained_budget_parser import RemainedBudgetParser
+from src.product.services.budget_preview_normalizer import BudgetPreviewNormalizer
 
 router = APIRouter(prefix="/api/budget", tags=["Budget"])
 
@@ -241,3 +244,34 @@ def select_case_budget_line(case_id: int, payload: BudgetSelectionRequest, db: S
     db.commit()
     db.refresh(case)
     return {"case_id": case.id, "budget_line_id": line.id, "selected": _budget_response(line, db)}
+
+
+@router.get("/preview/remained-budget")
+def preview_remained_budget():
+    """
+    Read-only endpoint to preview the remained budget XLSX.
+    """
+    file_path = "B_RemainedBudget.xlsx"
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=404, 
+            detail="Preview source file not found: B_RemainedBudget.xlsx"
+        )
+    
+    try:
+        with open(file_path, "rb") as f:
+            content = f.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+        
+    try:
+        raw_rows = RemainedBudgetParser.parse_preview(content, file_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse preview: {str(e)}")
+        
+    try:
+        batch = BudgetPreviewNormalizer.normalize_batch(raw_rows, file_path, file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to normalize preview: {str(e)}")
+        
+    return batch
