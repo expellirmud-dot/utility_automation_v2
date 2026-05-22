@@ -21,6 +21,16 @@ export default function CreateCase() {
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState("");
 
+  // Readiness Preview States
+  const [formExpenseGroup, setFormExpenseGroup] = useState("");
+  const [formFiscalYear, setFormFiscalYear] = useState("2569");
+  const [formAmount, setFormAmount] = useState("");
+  const [formProvider, setFormProvider] = useState("");
+  const [readinessData, setReadinessData] = useState<any>(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
+  const [readinessError, setReadinessError] = useState("");
+
+
   React.useEffect(() => {
     const fetchPreview = async () => {
       try {
@@ -38,6 +48,51 @@ export default function CreateCase() {
     };
     fetchPreview();
   }, []);
+
+  React.useEffect(() => {
+    if (!previewData || !formExpenseGroup) {
+      setReadinessData(null);
+      return;
+    }
+
+    const checkReadiness = async () => {
+      setReadinessLoading(true);
+      setReadinessError("");
+      try {
+        const payload = {
+          case_facts: {
+            fiscal_year_be: parseInt(formFiscalYear, 10) || previewData.metadata?.fiscal_year_be || 2569,
+            expense_group: formExpenseGroup,
+            required_amount: formAmount ? parseFloat(formAmount) : null,
+            provider: formProvider ? formProvider : null
+          },
+          budget_preview_batch: previewData
+        };
+
+        const res = await fetch("http://127.0.0.1:8000/api/budget/preview/readiness", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch readiness preview");
+        }
+
+        const data = await res.json();
+        setReadinessData(data);
+      } catch (err: any) {
+        setReadinessError(err.message);
+      } finally {
+        setReadinessLoading(false);
+      }
+    };
+
+    const timerId = setTimeout(() => {
+      checkReadiness();
+    }, 300);
+    return () => clearTimeout(timerId);
+  }, [previewData, formExpenseGroup, formFiscalYear, formAmount, formProvider]);
 
   const formatCurrency = (val: any) => {
     if (val === null || val === undefined) return "-";
@@ -189,7 +244,13 @@ export default function CreateCase() {
             </div>
             <div>
               <label className="block text-[13px] font-bold text-slate-700 mb-2">ปีงบประมาณ <span className="text-red-500">*</span></label>
-              <select name="fiscal_year_be" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" required defaultValue="2569">
+              <select 
+                name="fiscal_year_be" 
+                value={formFiscalYear}
+                onChange={(e) => setFormFiscalYear(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" 
+                required
+              >
                 <option value="2569">2569 (ต.ค. 2568 - ก.ย. 2569)</option>
                 <option value="2568">2568 (ต.ค. 2567 - ก.ย. 2568)</option>
               </select>
@@ -208,7 +269,13 @@ export default function CreateCase() {
             </div>
             <div>
               <label className="block text-[13px] font-bold text-slate-700 mb-2">กลุ่มค่าใช้จ่าย <span className="text-red-500">*</span></label>
-              <select name="expense_group" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" required>
+              <select 
+                name="expense_group" 
+                value={formExpenseGroup}
+                onChange={(e) => setFormExpenseGroup(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" 
+                required
+              >
                 <option value="">-- เลือกกลุ่ม --</option>
                 <option value="ค่าไฟฟ้า">ค่าไฟฟ้า</option>
                 <option value="ค่าน้ำประปา">ค่าน้ำประปา</option>
@@ -232,6 +299,27 @@ export default function CreateCase() {
                 <option value="งานการเงิน">งานการเงิน</option>
                 <option value="งานบัญชี">งานบัญชี</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-bold text-slate-700 mb-2">จำนวนเงินที่ขอเบิก <span className="text-slate-400 text-xs font-normal">(ถ้ามี)</span></label>
+              <input 
+                type="number" 
+                step="0.01"
+                value={formAmount}
+                onChange={(e) => setFormAmount(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" 
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-bold text-slate-700 mb-2">ผู้ให้บริการ <span className="text-slate-400 text-xs font-normal">(ถ้ามี)</span></label>
+              <input 
+                type="text" 
+                value={formProvider}
+                onChange={(e) => setFormProvider(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow" 
+                placeholder="เช่น PEA, NT..."
+              />
             </div>
           </div>
         </div>
@@ -316,6 +404,98 @@ export default function CreateCase() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Budget Readiness Preview Section */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center text-sm">🛡️</div>
+            <h3 className="font-bold text-[16px] text-slate-800">ตรวจความพร้อมงบประมาณ</h3>
+          </div>
+          
+          <div className="p-3 mb-4 bg-slate-50 border border-slate-200 text-slate-600 rounded-lg text-sm flex items-start gap-2">
+            <span className="text-slate-400">ℹ️</span>
+            <p><strong>ผลตรวจนี้เป็นการประเมินเบื้องต้นจากข้อมูลตัวอย่าง ยังไม่บันทึกลงฐานข้อมูล</strong></p>
+          </div>
+
+          {!previewData || !formExpenseGroup ? (
+            <div className="text-center py-8 text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+               รอข้อมูลสำหรับตรวจความพร้อม
+            </div>
+          ) : readinessLoading ? (
+            <div className="text-center py-8 text-slate-500 text-sm">
+              <span className="inline-block animate-spin mr-2">⏳</span> กำลังประมวลผล...
+            </div>
+          ) : readinessError ? (
+            <div className="text-center py-8 text-red-500 text-sm border-2 border-dashed border-red-200 rounded-xl bg-red-50">
+              <span className="text-red-400">{readinessError}</span>
+            </div>
+          ) : readinessData ? (
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700">สถานะความพร้อม:</span>
+                {readinessData.status === 'ready' && <span className="px-2 py-1 bg-green-100 text-green-700 rounded-md font-bold">พร้อมเบิกจ่าย (Ready)</span>}
+                {readinessData.status === 'warning' && <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-md font-bold">แจ้งเตือน (Warning)</span>}
+                {readinessData.status === 'blocked' && <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md font-bold">ติดขัด (Blocked)</span>}
+                {readinessData.status === 'missing_data' && <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-md font-bold">ข้อมูลไม่ครบ (Missing Data)</span>}
+              </div>
+
+              {readinessData.withholding_tax && (
+                <div>
+                  <span className="font-bold text-slate-700">ภาษีหัก ณ ที่จ่าย: </span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${readinessData.withholding_tax.applies === true ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {readinessData.withholding_tax.display_label}
+                  </span>
+                </div>
+              )}
+
+              {readinessData.budget_match && readinessData.budget_match.match_status === 'matched' && (
+                <div className="mt-4 border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 font-bold text-slate-700">ข้อมูลรายการงบประมาณที่จับคู่ได้</div>
+                  <div className="p-3 grid grid-cols-2 gap-y-2 gap-x-4">
+                    <div><span className="text-slate-500">ประเภทรายจ่าย:</span> <span className="font-semibold text-slate-800">{readinessData.budget_match.expense_type}</span></div>
+                    <div><span className="text-slate-500">งาน:</span> <span className="font-semibold text-slate-800">{readinessData.budget_match.work}</span></div>
+                    <div><span className="text-slate-500">หมวดรายจ่าย:</span> <span className="font-semibold text-slate-800">{readinessData.budget_match.appropriation_category}</span></div>
+                    <div><span className="text-slate-500">รหัสงบประมาณ:</span> <span className="font-mono text-xs font-semibold text-slate-800">{readinessData.budget_match.budget_code}</span></div>
+                    <div className="col-span-2"><span className="text-slate-500">งบคงเหลือ:</span> <span className="font-bold text-emerald-600">{readinessData.budget_match.remaining_amount !== null ? readinessData.budget_match.remaining_amount.toLocaleString("th-TH", { minimumFractionDigits: 2 }) : "-"} บาท</span></div>
+                  </div>
+                </div>
+              )}
+
+              {readinessData.missing_data && readinessData.missing_data.length > 0 && (
+                <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="font-bold text-slate-700 mb-1">ข้อมูลที่ขาดหาย:</div>
+                  <ul className="list-disc pl-5 space-y-1 text-slate-600">
+                    {readinessData.missing_data.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {readinessData.warnings && readinessData.warnings.length > 0 && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="font-bold text-amber-800 mb-1">แจ้งเตือน:</div>
+                  <ul className="list-disc pl-5 space-y-1 text-amber-700">
+                    {readinessData.warnings.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {readinessData.blockers && readinessData.blockers.length > 0 && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="font-bold text-red-800 mb-1">ปัญหาที่ทำให้เบิกจ่ายไม่ได้:</div>
+                  <ul className="list-disc pl-5 space-y-1 text-red-700">
+                    {readinessData.blockers.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* Budget Preview Section */}
