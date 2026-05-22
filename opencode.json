@@ -7,6 +7,17 @@
         "serena",
         "start-mcp-server"
       ]
+    },
+    "codegraph": {
+      "type": "local",
+      "command": [
+        "codegraph",
+        "serve",
+        "--mcp"
+      ],
+      "environment": {
+        "CODEGRAPH_ALLOW_UNSAFE_NODE": "1"
+      }
     }
   }
 }
