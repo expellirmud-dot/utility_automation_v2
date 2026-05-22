@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +9,67 @@ export default function CreateCase() {
   const [success, setSuccess] = useState(false);
   const [caseId, setCaseId] = useState("");
   const [error, setError] = useState("");
+
+  // Local file upload states
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (files: FileList) => {
+    const newFiles: File[] = [];
+    const errors: string[] = [];
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    
+    Array.from(files).forEach((file) => {
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const isValidType = allowedTypes.includes(file.type) || ['pdf', 'jpg', 'jpeg', 'png'].includes(fileExt || '');
+      
+      if (!isValidType) {
+        errors.push(`ไฟล์ "${file.name}" ต้องเป็น PDF, JPG, หรือ PNG เท่านั้น`);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`ไฟล์ "${file.name}" มีขนาดเกิน 10MB (ปัจจุบัน ${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+        return;
+      }
+      newFiles.push(file);
+    });
+    
+    if (errors.length > 0) {
+      setValidationErrors(prev => [...prev, ...errors]);
+    }
+    if (newFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const handleBoxClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,6 +101,8 @@ export default function CreateCase() {
       const data = await res.json();
       setCaseId(data.case_number);
       setSuccess(true);
+      setSelectedFiles([]);
+      setValidationErrors([]);
       e.currentTarget.reset();
       
       // Refresh dashboard route cache
@@ -150,13 +213,81 @@ export default function CreateCase() {
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm">📄</div>
             <h3 className="font-bold text-[16px] text-slate-800">อัปโหลดเอกสารต้นฉบับ</h3>
           </div>
+
+          <input 
+            type="file"
+            ref={fileInputRef}
+            onChange={handleInputChange}
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+          />
           
-          <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:bg-slate-50 transition-colors cursor-pointer">
+          <div 
+            onClick={handleBoxClick}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors cursor-pointer select-none
+              ${isDragging 
+                ? 'border-blue-500 bg-blue-50/30' 
+                : 'border-slate-300 hover:bg-slate-50'}`}
+          >
             <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📤</div>
             <h4 className="font-bold text-slate-700 mb-1">คลิกเพื่ออัปโหลด หรือ ลากไฟล์มาวาง</h4>
             <p className="text-sm text-slate-500">รองรับไฟล์ PDF, JPG, PNG (สูงสุด 10MB ต่อไฟล์)</p>
             <p className="text-xs text-slate-400 mt-2">(MOCK: ไม่มีการอัปโหลดไฟล์จริงใน Checkpoint นี้)</p>
           </div>
+
+          {/* Validation errors */}
+          {validationErrors.length > 0 && (
+            <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg text-xs text-red-800">
+              <div className="flex justify-between items-center font-bold mb-2">
+                <span>ข้อผิดพลาดเกี่ยวกับไฟล์:</span>
+                <button 
+                  type="button" 
+                  onClick={() => setValidationErrors([])} 
+                  className="text-red-600 hover:text-red-800 underline font-semibold"
+                >
+                  ล้างข้อผิดพลาด
+                </button>
+              </div>
+              <ul className="list-disc pl-4 space-y-1">
+                {validationErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Selected files list */}
+          {selectedFiles.length > 0 && (
+            <div className="mt-6 space-y-3">
+              <h5 className="text-[13px] font-bold text-slate-700">ไฟล์ที่เตรียมอัปโหลด ({selectedFiles.length})</h5>
+              <div className="grid grid-cols-1 gap-2">
+                {selectedFiles.map((file, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm hover:border-slate-300 transition-colors">
+                    <div className="flex items-center gap-3 truncate">
+                      <span className="text-2xl">
+                        {file.name.toLowerCase().endsWith('.pdf') ? '📄' : '🖼️'}
+                      </span>
+                      <div className="truncate">
+                        <p className="font-bold text-slate-700 truncate">{file.name}</p>
+                        <p className="text-[11px] text-slate-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-red-500 hover:text-red-700 font-bold px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-sm"
+                    >
+                      ลบออก
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
