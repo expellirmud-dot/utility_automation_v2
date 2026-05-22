@@ -113,6 +113,7 @@ def test_nt_alone_returns_warning():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "warning"
     assert "NT ambiguous" in res["warnings"]
+    assert any(w["code"] == "AMBIGUOUS_NT_PROVIDER" for w in res["warning_details"])
 
 def test_selected_electricity_but_provider_is_phone():
     batch = {
@@ -135,12 +136,15 @@ def test_selected_electricity_but_provider_is_phone():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "blocked"
     assert "selected electricity but provider/bill clearly phone/internet/water" in res["blockers"]
+    assert any(b["code"] == "UTILITY_PROVIDER_MISMATCH" for b in res["blocker_details"])
 
 def test_insufficient_remaining_amount():
     batch = {
-        "metadata": {"fiscal_year_be": 2569},
+        "metadata": {"fiscal_year_be": 2569, "source_file": "B_RemainedBudget.xlsx"},
         "rows": [
             {
+                "preview_row_id": "row_123",
+                "source_row": 5,
                 "extracted": {
                     "expense_type": "ค่าไฟฟ้า",
                     "remaining_amount": 500.0
@@ -157,6 +161,12 @@ def test_insufficient_remaining_amount():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "blocked"
     assert "required_amount > remaining_amount" in res["blockers"]
+    assert any(b["code"] == "INSUFFICIENT_REMAINING_AMOUNT" for b in res["blocker_details"])
+    
+    # Evidence checks
+    assert res["evidence"]["source_file"] == "B_RemainedBudget.xlsx"
+    assert res["evidence"]["preview_row_id"] == "row_123"
+    assert res["evidence"]["source_row"] == 5
 
 def test_no_matching_row():
     batch = {
@@ -179,6 +189,7 @@ def test_no_matching_row():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "blocked"
     assert "no matching preview row for fiscal year + utility category" in res["blockers"]
+    assert any(b["code"] == "NO_MATCHING_PREVIEW_ROW" for b in res["blocker_details"])
 
 def test_missing_required_amount():
     batch = {
@@ -200,6 +211,7 @@ def test_missing_required_amount():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "missing_data"
     assert "required_amount" in res["missing_data"]
+    assert any(m["code"] == "MISSING_REQUIRED_AMOUNT" for m in res["missing_data_details"])
 
 def test_multiple_matching_rows():
     batch = {
@@ -228,6 +240,7 @@ def test_multiple_matching_rows():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "warning"
     assert "multiple matching rows" in res["warnings"]
+    assert any(w["code"] == "MULTIPLE_MATCHING_ROWS" for w in res["warning_details"])
 
 def test_placeholder_department():
     batch = {
@@ -253,3 +266,4 @@ def test_placeholder_department():
     res = BudgetPreviewMatcher.match_case_to_preview(case_facts, batch)
     assert res["status"] == "warning"
     assert 'department/plan/budget are "รอข้อมูลจริง"' in res["warnings"]
+    assert any(w["code"] == "PLACEHOLDER_MAPPING_FIELDS" for w in res["warning_details"])
