@@ -1,0 +1,10 @@
+{
+  "task_id": "PRODUCT-006B",
+  "status": "success",
+  "schema_alignment": {
+    "target": "BudgetPreviewMatcher",
+    "changes_made": "Added 'component': 'budget_preview_matcher' to blocker_details, warning_details, missing_data_details."
+  },
+  "backward_compatibility": "Preserved flat string arrays (blockers, warnings, missing_data). Did not alter any output keys.",
+  "validation_passed": true
+}

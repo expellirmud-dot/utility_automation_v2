@@ -72,18 +72,18 @@ class BudgetPreviewMatcher:
         if not fiscal_year_be:
             blockers.append("missing fiscal_year_be")
             missing_data.append("fiscal_year_be")
-            blocker_details.append({"code": "MISSING_FISCAL_YEAR_BE", "level": "blocker", "message": "ไม่พบข้อมูลปีงบประมาณ", "field": "fiscal_year_be", "detail": {}})
-            missing_data_details.append({"code": "MISSING_FISCAL_YEAR_BE", "level": "missing_data", "message": "ไม่พบข้อมูลปีงบประมาณ", "field": "fiscal_year_be", "detail": {}})
+            blocker_details.append({"code": "MISSING_FISCAL_YEAR_BE", "level": "blocker", "message": "ไม่พบข้อมูลปีงบประมาณ", "component": "budget_preview_matcher", "field": "fiscal_year_be", "detail": {}})
+            missing_data_details.append({"code": "MISSING_FISCAL_YEAR_BE", "level": "missing_data", "message": "ไม่พบข้อมูลปีงบประมาณ", "component": "budget_preview_matcher", "field": "fiscal_year_be", "detail": {}})
         if not expense_group:
             blockers.append("missing expense_type")
             missing_data.append("expense_type")
-            blocker_details.append({"code": "MISSING_EXPENSE_TYPE", "level": "blocker", "message": "ไม่พบกลุ่มค่าใช้จ่าย", "field": "expense_group", "detail": {}})
-            missing_data_details.append({"code": "MISSING_EXPENSE_TYPE", "level": "missing_data", "message": "ไม่พบกลุ่มค่าใช้จ่าย", "field": "expense_group", "detail": {}})
+            blocker_details.append({"code": "MISSING_EXPENSE_TYPE", "level": "blocker", "message": "ไม่พบกลุ่มค่าใช้จ่าย", "component": "budget_preview_matcher", "field": "expense_group", "detail": {}})
+            missing_data_details.append({"code": "MISSING_EXPENSE_TYPE", "level": "missing_data", "message": "ไม่พบกลุ่มค่าใช้จ่าย", "component": "budget_preview_matcher", "field": "expense_group", "detail": {}})
         if required_amount is None:
             blockers.append("missing required_amount")
             missing_data.append("required_amount")
-            blocker_details.append({"code": "MISSING_REQUIRED_AMOUNT", "level": "blocker", "message": "ไม่พบจำนวนเงินที่ขอเบิก", "field": "required_amount", "detail": {}})
-            missing_data_details.append({"code": "MISSING_REQUIRED_AMOUNT", "level": "missing_data", "message": "ไม่พบจำนวนเงินที่ขอเบิก", "field": "required_amount", "detail": {}})
+            blocker_details.append({"code": "MISSING_REQUIRED_AMOUNT", "level": "blocker", "message": "ไม่พบจำนวนเงินที่ขอเบิก", "component": "budget_preview_matcher", "field": "required_amount", "detail": {}})
+            missing_data_details.append({"code": "MISSING_REQUIRED_AMOUNT", "level": "missing_data", "message": "ไม่พบจำนวนเงินที่ขอเบิก", "component": "budget_preview_matcher", "field": "required_amount", "detail": {}})
 
         canonical_utility_type = BudgetPreviewMatcher.categorize_utility(expense_group) if expense_group else "unknown"
         wht_rule = BudgetPreviewMatcher.get_withholding_tax(canonical_utility_type)
@@ -100,13 +100,13 @@ class BudgetPreviewMatcher:
         prov_class = BudgetPreviewMatcher.classify_provider(provider)
         if prov_class == "unknown":
             warnings.append("provider unknown")
-            warning_details.append({"code": "PROVIDER_UNKNOWN", "level": "warning", "message": "ไม่รู้จักผู้ให้บริการ", "field": "provider", "detail": {"provider": provider}})
+            warning_details.append({"code": "PROVIDER_UNKNOWN", "level": "warning", "message": "ไม่รู้จักผู้ให้บริการ", "component": "budget_preview_matcher", "field": "provider", "detail": {"provider": provider}})
         elif prov_class == "nt_ambiguous":
             warnings.append("NT ambiguous")
-            warning_details.append({"code": "AMBIGUOUS_NT_PROVIDER", "level": "warning", "message": "ระบุเพียง NT อาจกำกวมระหว่างโทรศัพท์กับอินเทอร์เน็ต", "field": "provider", "detail": {"provider": provider}})
+            warning_details.append({"code": "AMBIGUOUS_NT_PROVIDER", "level": "warning", "message": "ระบุเพียง NT อาจกำกวมระหว่างโทรศัพท์กับอินเทอร์เน็ต", "component": "budget_preview_matcher", "field": "provider", "detail": {"provider": provider}})
         elif canonical_utility_type == "electricity" and prov_class in ["phone", "internet", "water"]:
             blockers.append("selected electricity but provider/bill clearly phone/internet/water")
-            blocker_details.append({"code": "UTILITY_PROVIDER_MISMATCH", "level": "blocker", "message": "กลุ่มค่าใช้จ่ายกับผู้ให้บริการไม่สอดคล้องกัน", "field": "provider", "detail": {"expense": canonical_utility_type, "provider": prov_class}})
+            blocker_details.append({"code": "UTILITY_PROVIDER_MISMATCH", "level": "blocker", "message": "กลุ่มค่าใช้จ่ายกับผู้ให้บริการไม่สอดคล้องกัน", "component": "budget_preview_matcher", "field": "provider", "detail": {"expense": canonical_utility_type, "provider": prov_class}})
         elif canonical_utility_type in ["phone", "internet", "water"] and prov_class == "electricity":
             # Just keeping symmetry for the general rule
             pass
@@ -126,7 +126,7 @@ class BudgetPreviewMatcher:
         rows = batch.get("rows", [])
         if not rows:
             blockers.append("no preview rows")
-            blocker_details.append({"code": "NO_PREVIEW_ROWS", "level": "blocker", "message": "ไม่มีข้อมูลงบประมาณในระบบ", "field": "batch", "detail": {}})
+            blocker_details.append({"code": "NO_PREVIEW_ROWS", "level": "blocker", "message": "ไม่มีข้อมูลงบประมาณในระบบ", "component": "budget_preview_matcher", "field": "batch", "detail": {}})
         
         batch_fy = batch.get("metadata", {}).get("fiscal_year_be")
 
@@ -142,17 +142,17 @@ class BudgetPreviewMatcher:
         if not matched_rows and canonical_utility_type != "unknown" and fiscal_year_be:
             if not any(b == "no preview rows" for b in blockers):
                 blockers.append("no matching preview row for fiscal year + utility category")
-                blocker_details.append({"code": "NO_MATCHING_PREVIEW_ROW", "level": "blocker", "message": "ไม่พบรายการงบประมาณที่ตรงกับกลุ่มค่าใช้จ่าย", "field": "budget_match", "detail": {"canonical_utility_type": canonical_utility_type, "fiscal_year_be": fiscal_year_be}})
+                blocker_details.append({"code": "NO_MATCHING_PREVIEW_ROW", "level": "blocker", "message": "ไม่พบรายการงบประมาณที่ตรงกับกลุ่มค่าใช้จ่าย", "component": "budget_preview_matcher", "field": "budget_match", "detail": {"canonical_utility_type": canonical_utility_type, "fiscal_year_be": fiscal_year_be}})
 
         if canonical_utility_type in ["phone", "internet", "water"] and len(matched_rows) > 0:
             for mr in matched_rows:
                 if BudgetPreviewMatcher.categorize_utility(mr.get("extracted", {}).get("expense_type", "")) == "electricity":
                     blockers.append("selected phone/internet/water but matched row is electricity")
-                    blocker_details.append({"code": "UTILITY_PROVIDER_MISMATCH", "level": "blocker", "message": "กลุ่มค่าใช้จ่ายไม่ตรงกับรายการงบประมาณ", "field": "expense_group", "detail": {"matched": "electricity"}})
+                    blocker_details.append({"code": "UTILITY_PROVIDER_MISMATCH", "level": "blocker", "message": "กลุ่มค่าใช้จ่ายไม่ตรงกับรายการงบประมาณ", "component": "budget_preview_matcher", "field": "expense_group", "detail": {"matched": "electricity"}})
 
         if len(matched_rows) > 1:
             warnings.append("multiple matching rows")
-            warning_details.append({"code": "MULTIPLE_MATCHING_ROWS", "level": "warning", "message": "พบรายการงบประมาณที่เข้าข่ายหลายรายการ", "field": "budget_match", "detail": {"count": len(matched_rows)}})
+            warning_details.append({"code": "MULTIPLE_MATCHING_ROWS", "level": "warning", "message": "พบรายการงบประมาณที่เข้าข่ายหลายรายการ", "component": "budget_preview_matcher", "field": "budget_match", "detail": {"count": len(matched_rows)}})
             budget_match["match_status"] = "multiple"
         elif len(matched_rows) == 1:
             r = matched_rows[0]
@@ -169,15 +169,15 @@ class BudgetPreviewMatcher:
 
             if budget_match["remaining_amount"] is None:
                 blockers.append("matching row has missing remaining_amount")
-                blocker_details.append({"code": "MISSING_REMAINING_AMOUNT", "level": "blocker", "message": "ไม่พบงบคงเหลือในระบบ", "field": "remaining_amount", "detail": {}})
+                blocker_details.append({"code": "MISSING_REMAINING_AMOUNT", "level": "blocker", "message": "ไม่พบงบคงเหลือในระบบ", "component": "budget_preview_matcher", "field": "remaining_amount", "detail": {}})
             elif required_amount is not None and required_amount > budget_match["remaining_amount"]:
                 blockers.append("required_amount > remaining_amount")
-                blocker_details.append({"code": "INSUFFICIENT_REMAINING_AMOUNT", "level": "blocker", "message": "ยอดขอเบิกมากกว่างบคงเหลือ", "field": "required_amount", "detail": {"required": required_amount, "remaining": budget_match["remaining_amount"]}})
+                blocker_details.append({"code": "INSUFFICIENT_REMAINING_AMOUNT", "level": "blocker", "message": "ยอดขอเบิกมากกว่างบคงเหลือ", "component": "budget_preview_matcher", "field": "required_amount", "detail": {"required": required_amount, "remaining": budget_match["remaining_amount"]}})
                 
             placeholders = r.get("placeholders", {})
             if placeholders.get("department") == "รอข้อมูลจริง" or placeholders.get("plan") == "รอข้อมูลจริง" or placeholders.get("budget") == "รอข้อมูลจริง":
                 warnings.append("department/plan/budget are \"รอข้อมูลจริง\"")
-                warning_details.append({"code": "PLACEHOLDER_MAPPING_FIELDS", "level": "warning", "message": "หน่วยงาน แผนงาน หรืองบ เป็นข้อมูลรอการตรวจสอบ", "field": "budget_match", "detail": {}})
+                warning_details.append({"code": "PLACEHOLDER_MAPPING_FIELDS", "level": "warning", "message": "หน่วยงาน แผนงาน หรืองบ เป็นข้อมูลรอการตรวจสอบ", "component": "budget_preview_matcher", "field": "budget_match", "detail": {}})
 
         status = "ready"
         ready = True
