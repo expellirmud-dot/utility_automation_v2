@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function CreateCase() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_PRODUCT_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const apiUrl = (path: string) => `${API_BASE_URL}${path}`;
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -34,7 +37,7 @@ export default function CreateCase() {
   React.useEffect(() => {
     const fetchPreview = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/budget/preview/remained-budget");
+        const res = await fetch(apiUrl("/api/budget/preview/remained-budget"));
         if (!res.ok) {
           throw new Error("ไม่พบไฟล์ B_RemainedBudget.xlsx หรือไม่สามารถโหลดตัวอย่างได้");
         }
@@ -69,7 +72,7 @@ export default function CreateCase() {
           budget_preview_batch: previewData
         };
 
-        const res = await fetch("http://127.0.0.1:8000/api/budget/preview/readiness", {
+        const res = await fetch(apiUrl("/api/budget/preview/readiness"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -171,7 +174,7 @@ export default function CreateCase() {
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/cases/", {
+      const res = await fetch(apiUrl("/api/cases/"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
