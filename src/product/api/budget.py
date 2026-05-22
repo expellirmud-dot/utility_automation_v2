@@ -39,6 +39,11 @@ class BudgetSelectionRequest(BaseModel):
     budget_line_id: int
 
 
+class ReadinessPreviewRequest(BaseModel):
+    case_facts: dict[str, Any]
+    budget_preview_batch: dict[str, Any]
+
+
 def _get_fiscal_year(fiscal_year_be: int, db: Session) -> FiscalYear:
     fy = db.query(FiscalYear).filter(FiscalYear.year_be == fiscal_year_be).first()
     if not fy:
@@ -283,3 +288,9 @@ def preview_remained_budget():
         raise HTTPException(status_code=500, detail="Failed to normalize preview data.")
         
     return batch
+
+
+@router.post("/preview/readiness")
+def preview_readiness(payload: ReadinessPreviewRequest):
+    from src.product.services.budget_preview_matcher import BudgetPreviewMatcher
+    return BudgetPreviewMatcher.match_case_to_preview(payload.case_facts, payload.budget_preview_batch)
