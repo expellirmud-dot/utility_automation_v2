@@ -2,6 +2,7 @@ import os
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pathlib import Path
 
 from src.product.api.budget import router
 
@@ -11,11 +12,11 @@ app.include_router(router)
 client = TestClient(app)
 
 def test_preview_remained_budget_missing_file(monkeypatch):
-    monkeypatch.setattr(os.path, "exists", lambda x: False)
-    
+    monkeypatch.setattr(Path, "exists", lambda x: False)
+
     response = client.get("/api/budget/preview/remained-budget")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Preview source file not found: B_RemainedBudget.xlsx"
+    assert response.json()["detail"] == "Preview source file not found."
 
 def test_preview_remained_budget_method_not_allowed():
     # POST should not be allowed
@@ -34,8 +35,71 @@ def test_preview_remained_budget_method_not_allowed():
     response = client.delete("/api/budget/preview/remained-budget")
     assert response.status_code == 405
 
+def test_preview_remained_budget_read_failure(monkeypatch):
+    monkeypatch.setattr(Path, "exists", lambda x: True)
+
+    class MockFile:
+        def __enter__(self): return self
+        def __exit__(self, exc_type, exc_val, exc_tb): pass
+        def read(self): raise IOError("Simulated read error")
+
+    monkeypatch.setattr("builtins.open", lambda *args, **kwargs: MockFile())
+
+    response = client.get("/api/budget/preview/remained-budget")
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Failed to read preview source file."
+
+def test_preview_remained_budget_parse_failure(monkeypatch):
+    monkeypatch.setattr(Path, "exists", lambda x: True)
+
+    class MockFile:
+        def __enter__(self): return self
+        def __exit__(self, exc_type, exc_val, exc_tb): pass
+        def read(self): return b"dummy_content"
+
+    monkeypatch.setattr("builtins.open", lambda *args, **kwargs: MockFile())
+
+    def mock_parse(*args, **kwargs):
+        raise ValueError("Simulated parse error")
+
+    monkeypatch.setattr(
+        "src.product.services.remained_budget_parser.RemainedBudgetParser.parse_preview",
+        mock_parse
+    )
+
+    response = client.get("/api/budget/preview/remained-budget")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Failed to parse preview source file."
+
+def test_preview_remained_budget_normalize_failure(monkeypatch):
+    monkeypatch.setattr(Path, "exists", lambda x: True)
+
+    class MockFile:
+        def __enter__(self): return self
+        def __exit__(self, exc_type, exc_val, exc_tb): pass
+        def read(self): return b"dummy_content"
+
+    monkeypatch.setattr("builtins.open", lambda *args, **kwargs: MockFile())
+
+    monkeypatch.setattr(
+        "src.product.services.remained_budget_parser.RemainedBudgetParser.parse_preview",
+        lambda *args, **kwargs: []
+    )
+
+    def mock_normalize(*args, **kwargs):
+        raise RuntimeError("Simulated normalize error")
+
+    monkeypatch.setattr(
+        "src.product.services.budget_preview_normalizer.BudgetPreviewNormalizer.normalize_batch",
+        mock_normalize
+    )
+
+    response = client.get("/api/budget/preview/remained-budget")
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Failed to normalize preview data."
+
 def test_preview_remained_budget_success(monkeypatch):
-    monkeypatch.setattr(os.path, "exists", lambda x: True)
+    monkeypatch.setattr(Path, "exists", lambda x: True)
     
     class MockFile:
         def __enter__(self): return self

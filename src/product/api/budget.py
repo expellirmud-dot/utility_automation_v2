@@ -8,9 +8,15 @@ from sqlalchemy.sql import func
 from src.product.db.models import BudgetLine, Case, ExpenseLedger, FiscalYear
 from src.product.db.session import get_db
 import os
+from pathlib import Path
 from src.product.services.budget_import import BudgetImportService
 from src.product.services.remained_budget_parser import RemainedBudgetParser
 from src.product.services.budget_preview_normalizer import BudgetPreviewNormalizer
+
+# Resolve project root based on the location of this file
+# src/product/api/budget.py -> 3 levels up is the project root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+PREVIEW_SOURCE_FILENAME = "B_RemainedBudget.xlsx"
 
 router = APIRouter(prefix="/api/budget", tags=["Budget"])
 
@@ -251,27 +257,29 @@ def preview_remained_budget():
     """
     Read-only endpoint to preview the remained budget XLSX.
     """
-    file_path = "B_RemainedBudget.xlsx"
-    if not os.path.exists(file_path):
+    # Safe path resolution
+    file_path = PROJECT_ROOT / PREVIEW_SOURCE_FILENAME
+    
+    if not file_path.exists():
         raise HTTPException(
             status_code=404, 
-            detail="Preview source file not found: B_RemainedBudget.xlsx"
+            detail="Preview source file not found."
         )
     
     try:
         with open(file_path, "rb") as f:
             content = f.read()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to read preview source file.")
         
     try:
-        raw_rows = RemainedBudgetParser.parse_preview(content, file_path)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse preview: {str(e)}")
+        raw_rows = RemainedBudgetParser.parse_preview(content, PREVIEW_SOURCE_FILENAME)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to parse preview source file.")
         
     try:
-        batch = BudgetPreviewNormalizer.normalize_batch(raw_rows, file_path, file_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to normalize preview: {str(e)}")
+        batch = BudgetPreviewNormalizer.normalize_batch(raw_rows, PREVIEW_SOURCE_FILENAME, PREVIEW_SOURCE_FILENAME)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to normalize preview data.")
         
     return batch
