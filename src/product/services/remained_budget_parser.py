@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from io import BytesIO
 from typing import List, Dict, Any, Optional
@@ -6,6 +7,20 @@ from typing import List, Dict, Any, Optional
 class RemainedBudgetParser:
     SHEET_NAME = "reportRemainBudgetXlsx"
     HEADER_ROW = 7  # Row 8 (0-indexed)
+    DATA_START_ROW = HEADER_ROW + 1
+
+    # Column Mapping
+    COL_WORK = 1
+    COL_APPROPRIATION_CATEGORY = 2
+    COL_EXPENSE_TYPE = 3
+    COL_PROJECT = 4
+    COL_BUDGET_CODE = 5
+    COL_APPROVED_AMOUNT = 8
+    COL_TRANSFER_IN = 9
+    COL_TRANSFER_OUT = 10
+    COL_OBLIGATED_AMOUNT = 11
+    COL_DISBURSED_AMOUNT = 12
+    COL_REMAINING_AMOUNT = 14
 
     @staticmethod
     def _parse_amount(value: Any) -> Optional[float]:
@@ -29,9 +44,40 @@ class RemainedBudgetParser:
         return None
 
     @classmethod
+    def _extract_metadata(cls, df_raw: pd.DataFrame) -> Dict[str, Any]:
+        metadata = {
+            "printed_month": "",
+            "fiscal_year_be": None,
+            "municipality": ""
+        }
+        try:
+            # Row 2, Col 2 (index 1, 1): "วันที่พิมพ์ : 22/05/2569 17:54"
+            row1_col1 = str(df_raw.iloc[1, 1] or "").strip()
+            date_match = re.search(r"(\d{2})/(\d{2})/(\d{4})", row1_col1)
+            if date_match:
+                month_num = date_match.group(2)
+                months = {
+                    "01": "มกราคม", "02": "กุมภาพันธ์", "03": "มีนาคม", "04": "เมษายน",
+                    "05": "พฤษภาคม", "06": "มิถุนายน", "07": "กรกฎาคม", "08": "สิงหาคม",
+                    "09": "กันยายน", "10": "ตุลาคม", "11": "พฤศจิกายน", "12": "ธันวาคม"
+                }
+                metadata["printed_month"] = months.get(month_num, "")
+
+            # Row 4, Col 2 (index 3, 1): "ปีงบประมาณ ... 2569"
+            row3_col1 = str(df_raw.iloc[3, 1] or "").strip()
+            year_match = re.search(r"(\d{4})", row3_col1)
+            if year_match:
+                metadata["fiscal_year_be"] = int(year_match.group(1))
+
+            # Row 5, Col 2 (index 4, 1): "เทศบาลตำบลด่านทับตะโก"
+            metadata["municipality"] = str(df_raw.iloc[4, 1] or "").strip()
+        except Exception:
+            pass
+        return metadata
+
+    @classmethod
     def parse_preview(cls, file_content: bytes, source_file_name: str = "B_RemainedBudget.xlsx") -> List[Dict[str, Any]]:
         try:
-            # Read the entire sheet without headers first to extract metadata from top rows
             df_raw = pd.read_excel(
                 BytesIO(file_content), 
                 sheet_name=cls.SHEET_NAME, 
@@ -40,52 +86,10 @@ class RemainedBudgetParser:
         except Exception as e:
             raise ValueError(f"Failed to read sheet {cls.SHEET_NAME}: {e}")
 
-        # Metadata Extraction
-        # Row 1: Printed Date (index 1)
-        # Row 3: Fiscal Year (index 3)
-        # Row 4: Municipality (index 4)
+        metadata = cls._extract_metadata(df_raw)
         
-        printed_month = ""
-        fiscal_year_be = None
-        municipality = ""
-
-        try:
-            # Row 1, Col 1: "วันที่พิมพ์ : 22/05/2569 17:54"
-            row1_col1 = str(df_raw.iloc[1, 1] or "").strip()
-            # print(f"DEBUG: row1_col1 = {row1_col1}")
-            if "/" in row1_col1:
-                parts = row1_col1.split(":")
-                date_part = parts[1].strip().split(" ")[0] if len(parts) > 1 else row1_col1.split("/")[0]
-                # Try to extract just the date part: DD/MM/YYYY
-                import re as re_meta
-                date_match = re_meta.search(r"(\d{2})/(\d{2})/(\d{4})", row1_col1)
-                if date_match:
-                    month_num = date_match.group(2)
-                    months = {
-                        "01": "มกราคม", "02": "กุมภาพันธ์", "03": "มีนาคม", "04": "เมษายน",
-                        "05": "พฤษภาคม", "06": "มิถุนายน", "07": "กรกฎาคม", "08": "สิงหาคม",
-                        "09": "กันยายน", "10": "ตุลาคม", "11": "พฤศจิกายน", "12": "ธันวาคม"
-                    }
-                    printed_month = months.get(month_num, "")
-
-            # Row 3, Col 1: "ปีงบประมาณ ... 2569"
-            row3_col1 = str(df_raw.iloc[3, 1] or "").strip()
-            # print(f"DEBUG: row3_col1 = {row3_col1}")
-            year_match = re_meta.search(r"(\d{4})", row3_col1)
-            if year_match:
-                fiscal_year_be = int(year_match.group(1))
-
-            # Row 4, Col 1: "เทศบาลตำบลด่านทับตะโก"
-            municipality = str(df_raw.iloc[4, 1] or "").strip()
-            # print(f"DEBUG: municipality = {municipality}")
-        except Exception as e:
-            # print(f"DEBUG: metadata error = {e}")
-            pass
-
         results = []
-        # Data starts at row 9 (index 8). Header is row 8 (index 7).
-        # We iterate from index 8 onwards.
-        for idx in range(8, len(df_raw)):
+        for idx in range(cls.DATA_START_ROW, len(df_raw)):
             row = df_raw.iloc[idx]
             source_row = idx + 1
             
@@ -93,37 +97,20 @@ class RemainedBudgetParser:
                 val = row[col_idx]
                 return None if pd.isna(val) else val
 
-            work_val = get_val(1)
+            work_val = get_val(cls.COL_WORK)
             work = str(work_val or "").strip()
             if not work or work.startswith("รวม"):
                 continue
                 
-            # Based on analysis of B_RemainedBudget.xlsx:
-            # Col 1: work
-            # Col 2: appropriation_category
-            # Col 3: expense_type
-            # Col 4: department
-            # Col 5: budget_code
-            # Col 8: approved_amount
-            # Col 9: transfer_in
-            # Col 10: transfer_out
-            # Col 11: obligated_amount
-            # Col 12: disbursed_amount
-            # Col 14: remaining_amount
+            app_cat = str(get_val(cls.COL_APPROPRIATION_CATEGORY) or "").strip()
+            exp_type = str(get_val(cls.COL_EXPENSE_TYPE) or "").strip()
             
-            app_cat = str(get_val(2) or "").strip()
-            exp_type = str(get_val(3) or "").strip()
-            
-            dept_val = get_val(4)
-            dept = str(dept_val or "").strip()
-            if not dept:
-                dept = "รอข้อมูลจริง"
-            
-            # Plan and Budget are not clearly distinct columns in this layout
+            # Strict correction: department, plan, and budget as "รอข้อมูลจริง"
+            dept = "รอข้อมูลจริง"
             plan = "รอข้อมูลจริง"
             budget = "รอข้อมูลจริง"
             
-            budget_code_val = get_val(5)
+            budget_code_val = get_val(cls.COL_BUDGET_CODE)
             if budget_code_val is None or pd.isna(budget_code_val):
                 budget_code = ""
             else:
@@ -133,25 +120,25 @@ class RemainedBudgetParser:
 
             row_data = {
                 "source_row": source_row,
-                "fiscal_year_be": fiscal_year_be,
-                "printed_month": printed_month,
-                "municipality": municipality,
+                "fiscal_year_be": metadata["fiscal_year_be"],
+                "printed_month": metadata["printed_month"],
+                "municipality": metadata["municipality"],
                 "department": dept,
                 "plan": plan,
                 "work": work,
                 "budget": budget,
                 "appropriation_category": app_cat,
                 "expense_type": exp_type,
-                "project": str(get_val(6) or "").strip(), # Attempt to use Col 6 for project
+                "project": str(get_val(cls.COL_PROJECT) or "").strip(),
                 "budget_code": budget_code,
-                "approved_amount": cls._parse_amount(get_val(8)),
-                "transfer_in": cls._parse_amount(get_val(9)),
-                "transfer_out": cls._parse_amount(get_val(10)),
-                "obligated_amount": cls._parse_amount(get_val(11)),
-                "disbursed_amount": cls._parse_amount(get_val(12)),
-                "remaining_amount": cls._parse_amount(get_val(14)),
+                "approved_amount": cls._parse_amount(get_val(cls.COL_APPROVED_AMOUNT)),
+                "transfer_in": cls._parse_amount(get_val(cls.COL_TRANSFER_IN)),
+                "transfer_out": cls._parse_amount(get_val(cls.COL_TRANSFER_OUT)),
+                "obligated_amount": cls._parse_amount(get_val(cls.COL_OBLIGATED_AMOUNT)),
+                "disbursed_amount": cls._parse_amount(get_val(cls.COL_DISBURSED_AMOUNT)),
+                "remaining_amount": cls._parse_amount(get_val(cls.COL_REMAINING_AMOUNT)),
                 "withholding_tax": cls._determine_withholding_tax(exp_type, app_cat),
-                "data_status": str(get_val(13) or "").strip(), # Attempt to use Col 13 for status
+                "data_status": str(get_val(13) or "").strip(), # Preserving index 13 for status
                 "source_file": source_file_name,
                 "source_sheet": cls.SHEET_NAME,
             }
