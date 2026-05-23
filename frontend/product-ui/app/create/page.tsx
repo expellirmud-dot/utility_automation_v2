@@ -3,6 +3,76 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const IssueItem = ({ issue, type }: { issue: any, type: 'missing_data' | 'warning' | 'blocker' }) => {
+  if (typeof issue === 'string') {
+    return <li>{issue}</li>;
+  }
+  
+  const metaColor = type === 'blocker' ? 'text-red-500 border-red-200' : type === 'warning' ? 'text-amber-600 border-amber-200' : 'text-slate-500 border-slate-200';
+  const detailBg = type === 'blocker' ? 'bg-red-100' : type === 'warning' ? 'bg-amber-100' : 'bg-slate-200';
+  
+  return (
+    <li className="mb-2 last:mb-0">
+      <div className="font-semibold">{issue.message}</div>
+      <div className={`flex flex-wrap gap-1.5 mt-1 text-[11px] ${metaColor}`}>
+        {issue.code && <span className="font-mono bg-white px-1.5 py-0.5 rounded border">code: {issue.code}</span>}
+        {issue.component && <span className="font-mono bg-white px-1.5 py-0.5 rounded border">cmp: {issue.component}</span>}
+        {issue.field && <span className="font-mono bg-white px-1.5 py-0.5 rounded border">field: {issue.field}</span>}
+      </div>
+      {issue.detail && Object.keys(issue.detail).length > 0 && (
+        <details className="mt-1.5">
+          <summary className={`cursor-pointer text-[11px] underline ${metaColor} opacity-80 hover:opacity-100 outline-none`}>
+            แสดงข้อมูลเพิ่มเติม
+          </summary>
+          <div className={`mt-1.5 p-2 rounded text-[11px] font-mono whitespace-pre-wrap overflow-x-auto ${detailBg} text-slate-800`}>
+            {Object.entries(issue.detail).map(([k, v]) => (
+              <div key={k}><span className="font-bold opacity-70">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+            ))}
+          </div>
+        </details>
+      )}
+    </li>
+  );
+};
+
+const IssueList = ({
+  flatArray,
+  structuredArray,
+  type,
+  title,
+  containerBg,
+  containerBorder,
+  titleColor,
+  listColor
+}: {
+  flatArray?: string[];
+  structuredArray?: any[];
+  type: 'missing_data' | 'warning' | 'blocker';
+  title: string;
+  containerBg: string;
+  containerBorder: string;
+  titleColor: string;
+  listColor: string;
+}) => {
+  const hasStructured = structuredArray && structuredArray.length > 0;
+  const hasFlat = flatArray && flatArray.length > 0;
+  
+  if (!hasStructured && !hasFlat) return null;
+  
+  const items = hasStructured ? structuredArray : flatArray;
+  
+  return (
+    <div className={`mt-2 p-3 ${containerBg} border ${containerBorder} rounded-lg`}>
+      <div className={`font-bold ${titleColor} mb-2`}>{title}:</div>
+      <ul className={`list-disc pl-5 space-y-2 ${listColor}`}>
+        {items!.map((item: any, idx: number) => (
+          <IssueItem key={idx} issue={item} type={type} />
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export default function CreateCase() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_PRODUCT_API_BASE_URL ?? "http://127.0.0.1:8000";
   const apiUrl = (path: string) => `${API_BASE_URL}${path}`;
@@ -465,38 +535,38 @@ export default function CreateCase() {
                 </div>
               )}
 
-              {readinessData.missing_data && readinessData.missing_data.length > 0 && (
-                <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <div className="font-bold text-slate-700 mb-1">ข้อมูลที่ขาดหาย:</div>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-600">
-                    {readinessData.missing_data.map((item: string, idx: number) => (
-                      <li key={idx}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <IssueList
+                flatArray={readinessData.missing_data}
+                structuredArray={readinessData.missing_data_details}
+                type="missing_data"
+                title="ข้อมูลที่ขาดหาย"
+                containerBg="bg-slate-50"
+                containerBorder="border-slate-200"
+                titleColor="text-slate-700"
+                listColor="text-slate-600"
+              />
 
-              {readinessData.warnings && readinessData.warnings.length > 0 && (
-                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="font-bold text-amber-800 mb-1">แจ้งเตือน:</div>
-                  <ul className="list-disc pl-5 space-y-1 text-amber-700">
-                    {readinessData.warnings.map((item: string, idx: number) => (
-                      <li key={idx}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <IssueList
+                flatArray={readinessData.warnings}
+                structuredArray={readinessData.warning_details}
+                type="warning"
+                title="แจ้งเตือน"
+                containerBg="bg-amber-50"
+                containerBorder="border-amber-200"
+                titleColor="text-amber-800"
+                listColor="text-amber-700"
+              />
 
-              {readinessData.blockers && readinessData.blockers.length > 0 && (
-                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="font-bold text-red-800 mb-1">ปัญหาที่ทำให้เบิกจ่ายไม่ได้:</div>
-                  <ul className="list-disc pl-5 space-y-1 text-red-700">
-                    {readinessData.blockers.map((item: string, idx: number) => (
-                      <li key={idx}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <IssueList
+                flatArray={readinessData.blockers}
+                structuredArray={readinessData.blocker_details}
+                type="blocker"
+                title="ปัญหาที่ทำให้เบิกจ่ายไม่ได้"
+                containerBg="bg-red-50"
+                containerBorder="border-red-200"
+                titleColor="text-red-800"
+                listColor="text-red-700"
+              />
             </div>
           ) : null}
         </div>
