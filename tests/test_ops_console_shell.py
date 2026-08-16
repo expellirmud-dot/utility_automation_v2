@@ -141,3 +141,28 @@ def test_domain_panels_bundled_endpoint_get_only():
 
     for method in ['post', 'put', 'patch', 'delete']:
         assert getattr(client, method)('/ops/api/panels').status_code == 405
+
+
+def test_domain_panel_api_forbidden_action_routes_absent():
+    source = (Path(__file__).resolve().parents[1] / 'src' / 'ui' / 'ops_overview_api.py').read_text().lower()
+    forbidden = ['execute', 'retry', 'promote', 'rollback now', 'trigger replay', 'restart node']
+    for token in forbidden:
+        assert token not in source
+
+
+def test_domain_panel_routes_registered_get_only():
+    ops_routes = [route for route in app.routes if getattr(route, 'path', '').startswith('/ops/api/')]
+    expected = {
+        '/ops/api/recovery',
+        '/ops/api/simulation',
+        '/ops/api/mesh',
+        '/ops/api/policy',
+        '/ops/api/replay',
+        '/ops/api/system-health',
+        '/ops/api/panels',
+    }
+    actual = {route.path for route in ops_routes}
+    assert expected.issubset(actual)
+    for route in ops_routes:
+        if route.path in expected:
+            assert route.methods == {'GET'}
