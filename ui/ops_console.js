@@ -9,8 +9,6 @@
   var incidentListCache = null;
   var routeGovernanceCache = null;
   var domainPanelCache = {};
-  var domainPanelLoadFailed = false;
-  var domainPanelLoading = true;
 
   function addLine(card, label, value) {
     var row = document.createElement('p');
@@ -123,41 +121,18 @@
       var livePanel = createCard(sectionTitle, domainPanelCache[panelKey].status);
       addLine(livePanel, 'Source', domainPanelCache[panelKey].source);
       addLine(livePanel, 'Mode', 'Read-only advisory');
-      addLine(livePanel, 'Advisory Only', domainPanelCache[panelKey].advisory_only);
-      addLine(livePanel, 'Item Count', domainPanelCache[panelKey].item_count);
-      addLine(livePanel, 'Ordering', (domainPanelCache[panelKey].metadata || {}).deterministic_ordering || 'unknown');
       if (!domainPanelCache[panelKey].items || domainPanelCache[panelKey].items.length === 0) {
         addLine(livePanel, 'Items', 'No items available');
-        if (domainPanelCache[panelKey].diagnostics && domainPanelCache[panelKey].diagnostics.length > 0) {
-          addLine(livePanel, 'Diagnostics', domainPanelCache[panelKey].diagnostics[0].code || 'degraded');
-        }
       } else {
+        addLine(livePanel, 'Items', domainPanelCache[panelKey].items.length);
         domainPanelCache[panelKey].items.forEach(function (entry) {
           var row = document.createElement('p');
           row.className = 'meta';
-          row.textContent = String(entry.id || 'unknown_id');
+          row.textContent = JSON.stringify(entry);
           livePanel.appendChild(row);
         });
       }
       container.appendChild(livePanel);
-      return;
-    }
-    if (panelKey && domainPanelLoading) {
-      clearNode(container);
-      var loading = createCard(sectionTitle, 'stale');
-      addLine(loading, 'Status', 'loading');
-      addLine(loading, 'Label', 'Loading read-only domain panel');
-      addLine(loading, 'Mode', 'Read-only advisory');
-      container.appendChild(loading);
-      return;
-    }
-    if (panelKey && domainPanelLoadFailed) {
-      clearNode(container);
-      var degraded = createCard(sectionTitle, 'degraded');
-      addLine(degraded, 'Status', 'degraded');
-      addLine(degraded, 'Label', 'Domain panel source unavailable');
-      addLine(degraded, 'Mode', 'Read-only advisory');
-      container.appendChild(degraded);
       return;
     }
     clearNode(container);
@@ -210,17 +185,12 @@
   }
 
   function fetchDomainPanels() {
-    return fetch('/ops/api/panels')
-      .then(function (response) { return response.json(); })
-      .then(function (payload) {
-        domainPanelCache = payload.panels || {};
-      })
-      .catch(function () {
-        domainPanelLoadFailed = true;
-      })
-      .finally(function () {
-        domainPanelLoading = false;
-      });
+    var endpoints = ['/ops/api/recovery', '/ops/api/simulation', '/ops/api/mesh', '/ops/api/policy', '/ops/api/replay', '/ops/api/system-health'];
+    return Promise.all(endpoints.map(function (endpoint) {
+      return fetch(endpoint)
+        .then(function (response) { return response.json(); })
+        .then(function (payload) { domainPanelCache[endpoint.replace('/ops/api/', '')] = payload; });
+    }));
   }
 
   buildNav();

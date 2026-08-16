@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from fastapi.testclient import TestClient
 
@@ -62,11 +61,8 @@ def test_ops_shell_static_assets_safe_rendering_read_only():
 def test_overview_ops_js_fetches_route_governance_and_no_actions():
     js = client.get('/ops/ops_console.js').text
     assert "fetch('/ops/api/route-governance')" in js
-    assert "fetch('/ops/api/panels')" in js
-    assert 'domainPanelLoadFailed' in js
-    assert 'domainPanelLoading' in js
-    assert "'degraded'" in js
-    assert "'loading'" in js
+    for endpoint in ['recovery', 'simulation', 'mesh', 'policy', 'replay', 'system-health']:
+        assert f"'/ops/api/{endpoint}'" in js
     forbidden_labels = ['approve', 'reject', 'retry', 'execute', 'repair', 'promote']
     for label in forbidden_labels:
         assert label not in js.lower()
@@ -102,53 +98,49 @@ def test_overview_forbidden_imports_absent():
 
 
 def test_domain_panel_endpoints_get_only_and_deterministic_ordering():
-    endpoint_to_snapshot = {
-        'recovery': 'recovery_projection_snapshot.json',
-        'simulation': 'simulation_projection_snapshot.json',
-        'mesh': 'mesh_projection_snapshot.json',
-        'policy': 'policy_projection_snapshot.json',
-        'replay': 'replay_projection_snapshot.json',
-        'system-health': 'system_health_telemetry_snapshot.json',
-    }
-    snapshot_dir = Path(__file__).resolve().parents[1] / 'src' / 'ui'
-    endpoints = []
-    for endpoint, snapshot_name in endpoint_to_snapshot.items():
-        payload = json.loads((snapshot_dir / snapshot_name).read_text(encoding='utf-8'))
-        endpoints.append((endpoint, len(payload.get('items', []))))
-    for endpoint, expected_count in endpoints:
+    endpoints = [
+        'recovery',
+        'simulation',
+        'mesh',
+        'policy',
+        'replay',
+        'system-health',
+    ]
+    for endpoint in endpoints:
         response = client.get(f'/ops/api/{endpoint}')
         assert response.status_code == 200
         payload = response.json()
         assert payload['status'] in {'connected', 'empty', 'degraded'}
         assert payload['advisory_only'] is True
-        assert payload['item_count'] == expected_count
-        assert payload['summaries'] == payload['items']
-        assert payload['metadata']['deterministic_ordering'] == 'id_asc'
-        assert len(payload['items']) == expected_count
+        assert payload['item_count'] == len(payload['items'])
+        assert isinstance(payload['summaries'], list)
+        assert isinstance(payload['diagnostics'], dict)
+        assert payload['metadata']['source_of_truth'] == 'ledger'
         ids = [item.get('id', '') for item in payload['items']]
         assert ids == sorted(ids)
 
-        if endpoint == 'recovery':
-            assert 'recovery_summaries' in payload
-            assert 'diagnoses' in payload
-        if endpoint == 'simulation':
-            assert 'scenario_summaries' in payload
-            assert 'advisory_outcomes' in payload
-        if endpoint == 'mesh':
-            assert 'node_summaries' in payload
-            assert 'quorum_metadata' in payload
-        if endpoint == 'policy':
-            assert 'active_policy' in payload
-            assert 'lineage' in payload
-        if endpoint == 'replay':
-            assert 'replay_certification' in payload
-            assert 'determinism_verification' in payload
-        if endpoint == 'system-health':
-            assert 'health_summaries' in payload
-            assert 'provider_status' in payload
-
         for method in ['post', 'put', 'patch', 'delete']:
             assert getattr(client, method)(f'/ops/api/{endpoint}').status_code == 405
+
+
+def test_domain_panels_bundled_endpoint_get_only():
+    response = client.get('/ops/api/panels')
+    assert response.status_code == 200
+    payload = response.json()
+    assert [panel['domain'] for panel in payload['panels']] == [
+        'recovery',
+        'simulation',
+        'mesh',
+        'policy',
+        'replay',
+        'system_health',
+    ]
+    for panel in payload['panels']:
+        assert panel['advisory_only'] is True
+        assert panel['item_count'] == len(panel['items'])
+
+    for method in ['post', 'put', 'patch', 'delete']:
+        assert getattr(client, method)('/ops/api/panels').status_code == 405
 
 
 def test_domain_panel_api_forbidden_action_routes_absent():
@@ -174,13 +166,3 @@ def test_domain_panel_routes_registered_get_only():
     for route in ops_routes:
         if route.path in expected:
             assert route.methods == {'GET'}
-
-
-def test_ops_panels_bundle_endpoint_shape():
-    response = client.get('/ops/api/panels')
-    assert response.status_code == 200
-    payload = response.json()
-    assert sorted(payload['panels'].keys()) == ['mesh', 'policy', 'recovery', 'replay', 'simulation', 'system-health']
-    for panel in payload['panels'].values():
-        assert panel['advisory_only'] is True
-        assert panel['metadata']['deterministic_ordering'] == 'id_asc'
